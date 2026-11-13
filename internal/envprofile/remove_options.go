@@ -23,6 +23,9 @@ func RemoveWithOptions(home, name string, opts RemoveOptions) error {
 	if err := refuseBuiltinProfileAlias(home, name); err != nil {
 		return err
 	}
+	if !validProfileName(name) {
+		return fmt.Errorf("%s: profile name %q is not a portable identifier", DiagSourceInvalid, name)
+	}
 	if err := envauthority.Validate(home); err != nil {
 		return err
 	}
