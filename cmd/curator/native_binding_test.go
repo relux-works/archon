@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -75,6 +76,30 @@ func TestNativeHomeBindingCLI(t *testing.T) {
 				}
 			} else if code != exitOK {
 				t.Fatalf("%s purge = %d: %s", mode, code, stderr)
+			}
+		})
+	}
+}
+
+// Both remove-help forms expose the binding choices without loading config or
+// creating manager state; a failing config source is the forbidden control.
+func TestNativeHomeBindingRemoveHelp(t *testing.T) {
+	for _, flag := range []string{"--help", "-h"} {
+		t.Run(flag, func(t *testing.T) {
+			source, manager := profileHome(t)
+			source.err = errors.New("help must not load config")
+			code, stdout, stderr := runProfile(t, source, "profile", "remove", flag)
+			if code != exitOK || stderr != "" {
+				t.Fatalf("remove help=%d: %s", code, stderr)
+			}
+			for _, term := range []string{"--native-home", "--managed-only", "native_home.<adapter>", "native_home_binding_required"} {
+				if !strings.Contains(stdout, term) {
+					t.Fatalf("remove help omits %s", term)
+				}
+			}
+			entries, err := os.ReadDir(manager)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("help created manager state: %v %v", entries, err)
 			}
 		})
 	}
