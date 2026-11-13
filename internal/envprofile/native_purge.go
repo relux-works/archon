@@ -3,6 +3,7 @@ package envprofile
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -53,7 +54,12 @@ func purgeHomesWithBindings(home, profile string, bindings NativeHomeBindings) e
 		if err := pathboundary.ValidateLeafWithOwner(native, filepath.Join(native, envmarker.Name), pathboundary.DefaultOwnerLookup()); err != nil {
 			return err
 		}
-		marker, err := envmarker.Read(native)
+		if beforeNativePurgeMarkerRead != nil {
+			if err := beforeNativePurgeMarkerRead(native); err != nil {
+				return err
+			}
+		}
+		marker, err := readNativePurgeMarker(native, state.Info)
 		if err != nil {
 			return err
 		}
@@ -149,4 +155,36 @@ func purgeManagedHomes(home, profile string) error {
 		return err
 	}
 	return os.RemoveAll(managed)
+}
+
+// Test-only fault seam between metadata admission and the actual marker open.
+// Production leaves it nil; an error stops before marker bytes are read.
+var beforeNativePurgeMarkerRead func(string) error
+
+// Read only the admitted regular marker inode. A link or replacement after
+// metadata admission refuses before reading any credential or session payload.
+func readNativePurgeMarker(native string, expected os.FileInfo) (*envmarker.Marker, error) {
+	return envmarker.ReadWith(native, func(path string) (stateread.File, error) {
+		unreadable := func(err error) (stateread.File, error) { return stateread.File{}, stateread.UnusableError(path, err) }
+		file, err := pathboundary.OpenReadNoFollow(path)
+		if err != nil {
+			return unreadable(err)
+		}
+		defer func() { _ = file.Close() }()
+		info, err := file.Stat()
+		if err != nil {
+			return unreadable(err)
+		}
+		if expected == nil || !info.Mode().IsRegular() || !os.SameFile(expected, info) {
+			return unreadable(fmt.Errorf("native marker changed after admission"))
+		}
+		if err := pathboundary.CheckPrivateFile(path, info); err != nil {
+			return unreadable(err)
+		}
+		payload, err := io.ReadAll(file)
+		if err != nil {
+			return unreadable(err)
+		}
+		return stateread.File{Kind: stateread.KindPresent, Bytes: payload}, nil
+	})
 }

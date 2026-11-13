@@ -7,8 +7,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/relux-works/curator/internal/envmarker"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"golang.org/x/sys/unix"
@@ -80,5 +82,45 @@ func TestNativeHomeBindingPurgeNoCredentialOpen(t *testing.T) {
 	}
 	if err := bindingNoPayloadOpen(fd); err == nil || err.Error() != "native credential payload opened" {
 		t.Fatalf("payload-open checker missed intended plant: %v", err)
+	}
+}
+
+// A marker replaced after metadata admission refuses before opening the
+// synthetic credential payload. The plant must actually reach that boundary.
+func TestNativeHomeBindingPurgeMarkerSwap(t *testing.T) {
+	manager := bindingDirectory(t)
+	bindings := bindingPurgeHomes(t)
+	native := bindings["codex_cli"]
+	bindingPurgeMarker(t, native, "sample", "AGENTS.md")
+	if err := os.WriteFile(filepath.Join(native, "auth.json"), []byte("opaque fixture data\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	fd := bindingPayloadWatch(t, native)
+	previous := beforeNativePurgeMarkerRead
+	defer func() { beforeNativePurgeMarkerRead = previous }()
+	planted := false
+	beforeNativePurgeMarkerRead = func(home string) error {
+		if home != native {
+			return nil
+		}
+		path := filepath.Join(home, envmarker.Name)
+		if err := os.Rename(path, path+".saved"); err != nil {
+			return err
+		}
+		if err := os.Symlink("auth.json", path); err != nil {
+			return err
+		}
+		planted = true
+		return nil
+	}
+	err := purgeHomesWithBindings(manager, "sample", bindings)
+	if !planted {
+		t.Fatal("marker swap was not applied")
+	}
+	if err == nil || !strings.Contains(err.Error(), envmarker.DiagMarkerUnreadable) {
+		t.Fatalf("swapped marker refusal=%v", err)
+	}
+	if err := bindingNoPayloadOpen(fd); err != nil {
+		t.Fatalf("credential opened after marker swap: %v", err)
 	}
 }
