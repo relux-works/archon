@@ -529,3 +529,75 @@ Existing `.claude.json` project-trust provisioning remains independent. This
 prepares only the settings-files part of the launcher's
 [admission contract A](https://github.com/relux-works/curator-agent-launcher#readme);
 it does not qualify a build, gateway, policy cache or launch.
+
+## Explicit native-home bindings (local carrier)
+
+Native purge selects exact admitted directories independently of the caller's
+managed adapter overrides or `HOME`. Persist a selection with:
+
+```sh
+curator env config set native_home.codex_cli /absolute/native/codex
+curator env config show native_home.codex_cli
+curator env config unset native_home.codex_cli
+```
+
+`native_home` is stored in `<selected-config>.native-home-bindings.json`, beside
+that explicitly selected machine configuration. It uses the Curator-local
+`native-home-bindings/1` carrier, a candidate for later specification adoption:
+
+```json
+{"version":1,"bindings":{"codex_cli":"/absolute/native/codex"}}
+```
+
+The schema is closed. Unknown fields, duplicate keys, unsupported versions and
+unknown adapter IDs refuse. The owner-only sidecar uses mode `0600` on Unix and
+the private file ACL on Windows. Links, foreign ownership and group/other
+mutation rights refuse without permission repair. Writes replace the sidecar
+atomically; old manager-config bytes and schema acceptance do not change.
+A missing sidecar means no bindings. Show reports the values and their exact
+source; the whole `env config show` includes `native_home` and
+`native_home_source`. An absent source is reported as `none`.
+
+The binding must be an existing, owned directory at a clean absolute path,
+without symlinks at any path component. Relative paths, `.` or `..` components,
+files, missing directories, duplicate physical directories and Curator-managed
+homes refuse as `native_home_binding_required` before marker inspection.
+For `opencode`, bind the actual `opencode` directory, not its XDG parent.
+Set validates the stored target set; unset can remove a stale selection without
+opening its native directory or payloads.
+
+`profile remove --purge` needs bindings for its four native in-place adapters:
+`claude_code`, `codex_cli`, `opencode` and `pi`. An operation-specific CLI binding
+wins over the persisted knob for that adapter:
+
+```sh
+curator profile remove old-profile --purge \
+  --native-home claude_code=/absolute/native/claude \
+  --native-home codex_cli=/absolute/native/codex \
+  --native-home opencode=/absolute/native/opencode \
+  --native-home pi=/absolute/native/pi
+```
+
+The paths are placeholders. Neither environment variables nor a home scan
+supply omitted bindings. Purge does not touch a native marker naming another
+profile. Existing profile-in-use, overlay, marker, ownership and credential
+source gates still apply; a binding grants no takeover authority. Stored
+bindings for adapters without native in-place purge support are retained;
+explicitly requesting such an adapter for this operation refuses.
+
+To purge only the profile's enumerated managed homes and keep native homes:
+
+```sh
+curator profile remove old-profile --purge --managed-only
+```
+
+This mode needs no native binding and does not read the binding sidecar.
+Without `--purge`, ordinary removal retains native and managed homes.
+Credential migration still uses its existing protocol. These bindings currently
+select native purge targets only. Fixture checks do not qualify native
+installations.
+
+Run `go test ./internal/envprofile ./cmd/curator -run '^TestNativeHomeBinding'`
+for paired binding, sidecar, CLI-priority, foreign-target and refusal controls.
+The Linux payload-open fixture checks a synthetic credential file and includes
+an intentional read to prove its detector. Store local test output in `.temp/`.

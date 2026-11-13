@@ -167,7 +167,7 @@ func TestCredentialAuthorityEntryPoints(t *testing.T) {
 			return invocation{err: e}
 		}},
 		{"profile-remove", true, func(_ *testing.T, fx *managedFixture, _ string) invocation {
-			return invocation{err: Remove(fx.home, fx.profile, true)}
+			return invocation{err: RemoveWithOptions(fx.home, fx.profile, RemoveOptions{Purge: true, ManagedOnly: true})}
 		}},
 		{"profile-use", true, func(_ *testing.T, fx *managedFixture, _ string) invocation {
 			_, e := UseWithPolicy(fx.home, fx.profile, envregistry.ClaudeCode, "", false, Policy{})

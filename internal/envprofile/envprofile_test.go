@@ -321,7 +321,7 @@ func TestRemovePurgeCleansHomes(t *testing.T) {
 	}
 	// "one" is current nowhere: purge removes its record. Its homes were
 	// overwritten by "two", so purging "one" must not touch them.
-	if err := Remove(home, "one", true); err != nil {
+	if err := RemoveWithOptions(home, "one", RemoveOptions{Purge: true, NativeHomes: NativeHomeBindings(homes)}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := readSource(home, "one"); err == nil {

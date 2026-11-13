@@ -13,7 +13,8 @@ import (
 // reads or edits one environments §12.1 knob of manager-config schema 2 by
 // its table name. Show reads the effective configuration with the §12.1
 // defaults applied; set and unset rewrite the machine file only and refuse
-// a locked knob with the system-file warning.
+// a locked knob with the system-file warning. The Curator-local native_home
+// knob uses its own private versioned sidecar and leaves those carriers intact.
 func (c cli) cmdEnvConfig(cfg *config.Config, args []string) int {
 	if len(args) == 0 {
 		_, _ = fmt.Fprintln(c.stderr, "curator: env config show|set|unset [<knob> [<value>]]")
@@ -38,12 +39,25 @@ func (c cli) cmdEnvConfigShow(cfg *config.Config, args []string) int {
 		_, _ = fmt.Fprintln(c.stderr, envKnobAliasUsage)
 		return exitUsage
 	}
+	if len(args) == 1 {
+		if id, handled, err := nativeHomeKnob(args[0]); handled {
+			if err != nil {
+				_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+				return exitUsage
+			}
+			return c.showNativeHomeKnob(cfg, id)
+		}
+	}
 	rendered := cfg.EffectiveJSON()
 	env, _ := rendered["environments"].(map[string]any)
 	if len(args) == 0 {
 		permissions, err := envprofile.InstalledPermissions(cfg.Home(), machineFromConfig(cfg))
 		if err != nil {
 			_, _ = fmt.Fprintln(c.stderr, "curator: permissions posture unreadable:", err)
+			return exitFail
+		}
+		if err := addNativeHomeKnobs(cfg, env); err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
 			return exitFail
 		}
 		env["permissions_posture"] = permissions
@@ -87,6 +101,13 @@ func (c cli) cmdEnvConfigSet(cfg *config.Config, args []string) int {
 		_, _ = fmt.Fprintln(c.stderr, "curator: env config set <knob> <value>")
 		_, _ = fmt.Fprintln(c.stderr, envKnobAliasUsage)
 		return exitUsage
+	}
+	if id, handled, err := nativeHomeKnob(args[0]); handled {
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitUsage
+		}
+		return c.setNativeHomeKnob(cfg, id, args[1])
 	}
 	knob, rawValue := args[0], args[1]
 	segments, err := config.SplitEnvKnob(knob)
@@ -143,6 +164,13 @@ func (c cli) cmdEnvConfigUnset(cfg *config.Config, args []string) int {
 		_, _ = fmt.Fprintln(c.stderr, "curator: env config unset <knob>")
 		_, _ = fmt.Fprintln(c.stderr, envKnobAliasUsage)
 		return exitUsage
+	}
+	if id, handled, err := nativeHomeKnob(args[0]); handled {
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitUsage
+		}
+		return c.unsetNativeHomeKnob(cfg, id)
 	}
 	knob := args[0]
 	segments, err := config.SplitEnvKnob(knob)

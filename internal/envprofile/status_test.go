@@ -343,7 +343,7 @@ func TestStatusOrphanRetention(t *testing.T) {
 	if _, err := Resolve(provision2); err != nil {
 		t.Fatal(err)
 	}
-	if err := Remove(fx2.home, "acme2", true); err != nil {
+	if err := RemoveWithOptions(fx2.home, "acme2", RemoveOptions{Purge: true, ManagedOnly: true}); err != nil {
 		// acme2 is current, so removal refuses with profile_in_use; clear
 		// first like an operator would.
 		if !strings.Contains(err.Error(), DiagInUse) {
@@ -352,7 +352,7 @@ func TestStatusOrphanRetention(t *testing.T) {
 		if err := SetCurrent(fx2.home, "default"); err != nil {
 			t.Fatal(err)
 		}
-		if err := Remove(fx2.home, "acme2", true); err != nil {
+		if err := RemoveWithOptions(fx2.home, "acme2", RemoveOptions{Purge: true, ManagedOnly: true}); err != nil {
 			t.Fatal(err)
 		}
 	}

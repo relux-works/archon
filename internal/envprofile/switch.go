@@ -96,7 +96,9 @@ func adapterByID(id string) (Adapter, bool) {
 	return Adapter{}, false
 }
 
-// NativeHome resolves the adapter's native default home. The mechanism
+// NativeHome discovers the adapter home from the current process. It is not
+// an admitted native binding for purge; use ResolveNativeHomeBinding there.
+// The mechanism
 // variable names the home, except for opencode where it names the XDG
 // parent and the tool reads the opencode child (environments §7.1). The
 // four defaults below the user home are implementation choices the
@@ -1211,44 +1213,8 @@ func replaceLink(native, rel, storeFile string) error {
 // of every home whose marker names profile, and the profile's managed
 // homes with their markers and backups after the notice (environments
 // §9.2). Retained homes without a profile are orphans env status reports.
-func purgeHomes(home, profile string) error {
-	type purgeTarget struct {
-		native string
-		marker *envmarker.Marker
-	}
-	var targets []purgeTarget
-	for _, adapter := range Adapters {
-		native, err := NativeHome(adapter)
-		if err != nil {
-			return err
-		}
-		marker, err := envmarker.Read(native)
-		if err != nil {
-			// Inspect every marker before the first write. A failed read is
-			// not evidence that this home has no surfaces for the profile.
-			return err
-		}
-		if marker == nil || marker.Profile.Name != profile {
-			continue
-		}
-		targets = append(targets, purgeTarget{native: native, marker: marker})
-	}
-	for _, target := range targets {
-		for _, surface := range target.marker.Surfaces {
-			for _, path := range surface.Paths {
-				_ = os.Remove(filepath.Join(target.native, path))
-			}
-		}
-		_ = os.Remove(filepath.Join(target.native, envmarker.Name))
-		_ = os.RemoveAll(filepath.Join(target.native, ".agent-environment-backup"))
-	}
-	// Managed homes hold the operator's session data and are retained
-	// unless purged; a purge removes the profile's environments directory
-	// with every home, marker, and backup generation. The profile name is
-	// the only profile-derived component below the environments root, so
-	// the directory holds exactly this profile's homes.
-	_ = os.RemoveAll(filepath.Join(EnvRoot(home), profile))
-	return nil
+func purgeHomes(home, profile string, bindings NativeHomeBindings) error {
+	return purgeHomesWithBindings(home, profile, bindings)
 }
 
 // splitScope splits a scope key into environment and target.

@@ -441,11 +441,11 @@ func TestRemovePurgeMarkerAbsenceAndUnreadabilityDiffer(t *testing.T) {
 	}
 
 	t.Run("absent marker permits purge", func(t *testing.T) {
-		home, _, marker := makeFixture(t)
+		home, homes, marker := makeFixture(t)
 		if err := os.Remove(marker); err != nil {
 			t.Fatal(err)
 		}
-		if err := Remove(home, "acme", true); err != nil {
+		if err := RemoveWithOptions(home, "acme", RemoveOptions{Purge: true, NativeHomes: NativeHomeBindings(homes)}); err != nil {
 			t.Fatalf("purge with absent marker: %v", err)
 		}
 		if _, err := readSource(home, "acme"); err == nil {
@@ -456,7 +456,7 @@ func TestRemovePurgeMarkerAbsenceAndUnreadabilityDiffer(t *testing.T) {
 	t.Run("unreadable marker refuses before purge writes", func(t *testing.T) {
 		home, homes, marker := makeFixture(t)
 		makeStateFileUnreadable(t, marker)
-		if err := Remove(home, "acme", true); err == nil || !strings.Contains(err.Error(), envmarker.DiagMarkerUnreadable) || !strings.Contains(err.Error(), stateread.DiagUnreadable) {
+		if err := RemoveWithOptions(home, "acme", RemoveOptions{Purge: true, NativeHomes: NativeHomeBindings(homes)}); err == nil || !strings.Contains(err.Error(), envmarker.DiagMarkerUnreadable) || !strings.Contains(err.Error(), stateread.DiagUnreadable) {
 			t.Fatalf("purge error = %v; want typed unreadable marker refusal", err)
 		}
 		if _, err := readSource(home, "acme"); err != nil {

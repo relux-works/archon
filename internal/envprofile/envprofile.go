@@ -1503,29 +1503,34 @@ func fetchLockedSources(manager *gitManager, lock *contextlock.Lock) error {
 	return nil
 }
 
-// Remove deletes a profile that is current in no scope and an overlay of
-// none. With purge, in-place surfaces recorded by its markers, the markers,
+// Remove is the compatibility entry point without native bindings. A purge
+// refuses rather than guessing homes; use RemoveWithOptions for bound native
+// targets or explicit managed-only purge. It deletes a profile that is current
+// in no scope and is not an overlay member of another installed profile. With
+// purge, in-place surfaces recorded by its markers, the markers,
 // and the backup generations are removed too. Remove holds the
 // manager-home mutation lock; the profile directory goes with one RemoveAll
 // under it, which is already atomic at the granularity the manager
 // observes, so no journal is needed for the removal itself.
 func Remove(home, name string, purge bool) error {
+	return RemoveWithOptions(home, name, RemoveOptions{Purge: purge})
+}
+
+// refuseBuiltinProfileAlias keeps removal read-only until the selected path is
+// known not to identify the builtin profile, including case and symlink aliases.
+func refuseBuiltinProfileAlias(home, name string) error {
 	selectedPath := ProfileDir(home, name)
 	builtinPath := ProfileDir(home, DefaultProfile)
-	forbidden := func() error { return fmt.Errorf("builtin_profile_remove_forbidden: profile %q is builtin", name) }
+	forbidden := func() error {
+		return fmt.Errorf("builtin_profile_remove_forbidden: profile %q is builtin", name)
+	}
 	if selectedPath == builtinPath {
 		return forbidden()
 	}
-	// Filesystem identity also covers case aliases and aliases through a linked
-	// parent. This preflight reads directory metadata only, before mutation state.
 	selected, err := stateread.Lstat(selectedPath)
 	if err != nil {
 		return err
 	}
-	// Lstat keeps ordinary path checks from following a leaf link, but a
-	// removable profile name may itself be a link to the builtin directory.
-	// Resolve only for this read-only identity check; unresolved links fail
-	// before operation or purge state can be written.
 	if selected.Kind == stateread.KindPresent && selected.Info != nil && selected.Info.Mode()&os.ModeSymlink != 0 {
 		resolved, err := os.Stat(selectedPath)
 		if err != nil {
@@ -1540,38 +1545,7 @@ func Remove(home, name string, purge bool) error {
 	if selected.Kind == stateread.KindPresent && builtin.Kind == stateread.KindPresent && selected.Info != nil && builtin.Info != nil && selected.Info.IsDir() && builtin.Info.IsDir() && os.SameFile(selected.Info, builtin.Info) {
 		return forbidden()
 	}
-
-	op, err := beginOperation(home)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = op.close() }()
-	if _, err := readSource(home, name); err != nil {
-		return err
-	}
-	inUse, err := InUseByAnyScope(home, name)
-	if err != nil {
-		return err
-	}
-	if inUse {
-		return fmt.Errorf("%s: profile %q is current in a scope", DiagInUse, name)
-	}
-	// A profile that is an overlay member of another installed profile's
-	// lock stays until that profile stops declaring it (environments
-	// §9.2): removal would strand the overlay declaration.
-	owner, ok, ownerErr := overlayOwner(home, name)
-	if ownerErr != nil {
-		return ownerErr
-	}
-	if ok {
-		return fmt.Errorf("%s: profile %q is named as an overlay of installed profile %q", DiagInUse, name, owner)
-	}
-	if purge {
-		if err := purgeHomes(home, name); err != nil {
-			return err
-		}
-	}
-	return os.RemoveAll(ProfileDir(home, name))
+	return nil
 }
 
 // overlayOwner reports whether the root package of profile name is an

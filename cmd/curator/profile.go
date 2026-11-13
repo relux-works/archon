@@ -378,12 +378,38 @@ func (c cli) cmdProfileUpdate(cfg *config.Config, args []string) int {
 func (c cli) cmdProfileRemove(cfg *config.Config, args []string) int {
 	flags := c.newFlagSet("profile remove")
 	purge := flags.Bool("purge", false, "remove managed homes with markers and backups")
+	managedOnly := flags.Bool("managed-only", false, "purge only the enumerated managed homes; retain native homes")
+	var native nativeHomeFlags
+	flags.Var(&native, "native-home", "explicit native target <adapter>=<absolute-directory> (repeat for every native adapter)")
 	positional, err := parseInterspersed(flags, args)
 	if err != nil || len(positional) != 1 {
-		_, _ = fmt.Fprintln(c.stderr, "curator: profile remove <name> [--purge]")
+		_, _ = fmt.Fprintln(c.stderr, "curator: profile remove <name> [--purge [--managed-only | --native-home <adapter>=<absolute-directory> ...]]")
 		return exitUsage
 	}
-	if err := envprofile.Remove(cfg.Home(), positional[0], *purge); err != nil {
+	if (*managedOnly || len(native.homes) != 0) && !*purge {
+		_, _ = fmt.Fprintln(c.stderr, "curator: --managed-only and --native-home require --purge")
+		return exitUsage
+	}
+	if *managedOnly && len(native.homes) != 0 {
+		_, _ = fmt.Fprintln(c.stderr, "curator: --managed-only cannot select native homes")
+		return exitUsage
+	}
+	bindings := native.homes
+	if *purge && !*managedOnly {
+		persisted, _, err := envprofile.ReadNativeHomeBindings(cfg.Path)
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		selected := envprofile.NativeHomeBindings{}
+		for _, adapter := range envprofile.Adapters {
+			if home, present := persisted[adapter.ID]; present {
+				selected[adapter.ID] = home
+			}
+		}
+		bindings = envprofile.MergeNativeHomeBindings(selected, native.homes)
+	}
+	if err := envprofile.RemoveWithOptions(cfg.Home(), positional[0], envprofile.RemoveOptions{Purge: *purge, ManagedOnly: *managedOnly, NativeHomes: bindings}); err != nil {
 		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
 		return exitFail
 	}
