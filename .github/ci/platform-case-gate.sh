@@ -20,7 +20,9 @@
 #
 #   TIER 2 -- `.github/ci/skip-classes.tsv`
 #     Every OTHER skip anywhere in the run must have a reason matching a
-#     declared class, and that class must be allowed in this lane. An
+#     declared class, and that class must be allowed in this lane. Scoped
+#     declarations additionally require the exact package/test, GOOS, and
+#     measured capability even when a ledger row tolerates the skip. An
 #     unrecognised reason is fatal: a newly-introduced skip is caught the first
 #     time it runs. `root-unset` is allowed only for a package `suite-plan.sh`
 #     deferred, so a lane demanding a fully-serving root cannot pass while a
@@ -127,11 +129,23 @@ function jstr(line, key,   i, n, out, c, esc) {
 }
 ' "$JSON" | sort -u >"$OBSERVED" || { echo 'platform-case-gate: stream extraction failed' >&2; exit 2; }
 
+# Scoped filesystem exceptions use an independent probe, never a GOOS guess
+# or an environment override claiming a capability. Probe only when needed.
+CASE_FOLDING=not-probed
+if awk -F '\t' 'NR == FNR { if ($3 == "scoped" && $8 == "case-folding") pattern[++n] = $2; next }
+    $1 == "skip" { for (i = 1; i <= n; i++) if ($4 ~ pattern[i]) needed = 1 }
+    END { exit !needed }' "$CLASSES" "$OBSERVED"; then
+	CASE_FOLDING="$(bash "$(dirname "$0")/case-folding-probe.sh")" || {
+		echo 'platform-case-gate: filesystem case probe failed' >&2; exit 2;
+	}
+fi
+printf '%s\n' "$CASE_FOLDING" >"$EVIDENCE/case-folding.txt" || exit 2
+
 # ---------------------------------------------------------------------------
 # Enforce both tiers.
 # ---------------------------------------------------------------------------
 awk -v goos="$GOOS" -v ledger="$LEDGER" -v classes="$CLASSES" -v observed="$OBSERVED" \
-    -v skipsout="$SKIPS" -v deferred="${CI_DEFERRED_PKGS:-}" -v excluded="${CI_EXCLUDED_PKGS:-}" '
+    -v casefolding="$CASE_FOLDING" -v skipsout="$SKIPS" -v deferred="${CI_DEFERRED_PKGS:-}" -v excluded="${CI_EXCLUDED_PKGS:-}" '
 function listed(set, want,   n, i, a) {
 	if (set == "-" || set == "") return 0
 	n = split(set, a, ",")
@@ -156,6 +170,10 @@ BEGIN {
 		cclass[nclass]  = f[1]
 		cregex[nclass]  = f[2]
 		cpolicy[nclass] = f[3]
+		cpackage[nclass] = f[5]
+		ctest[nclass] = f[6]
+		cgoos[nclass] = f[7]
+		ccapability[nclass] = f[8]
 	}
 	close(classes)
 	if (nclass == 0) { print "FAIL  the skip-class table is empty"; exit 1 }
@@ -216,7 +234,15 @@ BEGIN {
 		else if (!hassub && (wkey in skipok)) { tol = skipok[wkey];   want = wantclass[wkey] }
 
 		verdict = ""
-		if (tol != "") {
+		if (ci && cpolicy[ci] == "scoped" &&
+		    (cpackage[ci] != skippkg[key] || ctest[ci] != skiptest[key] ||
+		     !listed(cgoos[ci], goos) ||
+		     (ccapability[ci] != "-" &&
+		      (ccapability[ci] != "case-folding" || casefolding != "folding")))) {
+			printf "FAIL  skip outside its declared case/platform/capability scope on %s: %s :: %s\n", goos, skippkg[key], skiptest[key]
+			printf "      reason: %s; measured case capability: %s\n", reason, casefolding
+			fail = 1; verdict = "FATAL-scope"
+		} else if (tol != "") {
 			if (!listed(tol, goos)) {
 				printf "FAIL  ledger case skipped where the ledger does not tolerate it (%s): %s :: %s\n", goos, skippkg[key], skiptest[key]
 				printf "      reason: %s\n", reason

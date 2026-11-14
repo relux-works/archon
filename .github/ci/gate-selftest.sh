@@ -505,7 +505,6 @@ while IFS="$(printf '\t')" read -r signature_reason signature_pattern; do
   assert "nearby signature fixture skip refuses: $signature_reason" 1 run_gate "$S" env CI_GATE_GOOS=windows
   assert_contains 'nearby signature skip stays unclassified' 'UNCLASSIFIED' "$WORK/gate-ev/skips-observed.tsv"
 done <<'SIGNATURE_SKIPS'
-signature-child-protocol: native descriptor test; Windows private-file counterpart runs separately	^signature-child-protocol: native descriptor test; Windows private-file counterpart runs separately$
 inherited descriptor backend unavailable	^(inherited descriptor backend unavailable|read-only signature input transport unavailable)$
 gpgv unavailable	^(gpgv unavailable|fixture generator unavailable)$
 gpg-fixture-agent-cleanup-unavailable: gpgconf missing	^gpg-fixture-agent-cleanup-unavailable: gpgconf missing$
@@ -627,6 +626,156 @@ for goos in linux darwin windows; do
 		bad "the shipped ledger is satisfiable on $goos" 'the ledger required nothing at all on this platform'
 	fi
 done
+
+echo ''
+echo '=== exact skip scopes: case, platform and measured filesystem capability ==='
+# Claim: the four scoped reasons admit only their declared case and platform.
+# Copied probe helpers below model capability verdicts deterministically; these
+# streams test gate policy, not native Windows/Linux/Darwin execution.
+SCOPED="$WORK/scoped"
+mkdir -p "$SCOPED/folding" "$SCOPED/sensitive" "$SCOPED/error"
+for scope_capability in folding sensitive error; do
+	cp "$GATE" "$SCOPED/$scope_capability/platform-case-gate.sh"
+	if [ "$scope_capability" = error ]; then
+		printf 'exit 2\n' >"$SCOPED/$scope_capability/case-folding-probe.sh"
+	else
+		printf 'echo %s\n' "$scope_capability" >"$SCOPED/$scope_capability/case-folding-probe.sh"
+	fi
+done
+scoped_gate() {
+	local script="$1" classes="$2" target="$3" package="$4" case_name="$5" reason="$6"
+	local ledger="${7:-$SHIPPED}" excluded=''
+	[ "$target" = linux ] && excluded=internal/godriver
+	# Replace any required pass for this case; never let a pass mask its skip.
+	awk -v name="\"Test\":\"$case_name\"" 'index($0, name) == 0' \
+		"$WORK/shipped-$target.json" >"$SCOPED/stream.json"
+	evout "$package" "$case_name" "$reason" >>"$SCOPED/stream.json"
+	ev skip "$package" "$case_name" >>"$SCOPED/stream.json"
+	CI_PLATFORM_CASES="$ledger" CI_SKIP_CLASSES="$classes" CI_GATE_GOOS="$target" \
+		CI_GATE_MODULE="$MODULE_PATH" CI_EXCLUDED_PKGS="$excluded" \
+		bash "$script" "$SCOPED/stream.json" "$SCOPED/evidence"
+}
+awk -F'\t' '$3 == "scoped" {print}' "$CLASSES" >"$SCOPED/rows.tsv"
+assert 'all four scoped allowances are covered by these controls' 0 \
+	test "$(wc -l <"$SCOPED/rows.tsv" | tr -d ' ')" = 4
+while IFS="$(printf '\t')" read -r scope_class scope_pattern scope_policy scope_note scope_pkg scope_test scope_goos scope_cap; do
+	scope_reason="${scope_pattern#^}"; scope_reason="${scope_reason%\$}"
+	scope_gate="$SCOPED/folding/platform-case-gate.sh"
+	# Exact known case/GOOS positive beside the reviewer's unrelated-test witness.
+	for scope_target in $(echo "$scope_goos" | tr ',' ' '); do
+		assert "scoped exact case passes on $scope_target: $scope_test" 0 \
+			scoped_gate "$scope_gate" "$CLASSES" "$scope_target" "$scope_pkg" "$scope_test" "$scope_reason"
+	done
+	scope_unrelated=TestReadPurityStatusMissingStore
+	[ "$scope_pkg" = cmd/curator ] && scope_unrelated=TestMuseRootContextCopyFallback
+	assert "unrelated Windows test cannot borrow reason: $scope_test" 1 \
+		scoped_gate "$scope_gate" "$CLASSES" windows "$scope_pkg" "$scope_unrelated" "$scope_reason"
+	assert_contains 'borrowed reason fails its intended scope' 'FATAL-scope' "$SCOPED/evidence/skips-observed.tsv"
+	assert "same test name in another package cannot borrow reason: $scope_test" 1 \
+		scoped_gate "$scope_gate" "$CLASSES" windows internal/marker "$scope_test" "$scope_reason"
+	assert "a child cannot inherit an exact scope: $scope_test" 1 \
+		scoped_gate "$scope_gate" "$CLASSES" windows "$scope_pkg" "$scope_test/extra" "$scope_reason"
+	if [ "$scope_goos" = windows ]; then
+		for scope_target in linux darwin; do
+			assert "Windows-only reason refuses on $scope_target: $scope_test" 1 \
+				scoped_gate "$scope_gate" "$CLASSES" "$scope_target" "$scope_pkg" "$scope_test" "$scope_reason"
+			assert_contains 'wrong-platform reason fails its intended scope' 'FATAL-scope' "$SCOPED/evidence/skips-observed.tsv"
+		done
+	fi
+
+	# An otherwise tolerant exact ledger row cannot repeal a scoped declaration.
+	cp "$SHIPPED" "$SCOPED/tolerant.tsv"
+	printf '%s\t%s\t-\tlinux,darwin,windows\t%s\tsynthetic toleration control\n' \
+		"$scope_pkg" "$scope_unrelated" "$scope_class" >>"$SCOPED/tolerant.tsv"
+	assert "ledger toleration cannot buy another case's allowance: $scope_test" 1 \
+		scoped_gate "$scope_gate" "$CLASSES" windows "$scope_pkg" "$scope_unrelated" "$scope_reason" "$SCOPED/tolerant.tsv"
+	assert_contains 'ledger bypass refuses for scope, not absent required cases' 'FATAL-scope' "$SCOPED/evidence/skips-observed.tsv"
+
+	# Both anchors matter independently. Narrowing mutants remove just one
+	# anchor, and must accept the very witness the production table rejects.
+	for scope_edge in prefix suffix; do
+		if [ "$scope_edge" = prefix ]; then scope_near="unexpected: $scope_reason"; else scope_near="$scope_reason unexpectedly"; fi
+		assert "anchored $scope_edge reason refuses: $scope_test" 1 \
+			scoped_gate "$scope_gate" "$CLASSES" windows "$scope_pkg" "$scope_test" "$scope_near"
+		assert_contains 'nearby reason stays unclassified' 'FATAL-unclassified' "$SCOPED/evidence/skips-observed.tsv"
+		awk -F'\t' -v OFS='\t' -v pattern="$scope_pattern" -v edge="$scope_edge" '
+			$2 == pattern { if (edge == "prefix") sub(/^\^/, "", $2); else sub(/\$$/, "", $2) } {print}
+		' "$CLASSES" >"$SCOPED/anchor-mutant.tsv"
+		assert "control catches removed $scope_edge anchor: $scope_test" 0 \
+			scoped_gate "$scope_gate" "$SCOPED/anchor-mutant.tsv" windows "$scope_pkg" "$scope_test" "$scope_near"
+	done
+	awk -F'\t' -v pattern="$scope_pattern" '$2 != pattern' "$CLASSES" >"$SCOPED/removed.tsv"
+	assert "exact reason needs its declaration: $scope_test" 1 \
+		scoped_gate "$scope_gate" "$SCOPED/removed.tsv" windows "$scope_pkg" "$scope_test" "$scope_reason"
+	assert_contains 'removed scoped declaration stays unclassified' 'FATAL-unclassified' "$SCOPED/evidence/skips-observed.tsv"
+
+	# Narrowing mutant: restoring global allow recreates each unrelated-test bug.
+	awk -F'\t' -v OFS='\t' -v pattern="$scope_pattern" '$2 == pattern {$3 = "allow"} {print}' \
+		"$CLASSES" >"$SCOPED/policy-mutant.tsv"
+	assert "control catches global-allow regression: $scope_test" 0 \
+		scoped_gate "$scope_gate" "$SCOPED/policy-mutant.tsv" windows "$scope_pkg" "$scope_unrelated" "$scope_reason"
+done <"$SCOPED/rows.tsv"
+
+# Claim: capability is independent of target GOOS; all three targets refuse a
+# folding-only skip on a synthetic sensitive filesystem, but passing tests need
+# no capability exception. Probe failures are operational failures, never skips.
+case_reason='case-insensitive store has no distinct positive name'
+case_name='TestReadPurityBuiltinAliases/distinct-case-sensitive-profile'
+for scope_target in linux darwin windows; do
+	assert "case-fold skip refuses measured sensitive on $scope_target" 1 \
+		scoped_gate "$SCOPED/sensitive/platform-case-gate.sh" "$CLASSES" "$scope_target" internal/envprofile "$case_name" "$case_reason"
+	assert_contains 'sensitive refusal identifies the scope' 'FATAL-scope' "$SCOPED/evidence/skips-observed.tsv"
+	assert_contains 'sensitive measurement is retained' 'sensitive' "$SCOPED/evidence/case-folding.txt"
+	cp "$WORK/shipped-$scope_target.json" "$SCOPED/pass.json"
+	ev pass internal/envprofile "$case_name" >>"$SCOPED/pass.json"
+	scope_excluded=''; [ "$scope_target" = linux ] && scope_excluded=internal/godriver
+	assert "case-fold positive can run on sensitive $scope_target" 0 \
+		env CI_EXCLUDED_PKGS="$scope_excluded" CI_PLATFORM_CASES="$SHIPPED" CI_SKIP_CLASSES="$CLASSES" CI_GATE_GOOS="$scope_target" CI_GATE_MODULE="$MODULE_PATH" \
+		bash "$SCOPED/sensitive/platform-case-gate.sh" "$SCOPED/pass.json" "$SCOPED/evidence"
+done
+assert 'a failed capability probe cannot grant an allowance' 2 \
+	scoped_gate "$SCOPED/error/platform-case-gate.sh" "$CLASSES" windows internal/envprofile "$case_name" "$case_reason"
+assert_contains 'failed probe reports its operational failure' 'filesystem case probe failed' "$WORK/out.txt"
+
+# Claim: each new scope predicate is necessary, independently of the table.
+# Each single-predicate mutant must accept its paired production rejection.
+for scope_predicate in package test goos capability; do
+	case "$scope_predicate" in
+	package) scope_expr='cpackage[ci] != skippkg[key]'; scope_pkg=internal/marker; scope_test=TestSignaturePipeChildProtocol; scope_target=windows; scope_state=folding ;;
+	test) scope_expr='ctest[ci] != skiptest[key]'; scope_pkg=internal/envprofile; scope_test=TestReadPurityStatusMissingStore; scope_target=windows; scope_state=folding ;;
+	goos) scope_expr='!listed(cgoos[ci], goos)'; scope_pkg=internal/envprofile; scope_test=TestSignaturePipeChildProtocol; scope_target=linux; scope_state=folding ;;
+	capability) scope_expr='casefolding != "folding"'; scope_pkg=internal/envprofile; scope_test="$case_name"; scope_target=windows; scope_state=sensitive ;;
+	esac
+	scope_reason='signature-child-protocol: native descriptor test; Windows private-file counterpart runs separately'
+	[ "$scope_predicate" = capability ] && scope_reason="$case_reason"
+	assert "production rejects $scope_predicate witness" 1 \
+		scoped_gate "$SCOPED/$scope_state/platform-case-gate.sh" "$CLASSES" "$scope_target" "$scope_pkg" "$scope_test" "$scope_reason"
+	awk -v expr="$scope_expr" '{ at = index($0, expr); if (at) { $0 = substr($0, 1, at - 1) "0" substr($0, at + length(expr)); n++ } print }
+		END { if (n != 1) exit 1 }' "$GATE" >"$SCOPED/$scope_state/predicate-mutant.sh"
+	assert "control catches removed $scope_predicate predicate" 0 \
+		scoped_gate "$SCOPED/$scope_state/predicate-mutant.sh" "$CLASSES" "$scope_target" "$scope_pkg" "$scope_test" "$scope_reason"
+done
+
+# Claim: the actual probe measures the runner temporary filesystem. Independent
+# case identity observation must agree; this is native evidence for this host
+# only. Deterministic helpers above are explicitly synthetic policy fixtures.
+probe_root="${TMPDIR:-${TMP:-${TEMP:-/tmp}}}"
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*)
+    probe_ordinary="$(cygpath -w "${TMP:-${TEMP:-$probe_root}}")"
+    probe_root="$(cygpath -u "${probe_ordinary:0:2}/")" ;;
+esac
+probe_fixture="$(mktemp -d "${probe_root%/}/case-observer.XXXXXX")"
+printf 'witness\n' >"$probe_fixture/CaseProbe"
+case_expected=sensitive
+[ "$probe_fixture/CaseProbe" -ef "$probe_fixture/caseprobe" ] && case_expected=folding
+assert 'real case-fold probe executes successfully' 0 bash "$HERE/case-folding-probe.sh"
+assert_contains 'real case-fold probe agrees with independent identity observation' "$case_expected" "$WORK/out.txt"
+rm -rf "$probe_fixture"
+case_exit=1; [ "$case_expected" = folding ] && case_exit=0
+assert 'real gate admits the exact case only with measured folding' "$case_exit" \
+	scoped_gate "$GATE" "$CLASSES" darwin internal/envprofile "$case_name" "$case_reason"
+assert_contains 'real gate retains its native capability observation' "$case_expected" "$SCOPED/evidence/case-folding.txt"
 
 echo ''
 echo '=== native-home ledger: measured filesystem capabilities on every runner ==='

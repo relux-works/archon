@@ -456,6 +456,13 @@ Curator uses an in-repository task board in `.task-board/`. Automated gates run 
 
 ### Tools
 
+The platform case gate checks scoped skip declarations against exact package,
+test, GOOS and measured filesystem capability. `bash .github/ci/case-folding-probe.sh`
+reports `folding` or `sensitive` for the fixture temporary filesystem; the gate
+records that observation in `case-folding.txt` beside its other evidence.
+Run `bash .github/ci/gate-selftest.sh` to check policy fixtures; keep local logs
+under `.temp/`. These synthetic streams do not qualify native platform behavior.
+
 Local SSH signer inspection uses OpenSSH `ssh-keygen -Y verify` with inherited
 signer/signature pipes on Unix. Windows uses ordinary temporary input files in
 an atomically created owner-only directory, including protected DACLs. Inputs
