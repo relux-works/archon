@@ -505,7 +505,7 @@ while IFS="$(printf '\t')" read -r signature_reason signature_pattern; do
   assert "nearby signature fixture skip refuses: $signature_reason" 1 run_gate "$S" env CI_GATE_GOOS=windows
   assert_contains 'nearby signature skip stays unclassified' 'UNCLASSIFIED' "$WORK/gate-ev/skips-observed.tsv"
 done <<'SIGNATURE_SKIPS'
-signature-child-protocol: native descriptor test; Windows named-pipe counterpart runs separately	^signature-child-protocol: native descriptor test; Windows named-pipe counterpart runs separately$
+signature-child-protocol: native descriptor test; Windows private-file counterpart runs separately	^signature-child-protocol: native descriptor test; Windows private-file counterpart runs separately$
 inherited descriptor backend unavailable	^(inherited descriptor backend unavailable|read-only signature input transport unavailable)$
 gpgv unavailable	^(gpgv unavailable|fixture generator unavailable)$
 gpg-fixture-agent-cleanup-unavailable: gpgconf missing	^gpg-fixture-agent-cleanup-unavailable: gpgconf missing$
