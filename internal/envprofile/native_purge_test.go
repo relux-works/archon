@@ -596,3 +596,77 @@ func TestNativeHomeBindingAdmissionCodesMissingDirectory(t *testing.T) {
 		t.Fatalf("missing bound directory lost its not-exist cause: %v", err)
 	}
 }
+
+// Unlinking the admitted marker and creating a new one under the same name is
+// refused before any deletion. The admitted descriptor is held open, so the
+// old inode stays allocated and the new file cannot reuse its number; the
+// refusal therefore does not depend on whether this filesystem would recycle
+// a freed inode. The replacement and every other target stay in place.
+func TestNativeHomeBindingPurgeRefusesMarkerRecreatedAfterUnlink(t *testing.T) {
+	manager := bindingDirectory(t)
+	bindings := bindingPurgeHomes(t)
+	first := bindings["claude_code"]
+	bindingPurgeMarker(t, first, "sample", "CLAUDE.md")
+	later := bindings["codex_cli"]
+	bindingPurgeMarker(t, later, "sample", "AGENTS.md")
+	laterMarker := filepath.Join(later, envmarker.Name)
+	markerBytes, err := os.ReadFile(laterMarker)
+	if err != nil {
+		t.Fatal(err)
+	}
+	previous := beforeNativePurgeDelete
+	defer func() { beforeNativePurgeDelete = previous }()
+	var plantErr error
+	var recreated os.FileInfo
+	beforeNativePurgeDelete = func() {
+		if plantErr = os.Remove(laterMarker); plantErr != nil {
+			return
+		}
+		if plantErr = os.WriteFile(laterMarker, markerBytes, 0o600); plantErr != nil {
+			return
+		}
+		recreated, plantErr = os.Lstat(laterMarker)
+	}
+	err = purgeHomesWithBindings(manager, "sample", bindings)
+	if plantErr != nil || recreated == nil {
+		t.Fatalf("unlink and recreate fixture applied=%v, err=%v", recreated != nil, plantErr)
+	}
+	if err == nil || !strings.Contains(err.Error(), DiagProfilePurgePreflightRefused) || !strings.Contains(err.Error(), "native marker changed after admission") {
+		t.Fatalf("recreated marker purge = %v; want preflight refusal naming the changed marker", err)
+	}
+	for _, path := range []string{filepath.Join(first, "CLAUDE.md"), filepath.Join(first, envmarker.Name), filepath.Join(later, "AGENTS.md")} {
+		if _, err := os.Lstat(path); err != nil {
+			t.Fatalf("refused purge removed %s: %v", path, err)
+		}
+	}
+	if now, err := os.Lstat(laterMarker); err != nil || !os.SameFile(recreated, now) {
+		t.Fatalf("recreated marker was removed or changed: %v", err)
+	}
+}
+
+// The identity check refuses when no admitted descriptor is held, so a
+// caller cannot fall back to a by-name comparison alone.
+func TestNativeMarkerStillAdmittedRequiresHeldDescriptor(t *testing.T) {
+	home := bindingDirectory(t)
+	bindingPurgeMarker(t, home, "sample", "AGENTS.md")
+	root, err := os.OpenRoot(home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer root.Close()
+	info, err := os.Lstat(filepath.Join(home, envmarker.Name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := nativeMarkerStillAdmitted(root, info, nil); err == nil || !strings.Contains(err.Error(), "not held") {
+		t.Fatalf("nil held descriptor = %v; want refusal", err)
+	}
+	held, err := os.Open(filepath.Join(home, envmarker.Name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer held.Close()
+	if err := nativeMarkerStillAdmitted(root, info, held); err != nil {
+		t.Fatalf("held admitted marker refused: %v", err)
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 
 	"github.com/relux-works/curator/internal/envmarker"
@@ -44,10 +45,15 @@ func purgeHomesWithBindings(home, profile string, bindings NativeHomeBindings) e
 		root       *os.Root
 		marker     *envmarker.Marker
 		markerInfo os.FileInfo
+		held       *os.File
 	}
 	var targets []target
 	var roots []*os.Root
+	var heldMarkers []*os.File
 	defer func() {
+		for _, file := range heldMarkers {
+			_ = file.Close()
+		}
 		for _, root := range roots {
 			_ = root.Close()
 		}
@@ -112,9 +118,12 @@ func purgeHomesWithBindings(home, profile string, bindings NativeHomeBindings) e
 				return err
 			}
 		}
-		marker, err := readNativePurgeMarker(binding.path, markerInfo)
+		marker, held, err := readNativePurgeMarker(binding.path, markerInfo)
 		if err != nil {
 			return fmt.Errorf("%s: %w", DiagProfilePurgePreflightRefused, err)
+		}
+		if held != nil {
+			heldMarkers = append(heldMarkers, held)
 		}
 		if marker == nil || marker.Profile.Name != profile {
 			continue
@@ -142,7 +151,7 @@ func purgeHomesWithBindings(home, profile string, bindings NativeHomeBindings) e
 		if err := preflightNativeBackup(root, binding.path); err != nil {
 			return fmt.Errorf("%s: %w", DiagProfilePurgePreflightRefused, err)
 		}
-		targets = append(targets, target{adapter: id, root: root, marker: marker, markerInfo: markerInfo})
+		targets = append(targets, target{adapter: id, root: root, marker: marker, markerInfo: markerInfo, held: held})
 	}
 	managed, err := preflightManagedPurge(home, profile)
 	if err != nil {
@@ -154,7 +163,7 @@ func purgeHomesWithBindings(home, profile string, bindings NativeHomeBindings) e
 	// Re-pin every admitted marker before the first deletion, so a marker
 	// swapped after admission refuses the whole purge with nothing removed.
 	for _, item := range targets {
-		if err := nativeMarkerStillAdmitted(item.root, item.markerInfo); err != nil {
+		if err := nativeMarkerStillAdmitted(item.root, item.markerInfo, item.held); err != nil {
 			return fmt.Errorf("%s: native adapter %s: %w", DiagProfilePurgePreflightRefused, item.adapter, err)
 		}
 	}
@@ -168,8 +177,14 @@ func purgeHomesWithBindings(home, profile string, bindings NativeHomeBindings) e
 				}
 			}
 		}
-		if err := nativeMarkerStillAdmitted(item.root, item.markerInfo); err != nil {
+		if err := nativeMarkerStillAdmitted(item.root, item.markerInfo, item.held); err != nil {
 			return purgeIncomplete("native adapter "+item.adapter+" marker", err)
+		}
+		if runtime.GOOS == "windows" {
+			// Windows refuses to delete a file held open without share-delete;
+			// its file IDs carry a reuse sequence, so the comparison above is
+			// strong without the held descriptor.
+			_ = item.held.Close()
 		}
 		if err := item.root.Remove(envmarker.Name); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return purgeIncomplete("native adapter "+item.adapter+" marker", err)
@@ -353,13 +368,26 @@ func preflightNativeRemoveTree(root *os.Root, native, relative string) error {
 // nativeMarkerStillAdmitted compares the marker now present in the admitted
 // root with the file identity read at admission. Removal is by name, so the
 // identity is pinned immediately before it; a changed or vanished marker
-// refuses instead of deleting whatever now has that name.
-func nativeMarkerStillAdmitted(root *os.Root, admitted os.FileInfo) error {
+// refuses instead of deleting whatever now has that name. The admitted marker
+// stays open from admission until removal, so its inode remains allocated: a
+// replacement created after an unlink cannot reuse that inode number and pass
+// a device and inode comparison.
+func nativeMarkerStillAdmitted(root *os.Root, admitted os.FileInfo, held *os.File) error {
+	if held == nil {
+		return errors.New("native marker is not held from admission")
+	}
+	heldInfo, err := held.Stat()
+	if err != nil {
+		return fmt.Errorf("inspect held native marker: %w", err)
+	}
+	if !os.SameFile(admitted, heldInfo) {
+		return errors.New("native marker changed after admission")
+	}
 	state, err := stateread.RootLstat(root, envmarker.Name)
 	if err != nil {
 		return fmt.Errorf("inspect native marker before removal: %w", err)
 	}
-	if state.Kind != stateread.KindPresent || state.Info == nil || !os.SameFile(admitted, state.Info) {
+	if state.Kind != stateread.KindPresent || state.Info == nil || !os.SameFile(heldInfo, state.Info) {
 		return errors.New("native marker changed after admission")
 	}
 	return nil
@@ -443,14 +471,23 @@ var beforeNativePurgeDelete func()
 
 // Read only the admitted regular marker inode. A link or replacement after
 // metadata admission refuses before reading any credential or session payload.
-func readNativePurgeMarker(native string, expected os.FileInfo) (*envmarker.Marker, error) {
-	return envmarker.ReadWith(native, func(path string) (stateread.File, error) {
+// readNativePurgeMarker reads the admitted marker through a no-follow open and
+// returns that descriptor still open. The caller holds it until removal so the
+// admitted inode cannot be freed and reused under the same name.
+func readNativePurgeMarker(native string, expected os.FileInfo) (*envmarker.Marker, *os.File, error) {
+	var held *os.File
+	marker, err := envmarker.ReadWith(native, func(path string) (stateread.File, error) {
 		unreadable := func(err error) (stateread.File, error) { return stateread.File{}, stateread.UnusableError(path, err) }
 		file, err := pathboundary.OpenReadNoFollow(path)
 		if err != nil {
 			return unreadable(err)
 		}
-		defer func() { _ = file.Close() }()
+		keep := false
+		defer func() {
+			if !keep {
+				_ = file.Close()
+			}
+		}()
 		info, err := file.Stat()
 		if err != nil {
 			return unreadable(err)
@@ -465,6 +502,17 @@ func readNativePurgeMarker(native string, expected os.FileInfo) (*envmarker.Mark
 		if err != nil {
 			return unreadable(err)
 		}
+		if held != nil {
+			_ = held.Close()
+		}
+		held, keep = file, true
 		return stateread.File{Kind: stateread.KindPresent, Bytes: payload}, nil
 	})
+	if err != nil || marker == nil {
+		if held != nil {
+			_ = held.Close()
+		}
+		return marker, nil, err
+	}
+	return marker, held, nil
 }
