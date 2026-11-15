@@ -10,6 +10,37 @@ import (
 	"time"
 )
 
+const fixtureIdentityRequired = "CURATOR_TEST_FIXTURE_IDENTITY_REQUIRED"
+
+// The parent selects this fixture policy explicitly. TestMain reapplies it
+// after the shared boundary clears all inherited Git configuration channels.
+func applyFixtureIdentityPolicy() {
+	if os.Getenv(fixtureIdentityRequired) != "1" {
+		return
+	}
+	for key, value := range map[string]string{
+		"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "user.useConfigOnly", "GIT_CONFIG_VALUE_0": "true",
+	} {
+		if err := os.Setenv(key, value); err != nil {
+			panic(err)
+		}
+	}
+}
+
+// The actual child must refuse implicit Git identity after its own TestMain,
+// rather than relying on the parent's probe or a host-specific email fallback.
+func TestIdentityFreeFixturePolicyAfterTestMain(t *testing.T) {
+	if os.Getenv(fixtureIdentityRequired) != "1" {
+		runFixturesWithoutAmbientIdentity(t, []string{"TestIdentityFreeFixturePolicyAfterTestMain"})
+		return
+	}
+	command := exec.Command("git", "-C", t.TempDir(), "var", "GIT_COMMITTER_IDENT")
+	output, err := command.CombinedOutput()
+	if err == nil || !strings.Contains(string(output), "auto-detection is disabled") {
+		t.Fatalf("child TestMain lost the selected identity-free policy: %v\n%s", err, output)
+	}
+}
+
 // With no ambient Git identity, the signed-tag fixtures still reach their
 // strict acceptance, changed-tag rejection, and cache-origin assertions.
 // The preliminary Git refusal proves the subprocess environment cannot supply
@@ -32,6 +63,7 @@ func runFixturesWithoutAmbientIdentity(t *testing.T, tests []string) {
 		key = strings.ToUpper(key)
 		switch {
 		case key == "HOME", key == "USERPROFILE", key == "XDG_CONFIG_HOME", key == "EMAIL",
+			key == fixtureIdentityRequired,
 			key == "GIT_DIR", key == "GIT_WORK_TREE", key == "GIT_CONFIG", key == "LC_ALL", key == "GIT_CEILING_DIRECTORIES",
 			strings.HasPrefix(key, "GIT_AUTHOR_"), strings.HasPrefix(key, "GIT_COMMITTER_"),
 			strings.HasPrefix(key, "GIT_CONFIG_"):
@@ -40,6 +72,7 @@ func runFixturesWithoutAmbientIdentity(t *testing.T, tests []string) {
 		env = append(env, entry)
 	}
 	env = append(env, "HOME="+home, "USERPROFILE="+home, "XDG_CONFIG_HOME="+home,
+		fixtureIdentityRequired+"=1",
 		"GIT_CEILING_DIRECTORIES="+home, "GIT_CONFIG_GLOBAL="+global, "GIT_CONFIG_SYSTEM="+os.DevNull, "GIT_CONFIG_NOSYSTEM=1",
 		"GIT_CONFIG_COUNT=1", "GIT_CONFIG_KEY_0=user.useConfigOnly", "GIT_CONFIG_VALUE_0=true", "LC_ALL=C")
 

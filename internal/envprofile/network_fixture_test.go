@@ -57,6 +57,7 @@ func TestMain(m *testing.M) {
 	// Scrub ambient Git and native roots before declaring this package's
 	// explicit fixture homes; isolation must not erase those selected roots.
 	restoreGitEnv := testgitenv.Isolate()
+	applyFixtureIdentityPolicy()
 	// BUG-261027-5t7pqj: inherited adapter roots must never escape the test HOME.
 	testHome, err := os.MkdirTemp("", "curator-package-home-*")
 	if err != nil {
