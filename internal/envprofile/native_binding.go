@@ -19,6 +19,14 @@ const DiagNativeHomeBindingRequired = "native_home_binding_required"
 // grant no takeover or credential authority; operation gates still apply.
 type NativeHomeBindings map[string]string
 
+// nativeHomeBindingAdmission carries the directory identity observed before
+// validation. Purge must compare an opened root to this identity instead of
+// blessing whatever a later pathname lookup happens to find.
+type nativeHomeBindingAdmission struct {
+	path string
+	info os.FileInfo
+}
+
 // ValidateNativeHomeBindingValue checks an explicitly supplied binding's syntax
 // without inspecting a home. Resolution performs the filesystem checks later.
 func ValidateNativeHomeBindingValue(id, home string) error {
@@ -41,28 +49,53 @@ func ResolveNativeHomeBinding(manager string, bindings NativeHomeBindings, id st
 	if err := ValidateNativeHomeBindingValue(id, bindings[id]); err != nil {
 		return "", err
 	}
-	var infos []os.FileInfo
+	var admitted []nativeHomeBindingAdmission
 	selected := ""
 	for _, key := range bindingKeys(bindings) {
-		home, err := resolveNativeHomeBindingWithOwner(manager, bindings, key, nil)
+		binding, err := admitNativeHomeBinding(manager, bindings, key)
 		if err != nil {
 			return "", err
 		}
-		info, err := os.Lstat(home)
-		if err != nil {
-			return "", err
-		}
-		for _, prior := range infos {
-			if os.SameFile(prior, info) {
-				return "", fmt.Errorf("%s: two adapters name one native directory", DiagNativeHomeBindingRequired)
+		for _, prior := range admitted {
+			if nativeHomeBindingsOverlap(prior, binding) {
+				return "", fmt.Errorf("%s: native bindings overlap", DiagNativeHomeBindingRequired)
 			}
 		}
-		infos = append(infos, info)
+		admitted = append(admitted, binding)
 		if key == id {
-			selected = home
+			selected = binding.path
 		}
 	}
 	return selected, nil
+}
+
+func admitNativeHomeBinding(manager string, bindings NativeHomeBindings, id string) (nativeHomeBindingAdmission, error) {
+	home := bindings[id]
+	if err := ValidateNativeHomeBindingValue(id, home); err != nil {
+		return nativeHomeBindingAdmission{}, err
+	}
+	before, err := os.Lstat(home)
+	if err != nil {
+		return nativeHomeBindingAdmission{}, err
+	}
+	if !before.IsDir() || before.Mode()&os.ModeSymlink != 0 {
+		return nativeHomeBindingAdmission{}, fmt.Errorf("%s: bound native path is not a direct directory", DiagNativeHomeBindingRequired)
+	}
+	if _, err := resolveNativeHomeBindingWithOwner(manager, bindings, id, nil); err != nil {
+		return nativeHomeBindingAdmission{}, err
+	}
+	after, err := os.Lstat(home)
+	if err != nil {
+		return nativeHomeBindingAdmission{}, err
+	}
+	if !after.IsDir() || after.Mode()&os.ModeSymlink != 0 || !os.SameFile(before, after) {
+		return nativeHomeBindingAdmission{}, fmt.Errorf("%s: bound native directory changed during admission", DiagNativeHomeBindingRequired)
+	}
+	return nativeHomeBindingAdmission{path: home, info: after}, nil
+}
+
+func nativeHomeBindingsOverlap(left, right nativeHomeBindingAdmission) bool {
+	return bindingPathsOverlap(left.path, right.path) || os.SameFile(left.info, right.info)
 }
 
 func resolveNativeHomeBindingWithOwner(manager string, bindings NativeHomeBindings, id string, owner pathboundary.OwnerLookup) (string, error) {
@@ -78,10 +111,10 @@ func resolveNativeHomeBindingWithOwner(manager string, bindings NativeHomeBindin
 
 // Freeze and validate the complete set before returning any target. Sorted
 // adapter order makes both plans and refusals deterministic.
-func nativeBindingResolver(manager string, bindings NativeHomeBindings, ids []string) (func(string) (string, error), error) {
+func nativeBindingResolver(manager string, bindings NativeHomeBindings, ids []string) (func(string) (nativeHomeBindingAdmission, error), error) {
 	ids = append([]string(nil), ids...)
 	sort.Strings(ids)
-	frozen := make(NativeHomeBindings, len(ids))
+	frozen := make(map[string]nativeHomeBindingAdmission, len(ids))
 	// Missing/syntactically invalid bindings precede all filesystem inspection.
 	for _, id := range ids {
 		if err := ValidateNativeHomeBindingValue(id, bindings[id]); err != nil {
@@ -98,29 +131,25 @@ func nativeBindingResolver(manager string, bindings NativeHomeBindings, ids []st
 			return nil, err
 		}
 	}
-	var infos []os.FileInfo
+	var admitted []nativeHomeBindingAdmission
 	for _, id := range ids {
-		home, err := resolveNativeHomeBindingWithOwner(manager, bindings, id, nil)
+		binding, err := admitNativeHomeBinding(manager, bindings, id)
 		if err != nil {
 			return nil, err
 		}
-		info, err := os.Lstat(home)
-		if err != nil {
-			return nil, err
-		}
-		for _, prior := range infos {
-			if os.SameFile(prior, info) {
-				return nil, fmt.Errorf("%s: two adapters name one native directory", DiagNativeHomeBindingRequired)
+		for _, prior := range admitted {
+			if nativeHomeBindingsOverlap(prior, binding) {
+				return nil, fmt.Errorf("%s: native bindings overlap", DiagNativeHomeBindingRequired)
 			}
 		}
-		infos = append(infos, info)
-		frozen[id] = home
+		admitted = append(admitted, binding)
+		frozen[id] = binding
 	}
-	return func(id string) (string, error) {
-		home, ok := frozen[id]
+	return func(id string) (nativeHomeBindingAdmission, error) {
+		binding, ok := frozen[id]
 		if !ok {
-			return "", fmt.Errorf("%s: adapter is outside the admitted target set", DiagNativeHomeBindingRequired)
+			return nativeHomeBindingAdmission{}, fmt.Errorf("%s: adapter is outside the admitted target set", DiagNativeHomeBindingRequired)
 		}
-		return home, nil
+		return binding, nil
 	}, nil
 }

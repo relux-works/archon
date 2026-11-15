@@ -59,10 +59,7 @@ func TestNativeHomeBindingCLI(t *testing.T) {
 			}
 			if mode == "bound" {
 				for _, id := range []string{"claude_code", "codex_cli", "opencode", "pi"} {
-					home, err := filepath.EvalSymlinks(t.TempDir())
-					if err != nil {
-						t.Fatal(err)
-					}
+					home := nativeBindingCLIDirectory(t)
 					args = append(args, "--native-home", id+"="+home)
 				}
 			}

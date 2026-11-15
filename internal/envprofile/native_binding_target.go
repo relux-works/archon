@@ -42,8 +42,11 @@ func validateNativeBindingTarget(manager, native string, owner pathboundary.Owne
 		if err != nil {
 			return fmt.Errorf("%s: native directory or ancestor is unavailable: %w", DiagNativeHomeBindingRequired, err)
 		}
-		if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
-			return fmt.Errorf("%s: native directory and ancestors must be direct directories", DiagNativeHomeBindingRequired)
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("%s: symlinked ancestor %q; provide a physical/resolved path", DiagNativeHomeBindingRequired, current)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("%s: native path component %q is not a directory", DiagNativeHomeBindingRequired, current)
 		}
 		if managerState.Kind == stateread.KindPresent && managerState.Info != nil && os.SameFile(info, managerState.Info) {
 			return fmt.Errorf("%s: native target aliases manager-owned state", DiagNativeHomeBindingRequired)

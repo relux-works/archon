@@ -27,3 +27,7 @@ func lookupOwner(path string, _ os.FileInfo) (OwnerIdentity, error) {
 func checkMutationPermissions(path string, _ os.FileInfo) error {
 	return fmt.Errorf("cannot prove private mutation permissions for %s on this platform", path)
 }
+
+func checkRemoveAccess(path string) error {
+	return fmt.Errorf("cannot prove removal access for %s on this platform", path)
+}

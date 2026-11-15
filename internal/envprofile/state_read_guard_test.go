@@ -650,7 +650,7 @@ func calledFunction(call *ast.CallExpr, function *managerReadFunction, modulePat
 
 func isStateReadSeamFunction(name string) bool {
 	switch name {
-	case "ReadFile", "ReadRegularFile", "ReadDir", "Stat", "Lstat", "Readlink":
+	case "ReadFile", "ReadRegularFile", "ReadDir", "Stat", "Lstat", "RootStat", "RootLstat", "Readlink":
 		return true
 	default:
 		return false

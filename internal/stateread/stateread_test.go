@@ -133,6 +133,81 @@ func TestReadsDistinguishAbsentFromBlockedParent(t *testing.T) {
 	}
 }
 
+// TestRootMetadataReadsStayBoundedAndDistinguishAbsence proves rooted Stat/Lstat
+// report a missing leaf as absent, reject a leaf beneath a regular-file parent,
+// and keep reading the opened directory after its pathname is replaced.
+func TestRootMetadataReadsStayBoundedAndDistinguishAbsence(t *testing.T) {
+	rootPath := t.TempDir()
+	presentPath := filepath.Join(rootPath, "present.txt")
+	if err := os.WriteFile(presentPath, []byte("admitted\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	blocker := filepath.Join(rootPath, "blocker")
+	if err := os.WriteFile(blocker, []byte("not a directory"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	targetPath := filepath.Join(t.TempDir(), "outside.txt")
+	if err := os.WriteFile(targetPath, []byte("outside\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(targetPath, filepath.Join(rootPath, "leaf-link")); err != nil {
+		t.Fatal(err)
+	}
+	root, err := os.OpenRoot(rootPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = root.Close() }()
+
+	rootBefore, err := RootStat(root, ".")
+	if err != nil || rootBefore.Kind != KindPresent || rootBefore.Info == nil || !rootBefore.Info.IsDir() {
+		t.Fatalf("RootStat(.) = (%+v, %v), want present directory", rootBefore, err)
+	}
+	if result, err := RootLstat(root, "present.txt"); err != nil || result.Kind != KindPresent || result.Info == nil || !result.Info.Mode().IsRegular() {
+		t.Fatalf("RootLstat(present) = (%+v, %v), want present regular file", result, err)
+	}
+	if result, err := RootLstat(root, "leaf-link"); err != nil || result.Kind != KindPresent || result.Info == nil || result.Info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("RootLstat(symlink leaf) = (%+v, %v), want the link itself", result, err)
+	}
+	if result, err := RootLstat(root, "missing.txt"); err != nil || result.Kind != KindAbsent {
+		t.Fatalf("RootLstat(missing) = (%+v, %v), want absent", result, err)
+	}
+	if result, err := RootStat(root, "missing.txt"); err != nil || result.Kind != KindAbsent {
+		t.Fatalf("RootStat(missing) = (%+v, %v), want absent", result, err)
+	}
+	if result, err := RootLstat(root, filepath.Join("blocker", "child")); err == nil || result.Kind != KindUnreadable {
+		t.Fatalf("RootLstat(beneath file) = (%+v, %v), want unreadable", result, err)
+	}
+
+	admittedPath := rootPath + ".admitted"
+	if err := os.Rename(rootPath, admittedPath); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(rootPath, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	replacementPath := filepath.Join(rootPath, "present.txt")
+	if err := os.WriteFile(replacementPath, []byte("replacement\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	openedRoot, err := RootStat(root, ".")
+	if err != nil || openedRoot.Kind != KindPresent || openedRoot.Info == nil || !os.SameFile(rootBefore.Info, openedRoot.Info) {
+		t.Fatalf("RootStat after pathname replacement = (%+v, %v), want original root", openedRoot, err)
+	}
+	openedFile, err := RootLstat(root, "present.txt")
+	if err != nil || openedFile.Kind != KindPresent || openedFile.Info == nil {
+		t.Fatalf("RootLstat after pathname replacement = (%+v, %v), want original file", openedFile, err)
+	}
+	originalInfo, err := os.Lstat(filepath.Join(admittedPath, "present.txt"))
+	if err != nil || !os.SameFile(originalInfo, openedFile.Info) {
+		t.Fatalf("rooted Lstat did not retain the admitted file identity: %v", err)
+	}
+	replacementInfo, err := os.Lstat(replacementPath)
+	if err != nil || os.SameFile(replacementInfo, openedFile.Info) {
+		t.Fatalf("rooted Lstat observed the replacement pathname: %v", err)
+	}
+}
+
 func TestReadableRegularFileMetadataOnly(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "auth.json")
 	if err := os.WriteFile(path, []byte("synthetic"), 0600); err != nil {

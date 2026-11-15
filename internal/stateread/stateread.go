@@ -158,6 +158,66 @@ func Stat(path string) (Metadata, error) {
 	return Metadata{Kind: KindUnreadable}, &Error{Kind: KindUnreadable, Path: path, Cause: err}
 }
 
+// RootStat inspects a path relative to an already-open root. Absence checks
+// stay within that root instead of reopening an arbitrary absolute path.
+func RootStat(root *os.Root, path string) (Metadata, error) {
+	if root == nil {
+		return Metadata{Kind: KindUnreadable}, UnusableError(path, fmt.Errorf("nil filesystem root"))
+	}
+	info, err := root.Stat(path)
+	return rootMetadata(root, path, info, err)
+}
+
+// RootLstat inspects the exact path relative to an already-open root without
+// following its final symbolic link. Absence checks remain rooted as well.
+func RootLstat(root *os.Root, path string) (Metadata, error) {
+	if root == nil {
+		return Metadata{Kind: KindUnreadable}, UnusableError(path, fmt.Errorf("nil filesystem root"))
+	}
+	info, err := root.Lstat(path)
+	return rootMetadata(root, path, info, err)
+}
+
+func rootMetadata(root *os.Root, path string, info os.FileInfo, cause error) (Metadata, error) {
+	if cause == nil {
+		return Metadata{Kind: KindPresent, Info: info}, nil
+	}
+	if missingRootPath(root, path, cause) {
+		return Metadata{Kind: KindAbsent}, nil
+	}
+	return Metadata{Kind: KindUnreadable}, &Error{Kind: KindUnreadable, Path: path, Cause: cause}
+}
+
+func missingRootPath(root *os.Root, path string, cause error) bool {
+	if root == nil || !filepath.IsLocal(path) || !os.IsNotExist(cause) {
+		return false
+	}
+	parent := filepath.Dir(filepath.Clean(path))
+	for {
+		info, err := root.Lstat(parent)
+		if err == nil {
+			if info.IsDir() {
+				return true
+			}
+			if info.Mode()&os.ModeSymlink == 0 {
+				return false
+			}
+			// A symlink ancestor is traversable only when it resolves to a
+			// directory inside this same root. Root.Stat enforces that boundary.
+			target, err := root.Stat(parent)
+			return err == nil && target.IsDir()
+		}
+		if !os.IsNotExist(err) {
+			return false
+		}
+		next := filepath.Dir(parent)
+		if next == parent {
+			return true
+		}
+		parent = next
+	}
+}
+
 // Lstat inspects the exact state path without following a symbolic link.
 func Lstat(path string) (Metadata, error) {
 	return LstatWith(path, os.Lstat)

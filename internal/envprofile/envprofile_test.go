@@ -41,7 +41,9 @@ func writePackage(t *testing.T, root, name, version, module string) {
 
 func pinHomes(t *testing.T) map[string]string {
 	t.Helper()
-	base := t.TempDir()
+	// Native-home boundary tests need a physical fixture root, not macOS's
+	// symlinked /var alias.
+	base := bindingDirectory(t)
 	homes := map[string]string{
 		"claude_code": filepath.Join(base, "claude"),
 		"codex_cli":   filepath.Join(base, "codex"),

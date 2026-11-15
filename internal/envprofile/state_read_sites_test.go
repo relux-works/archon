@@ -421,6 +421,8 @@ func TestStatusBackupInventoryAbsenceAndUnreadabilityDiffer(t *testing.T) {
 	})
 }
 
+// TestRemovePurgeMarkerAbsenceAndUnreadabilityDiffer proves absence permits
+// purge while an unreadable marker refuses before removing recorded state.
 func TestRemovePurgeMarkerAbsenceAndUnreadabilityDiffer(t *testing.T) {
 	makeFixture := func(t *testing.T) (string, map[string]string, string) {
 		t.Helper()

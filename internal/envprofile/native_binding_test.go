@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/relux-works/curator/internal/privatedir"
 )
 
 // Explicit exact bindings win over both managed caller overrides and HOME;
@@ -59,8 +61,47 @@ func TestNativeHomeBindingPreflightsCompleteSet(t *testing.T) {
 		t.Fatal(err)
 	}
 	bindings["codex_cli"] = filepath.Join(t.TempDir(), "changed")
-	if got, err := resolver("codex_cli"); err != nil || got != first {
-		t.Fatalf("frozen explicit target = %q, %v; want %q", got, err, first)
+	if got, err := resolver("codex_cli"); err != nil || got.path != first {
+		t.Fatalf("frozen explicit target = %q, %v; want %q", got.path, err, first)
+	}
+}
+
+// Nested native bindings refuse in either adapter order; disjoint directories
+// remain a valid neighboring control. This checks directory bindings, not
+// mount-alias behavior.
+func TestNativeHomeBindingRejectsNestedBindings(t *testing.T) {
+	manager := bindingDirectory(t)
+	parent := bindingDirectory(t)
+	child := filepath.Join(parent, "child")
+	if err := os.Mkdir(child, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	valid := bindingPurgeHomes(t)
+	if _, err := nativeBindingResolver(manager, valid, []string{"claude_code", "codex_cli", "opencode", "pi"}); err != nil {
+		t.Fatalf("disjoint native bindings refused: %v", err)
+	}
+	managerChild := filepath.Join(manager, "native")
+	if err := os.Mkdir(managerChild, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, home := range []string{managerChild, filepath.Dir(manager)} {
+		if _, err := ResolveNativeHomeBinding(manager, NativeHomeBindings{"codex_cli": home}, "codex_cli"); err == nil || !strings.Contains(err.Error(), DiagNativeHomeBindingRequired) {
+			t.Fatalf("manager-overlapping binding %q = %v; want coded refusal", home, err)
+		}
+	}
+	for _, reverse := range []bool{false, true} {
+		bindings := bindingPurgeHomes(t)
+		if reverse {
+			bindings["claude_code"], bindings["codex_cli"] = child, parent
+		} else {
+			bindings["claude_code"], bindings["codex_cli"] = parent, child
+		}
+		if resolver, err := nativeBindingResolver(manager, bindings, []string{"claude_code", "codex_cli", "opencode", "pi"}); err == nil || resolver != nil || !strings.Contains(err.Error(), DiagNativeHomeBindingRequired) {
+			t.Fatalf("reverse=%v nested bindings = %v, %v; want coded refusal", reverse, resolver != nil, err)
+		}
+		if _, err := ResolveNativeHomeBinding(manager, bindings, "claude_code"); err == nil || !strings.Contains(err.Error(), DiagNativeHomeBindingRequired) {
+			t.Fatalf("reverse=%v public resolver accepted nested bindings: %v", reverse, err)
+		}
 	}
 }
 
@@ -69,6 +110,9 @@ func bindingDirectory(t *testing.T) string {
 	home, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
+	}
+	if err := privatedir.Protect(home); err != nil {
+		t.Fatalf("protect synthetic native directory: %v", err)
 	}
 	return home
 }

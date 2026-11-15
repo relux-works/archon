@@ -11,6 +11,8 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
+
+	"github.com/relux-works/curator/internal/stateread"
 )
 
 const mutationRights windows.ACCESS_MASK = windows.GENERIC_WRITE | windows.GENERIC_ALL |
@@ -149,6 +151,47 @@ func checkMutationPermissions(path string, _ os.FileInfo) error {
 		}
 	}
 	return nil
+}
+
+func checkRemoveAccess(path string) error {
+	state, err := stateread.Lstat(path)
+	if err != nil {
+		return err
+	}
+	if state.Kind == stateread.KindAbsent {
+		return nil
+	}
+	if state.Kind != stateread.KindPresent || state.Info == nil {
+		return stateread.UnusableError(path, fmt.Errorf("removal target metadata is unavailable"))
+	}
+	if err := openForRemoval(path, windows.DELETE); err == nil {
+		return nil
+	}
+	parent := filepath.Dir(path)
+	if err := openForRemoval(parent, windowsFileDeleteChild); err == nil {
+		return nil
+	}
+	return fmt.Errorf("effective identity lacks DELETE on %s and FILE_DELETE_CHILD on its parent", path)
+}
+
+func openForRemoval(path string, access windows.ACCESS_MASK) error {
+	name, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return err
+	}
+	handle, err := windows.CreateFile(
+		name,
+		uint32(access),
+		windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE|windows.FILE_SHARE_DELETE,
+		nil,
+		windows.OPEN_EXISTING,
+		windows.FILE_FLAG_OPEN_REPARSE_POINT|windows.FILE_FLAG_BACKUP_SEMANTICS,
+		0,
+	)
+	if err != nil {
+		return err
+	}
+	return windows.CloseHandle(handle)
 }
 
 func securityOwnerAndDACL(path string) (*windows.SID, *windows.ACL, error) {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"syscall"
 )
 
@@ -30,6 +31,21 @@ func lookupOwner(path string, info os.FileInfo) (OwnerIdentity, error) {
 func checkMutationPermissions(path string, info os.FileInfo) error {
 	if info.Mode().Perm()&0o022 != 0 {
 		return fmt.Errorf("%s grants group or other identities mutation permission", path)
+	}
+	return nil
+}
+
+func checkRemoveAccess(path string) error {
+	parent := filepath.Dir(path)
+	info, err := os.Stat(parent)
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("parent of %s is not a directory", path)
+	}
+	if info.Mode().Perm()&0o300 != 0o300 {
+		return fmt.Errorf("owner lacks write and search permission on %s", parent)
 	}
 	return nil
 }

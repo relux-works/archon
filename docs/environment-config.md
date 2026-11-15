@@ -562,6 +562,16 @@ The binding must be an existing, owned directory at a clean absolute path,
 without symlinks at any path component. Relative paths, `.` or `..` components,
 files, missing directories, duplicate physical directories and Curator-managed
 homes refuse as `native_home_binding_required` before marker inspection.
+Native bindings must also be pairwise disjoint: two adapters cannot name the
+same directory or have an ancestor/descendant relationship, and neither may
+overlap manager-owned state.
+Validation uses the supplied path as written and does not canonicalize arbitrary
+native inputs. On macOS, `/var` is a symlinked ancestor; a binding through it is
+refused with the offending ancestor named in the diagnostic and a request for a
+physical/resolved path. Supply the equivalent physical path under `/private/var`
+when that is the intended native home. Symlinks below that physical root remain
+refused. This rule applies alongside the existing owner, permission and identity
+checks.
 For `opencode`, bind the actual `opencode` directory, not its XDG parent.
 Set validates the stored target set; unset can remove a stale selection without
 opening its native directory or payloads.
@@ -596,6 +606,14 @@ Without `--purge`, ordinary removal retains native and managed homes.
 Credential migration still uses its existing protocol. These bindings currently
 select native purge targets only. Fixture checks do not qualify native
 installations.
+
+Purge checks every selected native surface, backup directory and manager-side
+removal root before the first deletion. A known blocked or unremovable target
+returns `profile_purge_preflight_refused` without changing the selected trees.
+An operating-system failure after deletion starts returns
+`profile_purge_incomplete`; earlier paths may already be gone, and Curator does
+not promise rollback or atomic deletion across native and managed homes. Inspect
+the remaining markers and paths before retrying.
 
 Run `go test ./internal/envprofile ./cmd/curator -run '^TestNativeHomeBinding'`
 for paired binding, sidecar, CLI-priority, foreign-target and refusal controls.

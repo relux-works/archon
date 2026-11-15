@@ -77,6 +77,11 @@ func RemoveWithOptions(home, name string, opts RemoveOptions) error {
 		return fmt.Errorf("%s: profile %q is named as an overlay of installed profile %q", DiagInUse, name, owner)
 	}
 	if opts.Purge {
+		if err := preflightProfileRemoval(home, name); err != nil {
+			return fmt.Errorf("%s: profile target: %w", DiagProfilePurgePreflightRefused, err)
+		}
+	}
+	if opts.Purge {
 		var purgeErr error
 		if opts.ManagedOnly {
 			purgeErr = purgeManagedHomes(home, name)
@@ -87,5 +92,11 @@ func RemoveWithOptions(home, name string, opts RemoveOptions) error {
 			return purgeErr
 		}
 	}
-	return os.RemoveAll(ProfileDir(home, name))
+	if err := os.RemoveAll(ProfileDir(home, name)); err != nil {
+		if opts.Purge {
+			return purgeIncomplete("profile directory", err)
+		}
+		return err
+	}
+	return nil
 }

@@ -9,12 +9,17 @@ import (
 
 	"github.com/relux-works/curator/internal/envmarker"
 	"github.com/relux-works/curator/internal/envprofile"
+	"github.com/relux-works/curator/internal/privatedir"
 )
 
 func nativeBindingCLIDirectory(t *testing.T) string {
 	t.Helper()
-	path, err := filepath.EvalSymlinks(t.TempDir())
+	root, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(root, "native-home")
+	if err := privatedir.Make(path); err != nil {
 		t.Fatal(err)
 	}
 	return path

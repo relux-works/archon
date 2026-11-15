@@ -372,6 +372,16 @@ func CheckPrivateFile(path string, info os.FileInfo) error {
 	return checkNode(filepath.Dir(path), path, info, operator, lookupOwner)
 }
 
+// CheckRemoveAccess performs a read-only platform access check for removing
+// path. It checks the platform's available parent/target delete-access signals
+// at preflight time only; later filesystem failures remain possible.
+func CheckRemoveAccess(path string) error {
+	if err := checkRemoveAccess(path); err != nil {
+		return &Failure{Root: filepath.Dir(path), Path: path, Check: CheckPermissions, Cause: err}
+	}
+	return nil
+}
+
 func checkNode(root, path string, info os.FileInfo, operator OwnerIdentity, ownerLookup OwnerLookup) error {
 	owner, err := ownerLookup(path, info)
 	if err != nil {

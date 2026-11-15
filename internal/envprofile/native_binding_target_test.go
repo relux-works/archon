@@ -10,9 +10,8 @@ import (
 	"github.com/relux-works/curator/internal/pathboundary"
 )
 
-// An existing bound external directory passes the target
-// boundary. Managed descendants, manager ancestors, foreign ownership and
-// symlink aliases refuse without changing either directory's contents.
+// A canonical external directory passes while managed overlap, foreign
+// ownership, and symlinked native routes refuse at the target boundary.
 func TestNativeHomeBindingTargetBoundary(t *testing.T) {
 	manager := bindingDirectory(t)
 	native := bindingDirectory(t)
@@ -34,7 +33,7 @@ func TestNativeHomeBindingTargetBoundary(t *testing.T) {
 		t.Fatalf("foreign owner = %v; want ownership refusal", err)
 	}
 	if runtime.GOOS != "windows" {
-		alias := filepath.Join(t.TempDir(), "alias")
+		alias := filepath.Join(bindingDirectory(t), "alias")
 		if err := os.Symlink(manager, alias); err != nil {
 			t.Fatal(err)
 		}
@@ -49,6 +48,29 @@ func TestNativeHomeBindingTargetBoundary(t *testing.T) {
 		}
 		if err := validateNativeBindingTarget(manager, alias, nil); err == nil {
 			t.Fatal("symlink native root accepted")
+		}
+
+		// The canonical root is a positive control for a route through the
+		// symlinked parent below.
+		root := bindingDirectory(t)
+		realParent := filepath.Join(root, "real-parent")
+		if err := os.Mkdir(realParent, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		nativeHome := filepath.Join(realParent, "native")
+		if err := os.Mkdir(nativeHome, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := validateNativeBindingTarget(manager, nativeHome, nil); err != nil {
+			t.Fatalf("canonical native home refused: %v", err)
+		}
+		aliasParent := filepath.Join(root, "alias-parent")
+		if err := os.Symlink(realParent, aliasParent); err != nil {
+			t.Fatal(err)
+		}
+		aliasedHome := filepath.Join(aliasParent, "native")
+		if err := validateNativeBindingTarget(manager, aliasedHome, nil); err == nil || !strings.Contains(err.Error(), DiagNativeHomeBindingRequired) || !strings.Contains(err.Error(), aliasParent) || !strings.Contains(err.Error(), "physical/resolved path") {
+			t.Fatalf("symlinked native ancestor refusal = %v; want named ancestor and physical/resolved-path guidance", err)
 		}
 	}
 }
