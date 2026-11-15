@@ -54,6 +54,9 @@ func TestMain(m *testing.M) {
 	if name := filepath.Base(os.Args[0]); name == "git" || name == "git.exe" {
 		os.Exit(runMissingPinGit())
 	}
+	// Scrub ambient Git and native roots before declaring this package's
+	// explicit fixture homes; isolation must not erase those selected roots.
+	restoreGitEnv := testgitenv.Isolate()
 	// BUG-261027-5t7pqj: inherited adapter roots must never escape the test HOME.
 	testHome, err := os.MkdirTemp("", "curator-package-home-*")
 	if err != nil {
@@ -84,7 +87,6 @@ func TestMain(m *testing.M) {
 	if err := os.Setenv("PATH", filepath.Join(testHome, "bin")+string(os.PathListSeparator)+os.Getenv("PATH")); err != nil {
 		panic(err)
 	}
-	restoreGitEnv := testgitenv.Isolate()
 	code := m.Run()
 	restoreGitEnv()
 	_ = os.RemoveAll(testHome)
