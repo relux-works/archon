@@ -76,7 +76,7 @@ func admitNativeHomeBinding(manager string, bindings NativeHomeBindings, id stri
 	}
 	before, err := os.Lstat(home)
 	if err != nil {
-		return nativeHomeBindingAdmission{}, err
+		return nativeHomeBindingAdmission{}, fmt.Errorf("%s: inspect bound native directory: %w", DiagNativeHomeBindingRequired, err)
 	}
 	if !before.IsDir() || before.Mode()&os.ModeSymlink != 0 {
 		return nativeHomeBindingAdmission{}, fmt.Errorf("%s: bound native path is not a direct directory", DiagNativeHomeBindingRequired)
@@ -86,7 +86,7 @@ func admitNativeHomeBinding(manager string, bindings NativeHomeBindings, id stri
 	}
 	after, err := os.Lstat(home)
 	if err != nil {
-		return nativeHomeBindingAdmission{}, err
+		return nativeHomeBindingAdmission{}, fmt.Errorf("%s: re-inspect bound native directory: %w", DiagNativeHomeBindingRequired, err)
 	}
 	if !after.IsDir() || after.Mode()&os.ModeSymlink != 0 || !os.SameFile(before, after) {
 		return nativeHomeBindingAdmission{}, fmt.Errorf("%s: bound native directory changed during admission", DiagNativeHomeBindingRequired)

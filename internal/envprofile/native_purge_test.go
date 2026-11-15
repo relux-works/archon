@@ -1,6 +1,7 @@
 package envprofile
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -525,5 +526,73 @@ func TestNativeHomeBindingPurgeRejectsCredentialSurface(t *testing.T) {
 		if data, err := os.ReadFile(path); err != nil || string(data) != "recorded context\n" {
 			t.Fatalf("credential refusal changed a target: %v", err)
 		}
+	}
+}
+
+// A marker replaced by a different file after admission is never deleted by
+// name: the purge refuses before its first deletion and every target,
+// including the replacement and the managed home, stays in place. Without
+// the identity pin the replacement would be removed, so this also witnesses
+// that pin. A same-bytes replacement keeps the content check from passing it.
+func TestNativeHomeBindingPurgeRefusesMarkerSwappedAfterAdmission(t *testing.T) {
+	manager := bindingDirectory(t)
+	bindings := bindingPurgeHomes(t)
+	first := bindings["claude_code"]
+	bindingPurgeMarker(t, first, "sample", "CLAUDE.md")
+	later := bindings["codex_cli"]
+	bindingPurgeMarker(t, later, "sample", "AGENTS.md")
+	laterMarker := filepath.Join(later, envmarker.Name)
+	markerBytes, err := os.ReadFile(laterMarker)
+	if err != nil {
+		t.Fatal(err)
+	}
+	managed := filepath.Join(EnvRoot(manager), "sample")
+	if err := os.MkdirAll(managed, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	previous := beforeNativePurgeDelete
+	defer func() { beforeNativePurgeDelete = previous }()
+	var plantErr error
+	var replacement os.FileInfo
+	beforeNativePurgeDelete = func() {
+		staged := filepath.Join(later, "marker.replacement")
+		if plantErr = os.WriteFile(staged, markerBytes, 0o600); plantErr != nil {
+			return
+		}
+		if plantErr = os.Rename(staged, laterMarker); plantErr != nil {
+			return
+		}
+		replacement, plantErr = os.Lstat(laterMarker)
+	}
+	err = purgeHomesWithBindings(manager, "sample", bindings)
+	if plantErr != nil || replacement == nil {
+		t.Fatalf("marker swap fixture applied=%v, err=%v", replacement != nil, plantErr)
+	}
+	if err == nil || !strings.Contains(err.Error(), DiagProfilePurgePreflightRefused) || !strings.Contains(err.Error(), "native marker changed after admission") {
+		t.Fatalf("swapped marker purge = %v; want preflight refusal naming the changed marker", err)
+	}
+	for _, path := range []string{filepath.Join(first, "CLAUDE.md"), filepath.Join(first, envmarker.Name), filepath.Join(later, "AGENTS.md"), managed} {
+		if _, err := os.Lstat(path); err != nil {
+			t.Fatalf("refused purge removed %s: %v", path, err)
+		}
+	}
+	now, err := os.Lstat(laterMarker)
+	if err != nil || !os.SameFile(replacement, now) {
+		t.Fatalf("replacement marker was removed or changed: %v", err)
+	}
+}
+
+// A bound native directory that is missing at admission reports the binding
+// diagnostic code instead of a raw filesystem error; the underlying
+// not-exist cause stays inspectable.
+func TestNativeHomeBindingAdmissionCodesMissingDirectory(t *testing.T) {
+	manager := bindingDirectory(t)
+	missing := filepath.Join(bindingDirectory(t), "missing")
+	_, err := admitNativeHomeBinding(manager, NativeHomeBindings{"codex_cli": missing}, "codex_cli")
+	if err == nil || !strings.Contains(err.Error(), DiagNativeHomeBindingRequired) {
+		t.Fatalf("missing bound directory = %v; want %s", err, DiagNativeHomeBindingRequired)
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("missing bound directory lost its not-exist cause: %v", err)
 	}
 }

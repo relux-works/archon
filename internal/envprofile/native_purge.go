@@ -40,9 +40,10 @@ func purgeHomesWithBindings(home, profile string, bindings NativeHomeBindings) e
 		return err
 	}
 	type target struct {
-		adapter string
-		root    *os.Root
-		marker  *envmarker.Marker
+		adapter    string
+		root       *os.Root
+		marker     *envmarker.Marker
+		markerInfo os.FileInfo
 	}
 	var targets []target
 	var roots []*os.Root
@@ -141,7 +142,7 @@ func purgeHomesWithBindings(home, profile string, bindings NativeHomeBindings) e
 		if err := preflightNativeBackup(root, binding.path); err != nil {
 			return fmt.Errorf("%s: %w", DiagProfilePurgePreflightRefused, err)
 		}
-		targets = append(targets, target{adapter: id, root: root, marker: marker})
+		targets = append(targets, target{adapter: id, root: root, marker: marker, markerInfo: markerInfo})
 	}
 	managed, err := preflightManagedPurge(home, profile)
 	if err != nil {
@@ -149,6 +150,13 @@ func purgeHomesWithBindings(home, profile string, bindings NativeHomeBindings) e
 	}
 	if beforeNativePurgeDelete != nil {
 		beforeNativePurgeDelete()
+	}
+	// Re-pin every admitted marker before the first deletion, so a marker
+	// swapped after admission refuses the whole purge with nothing removed.
+	for _, item := range targets {
+		if err := nativeMarkerStillAdmitted(item.root, item.markerInfo); err != nil {
+			return fmt.Errorf("%s: native adapter %s: %w", DiagProfilePurgePreflightRefused, item.adapter, err)
+		}
 	}
 
 	for _, item := range targets {
@@ -159,6 +167,9 @@ func purgeHomesWithBindings(home, profile string, bindings NativeHomeBindings) e
 					return purgeIncomplete("native adapter "+item.adapter+" surface "+path, err)
 				}
 			}
+		}
+		if err := nativeMarkerStillAdmitted(item.root, item.markerInfo); err != nil {
+			return purgeIncomplete("native adapter "+item.adapter+" marker", err)
 		}
 		if err := item.root.Remove(envmarker.Name); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return purgeIncomplete("native adapter "+item.adapter+" marker", err)
@@ -335,6 +346,21 @@ func preflightNativeRemoveTree(root *os.Root, native, relative string) error {
 		if err := preflightNativeRemoveTree(root, native, filepath.Join(relative, entry.Name())); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// nativeMarkerStillAdmitted compares the marker now present in the admitted
+// root with the file identity read at admission. Removal is by name, so the
+// identity is pinned immediately before it; a changed or vanished marker
+// refuses instead of deleting whatever now has that name.
+func nativeMarkerStillAdmitted(root *os.Root, admitted os.FileInfo) error {
+	state, err := stateread.RootLstat(root, envmarker.Name)
+	if err != nil {
+		return fmt.Errorf("inspect native marker before removal: %w", err)
+	}
+	if state.Kind != stateread.KindPresent || state.Info == nil || !os.SameFile(admitted, state.Info) {
+		return errors.New("native marker changed after admission")
 	}
 	return nil
 }
