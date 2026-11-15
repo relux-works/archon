@@ -14,6 +14,11 @@ import (
 	"github.com/relux-works/curator/internal/stateread"
 )
 
+// Native purge diagnostics. DiagProfilePurgePreflightRefused means the
+// complete target set failed its checks before any deletion, so nothing was
+// removed. DiagProfilePurgeIncomplete means a removal failed after earlier
+// targets were already deleted; it reports that partial state and claims no
+// rollback.
 const (
 	DiagProfilePurgePreflightRefused = "profile_purge_preflight_refused"
 	DiagProfilePurgeIncomplete       = "profile_purge_incomplete"
