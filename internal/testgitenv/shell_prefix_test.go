@@ -63,7 +63,8 @@ func TestCompleteGitPrefixNamesInGo(t *testing.T) {
 // Each nonidentifier must cause the intended pre-command refusal, or reach a
 // raw child with exactly the two allowed Git defaults. Ordinary names must
 // succeed, create two distinct real commits, and allow fixture-local tracing.
-// Every row preserves a complete outside-decoy preimage. No skip is permitted.
+// Framed enumeration must reject truncated, empty and unmarked streams before
+// dispatch. Every row preserves a complete outside-decoy preimage. No skips.
 func TestShellCompleteGitPrefixNames(t *testing.T) {
 	shell := os.Getenv("CURATOR_TEST_PREFIX_BASH")
 	if shell == "" {
@@ -87,8 +88,14 @@ func TestShellCompleteGitPrefixNames(t *testing.T) {
 		{name: "ordinary-trace", key: "GIT_TRACE"},
 		{name: "ordinary-random", key: strings.ReplaceAll(nonidentifierGitNames(t)[4], "-", "_")},
 		{name: "multiline-value", key: "GIT_F7_RECORD_VALUE", value: "synthetic\nGIT_F7-DASH=still-a-value"},
-		{name: "enumeration-failed", enumerator: "printf 'F7_PARTIAL=synthetic\\0'; exit 1", refusal: "complete environment enumeration unavailable"},
-		{name: "enumeration-truncated", enumerator: "printf 'F7_PARTIAL=unterminated'; exit 0", refusal: "complete environment enumeration unavailable"},
+		{name: "enumeration-failed", key: "GIT_TRACE", enumerator: "printf 'isolate-test-env-count:2\\0F7_PARTIAL=synthetic\\0'; exit 1", refusal: "complete environment enumeration unavailable"},
+		{name: "enumeration-truncated", key: "GIT_TRACE", enumerator: "printf 'isolate-test-env-count:2\\0F7_PARTIAL=unterminated'; exit 0", refusal: "complete environment enumeration unavailable"},
+		{name: "enumeration-truncated-at-nul", key: "GIT_TRACE", enumerator: "printf 'isolate-test-env-count:2\\0F7_PARTIAL=synthetic\\0isolate-test-env-complete\\0'; exit 0", refusal: "complete environment enumeration unavailable"},
+		{name: "enumeration-empty-success", key: "GIT_TRACE", enumerator: "exit 0", refusal: "complete environment enumeration unavailable"},
+		{name: "enumeration-missing-marker", key: "GIT_TRACE", enumerator: "printf 'isolate-test-env-count:1\\0F7_PARTIAL=synthetic\\0'; exit 0", refusal: "complete environment enumeration unavailable"},
+		{name: "enumeration-zero-count", key: "GIT_TRACE", enumerator: "printf 'isolate-test-env-count:0\\0isolate-test-env-complete\\0'; exit 0", refusal: "complete environment enumeration unavailable"},
+		{name: "enumeration-trailing-record", key: "GIT_TRACE", enumerator: "printf 'isolate-test-env-count:1\\0F7_PARTIAL=synthetic\\0isolate-test-env-complete\\0EXTRA=value\\0'; exit 0", refusal: "complete environment enumeration unavailable"},
+		{name: "enumeration-trailing-partial", key: "GIT_TRACE", enumerator: "printf 'isolate-test-env-count:1\\0F7_PARTIAL=synthetic\\0isolate-test-env-complete\\0EXTRA=unterminated'; exit 0", refusal: "complete environment enumeration unavailable"},
 	}
 	for i, key := range nonidentifierGitNames(t) {
 		cases = append(cases, struct{ name, key, value, enumerator, refusal string }{name: fmt.Sprintf("nonidentifier-%d", i), key: key, refusal: "unsupported inherited Git name"})
@@ -147,7 +154,7 @@ printf 'two distinct real commits and fixture-local trace completed\n'
 				if err := os.Mkdir(shim, 0700); err != nil {
 					t.Fatal(err)
 				}
-				if err := os.WriteFile(filepath.Join(shim, "env"), []byte("#!/bin/sh\n"+row.enumerator+"\n"), 0700); err != nil {
+				if err := os.WriteFile(filepath.Join(shim, "node"), []byte("#!/bin/sh\n"+row.enumerator+"\n"), 0700); err != nil {
 					t.Fatal(err)
 				}
 				for i, entry := range cmd.Env {
@@ -173,6 +180,66 @@ printf 'two distinct real commits and fixture-local trace completed\n'
 			}
 			if runErr != nil || !strings.Contains(string(out), "raw child Git environment has exactly the two fixture defaults") || !strings.Contains(string(out), "two distinct real commits and fixture-local trace completed") {
 				t.Fatalf("complete prefix boundary for %q: %v\n%s", key, runErr, out)
+			}
+		})
+	}
+}
+
+// The count check, rather than the trailer alone, rejects a cut at a NUL
+// boundary. Removing only that check must expose the forbidden dispatch.
+func TestShellEnvironmentFrameCountControl(t *testing.T) {
+	helper, err := filepath.Abs(filepath.Join("..", "..", ".github", "ci", "isolate-test-env.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(helper)
+	if err != nil {
+		t.Fatal(err)
+	}
+	check := `if [ "$seen" != "$expected" ]; then break; fi`
+	if strings.Count(string(body), check) != 1 {
+		t.Fatal("count-check control target must occur exactly once")
+	}
+	mutant := filepath.Join(t.TempDir(), "isolate-test-env.sh")
+	if err := os.WriteFile(mutant, []byte(strings.Replace(string(body), check, ": # count-check narrowing control", 1)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range []struct {
+		name, script string
+		want         int
+	}{
+		{"counted-frame", helper, 2},
+		{"trailer-only-mutant", mutant, 0},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			root := t.TempDir()
+			marker := filepath.Join(root, "dispatched")
+			cmd := exec.Command("bash", "-c", `
+. "$1" || exit 3
+# A two-record frame has lost its second record but retained its trailer.
+node() { printf 'isolate-test-env-count:2\0F7_PARTIAL=synthetic\0isolate-test-env-complete\0'; }
+isolate_test_env "$2/owned" || exit $?
+printf dispatched >"$3"
+`, "_", row.script, root, marker)
+			out, runErr := cmd.CombinedOutput()
+			got := 0
+			if runErr != nil {
+				exit, ok := runErr.(*exec.ExitError)
+				if !ok {
+					t.Fatal(runErr)
+				}
+				got = exit.ExitCode()
+			}
+			if got != row.want {
+				t.Fatalf("frame control exit %d, want %d: %s", got, row.want, out)
+			}
+			_, markerErr := os.Lstat(marker)
+			if row.want == 2 {
+				if !strings.Contains(string(out), "complete environment enumeration unavailable") || !os.IsNotExist(markerErr) {
+					t.Fatalf("counted frame must refuse without dispatch: %s; marker: %v", out, markerErr)
+				}
+			} else if markerErr != nil {
+				t.Fatalf("count-bypass plant did not expose forbidden dispatch: %v", markerErr)
 			}
 		})
 	}

@@ -5,7 +5,8 @@
 # this function never touches or restores caller repositories or native homes.
 
 isolate_test_env() {
-	local root key upper windows entry complete
+	local root key upper windows entry complete expected seen
+	local -a keys=()
 	root="$1"
 	# Refuse reuse and canonicalize before creating config or exporting paths.
 	(umask 077; mkdir "$root") || return 2
@@ -15,15 +16,49 @@ isolate_test_env() {
 		MINGW*|MSYS*|CYGWIN*) windows=1 ;;
 		*) windows=0 ;;
 	esac
-	# Bash's exported-variable table omits inherited nonidentifier names on
-	# Bash 5. Read the actual process environment, NUL-delimited so whitespace
-	# in names/values cannot split records. Values stay in a pipe, never a file.
-	# An env record always contains '='; the distinct completion record is
-	# emitted only after successful enumeration. Missing env -0 fails closed.
+	# Use the same OS environment API as isolated-test.cjs: Bash's variable
+	# table omits inherited nonidentifier names. Frame the complete snapshot
+	# before writing it, so a NUL-boundary truncation followed by a completion
+	# marker cannot turn a partial inventory into success. Node is already a
+	# prerequisite of the CI test wrapper. Values stay in a pipe, never a file.
 	complete=0
+	expected=''
+	seen=0
 	while IFS= read -r -d '' entry; do
-		if [ "$entry" = 'isolate-test-env-complete' ]; then complete=1; break; fi
-		case "$entry" in *=*) key="${entry%%=*}" ;; *) return 2 ;; esac
+		if [ "$complete" -eq 1 ]; then break; fi
+		if [ -z "$expected" ]; then
+			if [[ "$entry" =~ ^isolate-test-env-count:([1-9][0-9]*)$ ]]; then
+				expected="${BASH_REMATCH[1]}"
+				continue
+			fi
+			break
+		fi
+		if [ "$entry" = 'isolate-test-env-complete' ]; then
+			if [ "$seen" != "$expected" ]; then break; fi
+			complete=1
+			continue
+		fi
+		case "$entry" in *=*) key="${entry%%=*}" ;; *) break ;; esac
+		seen=$((seen + 1))
+		keys+=("$key")
+	done < <(node -e '
+try {
+  const entries = Object.entries(process.env);
+  if (entries.length === 0) throw new Error("empty environment");
+  const records = entries.map(([key, value]) => key + "=" + value + "\0");
+  process.stdout.write("isolate-test-env-count:" + entries.length + "\0" +
+    records.join("") + "isolate-test-env-complete\0");
+} catch {
+  process.exitCode = 2;
+}
+')
+	# Reading through EOF also rejects extra complete or unterminated records
+	# after the trailer. Do not mutate the caller environment before validation.
+	if [ "$complete" -ne 1 ] || [ -n "$entry" ]; then
+		printf '%s\n' 'isolate-test-env: complete environment enumeration unavailable; refusing before fixture commands' >&2
+		return 2
+	fi
+	for key in "${keys[@]}"; do
 		upper="$(printf '%s' "$key" | LC_ALL=C tr '[:lower:]' '[:upper:]')" || return 2
 		case "$upper" in
 			GIT_*)
@@ -40,11 +75,7 @@ isolate_test_env() {
 			USERPROFILE)
 				if [ "$windows" -eq 1 ]; then unset "$key" || return 2; fi ;;
 		esac
-	done < <(env -0 && printf 'isolate-test-env-complete\0')
-	if [ "$complete" -ne 1 ]; then
-		printf '%s\n' 'isolate-test-env: complete environment enumeration unavailable; refusing before fixture commands' >&2
-		return 2
-	fi
+	done
 	(umask 077; mkdir "$root/home" "$root/xdg" "$root/tmp" && : >"$root/gitconfig") || return 2
 	HOME="$root/home"
 	XDG_CONFIG_HOME="$root/xdg"
