@@ -1202,6 +1202,10 @@ jobs:
         shell: bash
         run: bash .github/ci/isolate-go-state.sh
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Self-test the CI gates
         shell: bash
         run: bash .github/ci/gate-selftest.sh
