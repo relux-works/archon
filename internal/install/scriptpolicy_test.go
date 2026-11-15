@@ -86,6 +86,9 @@ func TestMain(m *testing.M) {
 	if buildrepo.IsSSHWrapperInvocation(os.Args[0]) {
 		os.Exit(buildrepo.RunSSHWrapper(os.Args, os.Getenv, os.Stdin, os.Stdout, os.Stderr))
 	}
+	// Isolate inherited selectors before declaring explicit package homes.
+	// The shared boundary must not erase these fixture-owned native roots.
+	restoreGitEnv := testgitenv.Isolate()
 	// BUG-261027-5t7pqj: inherited adapter roots must never escape the test HOME.
 	testHome, err := os.MkdirTemp("", "curator-package-home-*")
 	if err != nil {
@@ -121,7 +124,6 @@ func TestMain(m *testing.M) {
 	if err := os.Setenv("PATH", filepath.Join(testHome, "bin")+string(os.PathListSeparator)+os.Getenv("PATH")); err != nil {
 		panic(err)
 	}
-	restoreGitEnv := testgitenv.Isolate()
 	code := m.Run()
 	restoreGitEnv()
 	_ = os.RemoveAll(testHome)
