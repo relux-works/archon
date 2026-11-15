@@ -181,8 +181,9 @@ func TestNativeHomeReviewUnreportedFallbackRefuses(t *testing.T) {
 	if got, err := NativeHome(adapter); err != nil || got != os.Getenv("CODEX_HOME") {
 		t.Fatalf("outside public selector: %q %v", got, err)
 	}
-	// These are the actual selection seams used by switch, import and unmanage.
-	// Their outside controls succeed before the same operations refuse a caller.
+	// These are the env-selected seams used by switch, import and unmanage.
+	// Purge accepts explicit native-home bindings and has separate positive and
+	// missing-binding controls in native_purge_test.go.
 	selections := []struct {
 		name string
 		run  func() error
@@ -190,7 +191,6 @@ func TestNativeHomeReviewUnreportedFallbackRefuses(t *testing.T) {
 		{"switch", func() error { _, err := resolveNativeHome(adapter, nil); return err }},
 		{"import", func() error { _, err := importNativeHome(ImportOptions{}, adapter.ID); return err }},
 		{"unmanage", func() error { _, err := planUnmanageHomes(UnmanageRequest{EnvID: adapter.ID}); return err }},
-		{"purge", func() error { return purgeHomes(manager, "absent") }},
 	}
 	for _, operation := range selections {
 		if err := operation.run(); err != nil {
