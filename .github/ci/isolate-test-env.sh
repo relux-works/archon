@@ -25,7 +25,7 @@ isolate_test_env() {
 	expected=''
 	seen=0
 	while IFS= read -r -d '' entry; do
-		if [ "$complete" -eq 1 ]; then break; fi
+		if [ "$complete" -eq 1 ]; then complete=0; break; fi
 		if [ -z "$expected" ]; then
 			if [[ "$entry" =~ ^isolate-test-env-count:([1-9][0-9]*)$ ]]; then
 				expected="${BASH_REMATCH[1]}"

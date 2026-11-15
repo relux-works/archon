@@ -95,6 +95,7 @@ func TestShellCompleteGitPrefixNames(t *testing.T) {
 		{name: "enumeration-missing-marker", key: "GIT_TRACE", enumerator: "printf 'isolate-test-env-count:1\\0F7_PARTIAL=synthetic\\0'; exit 0", refusal: "complete environment enumeration unavailable"},
 		{name: "enumeration-zero-count", key: "GIT_TRACE", enumerator: "printf 'isolate-test-env-count:0\\0isolate-test-env-complete\\0'; exit 0", refusal: "complete environment enumeration unavailable"},
 		{name: "enumeration-trailing-record", key: "GIT_TRACE", enumerator: "printf 'isolate-test-env-count:1\\0F7_PARTIAL=synthetic\\0isolate-test-env-complete\\0EXTRA=value\\0'; exit 0", refusal: "complete environment enumeration unavailable"},
+		{name: "enumeration-trailing-empty-record", key: "GIT_TRACE", enumerator: "printf 'isolate-test-env-count:1\\0F7_PARTIAL=synthetic\\0isolate-test-env-complete\\0\\0'; exit 0", refusal: "complete environment enumeration unavailable"},
 		{name: "enumeration-trailing-partial", key: "GIT_TRACE", enumerator: "printf 'isolate-test-env-count:1\\0F7_PARTIAL=synthetic\\0isolate-test-env-complete\\0EXTRA=unterminated'; exit 0", refusal: "complete environment enumeration unavailable"},
 	}
 	for i, key := range nonidentifierGitNames(t) {
