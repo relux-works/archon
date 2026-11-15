@@ -61,16 +61,9 @@ func TestRealSwiftPMManifestRunsThroughProductionManagerAndExecutor(t *testing.T
 	}
 	base := t.TempDir()
 	t.Cleanup(func() {
-		_ = filepath.WalkDir(base, func(current string, entry os.DirEntry, walkErr error) error {
-			if walkErr == nil {
-				if entry.IsDir() {
-					_ = os.Chmod(current, 0o700)
-				} else {
-					_ = os.Chmod(current, 0o600)
-				}
-			}
-			return nil
-		})
+		if err := restoreSwiftFixtureDirectories(base); err != nil {
+			t.Error(err)
+		}
 	})
 	root := filepath.Join(base, "package")
 	if err = os.MkdirAll(filepath.Join(root, "Sources", "Fixture"), 0o700); err != nil {

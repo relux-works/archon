@@ -8,6 +8,11 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      fixture_isolation_diagnostics:
+        description: Run bounded native fixture cleanup and snapshot sharing controls
+        type: boolean
+        required: false
+        default: false
       candidate_ref:
         description: >-
           Full 40-character relux-works/curator-spec revision holding the candidate
@@ -1438,3 +1443,115 @@ jobs:
           name: candidate-evidence-${{ matrix.os }}
           path: .temp/ci-evidence/
           if-no-files-found: warn
+
+  snapshot-sharing-comparison:
+    name: Windows snapshot sharing comparison
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.fixture_isolation_diagnostics }}
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: b3ec7aa77ce3a2e0bfbf015aefe1f5ed6f5f5195
+          path: .temp/sharing-baseline
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: db2e4139f91347e6d8d5e05492ed93d945296a02
+          path: .temp/sharing-candidate
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compare thirty isolated counts at each revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$GITHUB_WORKSPACE/.temp/sharing-evidence"
+          mkdir -p "$evidence"
+          cache="$(cygpath -m "$(mktemp -d)")"
+          for label in baseline candidate; do
+            repo="$GITHUB_WORKSPACE/.temp/sharing-$label"
+            git -C "$repo" rev-parse HEAD > "$evidence/$label.head"
+            home="$(cygpath -m "$(mktemp -d)")"
+            tmp="$(cygpath -m "$(mktemp -d)")"
+            (
+              cd "$repo"
+              env -i PATH="$PATH" SystemRoot="$SYSTEMROOT" HOME="$home" USERPROFILE="$home" \
+                TMPDIR="$tmp" TMP="$tmp" TEMP="$tmp" GIT_CONFIG_GLOBAL=/dev/null \
+                GIT_CONFIG_NOSYSTEM=1 GOCACHE="$cache/cache" GOPATH="$cache/go" \
+                GOENV=off GOTOOLCHAIN=local GOMAXPROCS=2 \
+                bash .github/ci/isolated-test.sh \
+                  go test -p 1 -parallel 2 -run TestConcurrentGetRetriesInjectedWindowsSharingViolation \
+                    -count=30 -v ./internal/snapshot > "$evidence/$label.log" 2>&1
+            ) && rc=0 || rc=$?
+            printf '%s\n' "$rc" > "$evidence/$label.exit"
+          done
+          python - <<'PY'
+          import json, os, pathlib, re
+          root = pathlib.Path(os.environ['GITHUB_WORKSPACE']) / '.temp/sharing-evidence'
+          test = 'TestConcurrentGetRetriesInjectedWindowsSharingViolation'
+          expected = {'baseline': 'b3ec7aa77ce3a2e0bfbf015aefe1f5ed6f5f5195', 'candidate': 'db2e4139f91347e6d8d5e05492ed93d945296a02'}
+          result = {}
+          for label in ('baseline', 'candidate'):
+              text = (root / (label + '.log')).read_text(errors='replace')
+              head = (root / (label + '.head')).read_text().strip()
+              code = int((root / (label + '.exit')).read_text())
+              runs = len(re.findall(r'^=== RUN   ' + test + r'\r?$', text, re.M))
+              failures = len(re.findall(r'^--- FAIL: ' + test + r' ', text, re.M))
+              passes = len(re.findall(r'^--- PASS: ' + test + r' ', text, re.M))
+              assert head == expected[label], (label, head)
+              assert runs == passes + failures == 30, (label, runs, passes, failures)
+              assert code == (1 if failures else 0), (label, code, failures)
+              result[label] = {'head': head, 'runs': runs, 'passes': passes, 'failures': failures, 'command_exit': code}
+          result['equal_failure_counts'] = result['baseline']['failures'] == result['candidate']['failures']
+          result['candidate_only_failure'] = result['candidate']['failures'] > 0 and result['baseline']['failures'] == 0
+          (root / 'comparison.json').write_text(json.dumps(result, indent=2) + '\n')
+          print(json.dumps(result, indent=2))
+          PY
+      - name: Upload comparison commands and outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-sharing-comparison
+          path: .temp/sharing-evidence/
+          if-no-files-found: error
+
+  native-executable-cleanup:
+    name: Executable cleanup controls (${{ matrix.os }})
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.fixture_isolation_diagnostics }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Execute link-preserving cleanup and inherited trace regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          home="$(mktemp -d)"
+          tmp="$(mktemp -d)"
+          env -i PATH="$PATH" HOME="$home" TMPDIR="$tmp" GIT_CONFIG_GLOBAL=/dev/null \
+            GIT_CONFIG_NOSYSTEM=1 GOENV=off GOTOOLCHAIN=local GOMAXPROCS=2 \
+            bash .github/ci/isolated-test.sh go test -p 1 -parallel 2 -v -count=30 \
+              -run '^Test(SwiftFixtureCleanupPreservesExternalExecutable|InheritedGitTraceIsolation)$' \
+              ./internal/swiftpmsource ./internal/testgitenv

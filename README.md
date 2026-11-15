@@ -875,3 +875,12 @@ inventory from a substituted executable or arbitrary non-Git command channels.
 temporary roots plus cwd changes; a platform that cannot create a directory
 symlink fails that control with an explicit error. These checks use synthetic data;
 they neither read live credentials nor operate on an operator repository.
+
+The CI workflow can run bounded fixture-isolation diagnostics with
+`gh workflow run ci.yml --ref <work-branch> -f fixture_isolation_diagnostics=true`.
+Alongside the normal CI matrix, this repeats the native executable-cleanup and
+inherited Git trace controls on Linux/macOS, and compares thirty Windows snapshot
+sharing-test runs at the pinned baseline and isolation candidate. Exact revisions,
+command exits and failure counts are uploaded as `snapshot-sharing-comparison`.
+These comparison counts are diagnostic evidence; a successful collection job does
+not turn observed test failures into passing tests.
