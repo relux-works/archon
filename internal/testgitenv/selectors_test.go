@@ -79,14 +79,24 @@ func requireDecoyImage(t *testing.T, before, after map[string]decoyEntry) {
 
 func newDecoy(t *testing.T) string {
 	t.Helper()
+	return newDecoyWithGit(t, fixtureGit)
+}
+
+func newDecoyWithGit(t *testing.T, git func(*testing.T, string, ...string) []byte) string {
+	t.Helper()
 	root := t.TempDir()
-	fixtureGit(t, root, "init", "-q", "-b", "main")
-	fixtureGit(t, root, "config", "fixture.sentinel", "preserved")
+	git(t, root, "init", "-q", "-b", "main")
+	// Finish setup without launching background writers before the complete
+	// preimage is taken. Keep maintenance locks visible to that image witness.
+	git(t, root, "config", "maintenance.auto", "false")
+	git(t, root, "config", "gc.auto", "0")
+	git(t, root, "config", "gc.autoDetach", "false")
+	git(t, root, "config", "fixture.sentinel", "preserved")
 	if err := os.WriteFile(filepath.Join(root, "sentinel"), []byte("disposable decoy"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	fixtureGit(t, root, "add", "sentinel")
-	fixtureGit(t, root, "-c", "user.name=Decoy", "-c", "user.email=decoy@example.invalid", "commit", "-qm", "decoy")
+	git(t, root, "add", "sentinel")
+	git(t, root, "-c", "user.name=Decoy", "-c", "user.email=decoy@example.invalid", "commit", "-qm", "decoy")
 	// An untracked ancestry fixture leaf lets the old shell bypass really
 	// stage and commit into this sacrificial repository, rather than merely
 	// failing an unrelated missing-file setup.
