@@ -653,7 +653,7 @@ func TestNativeMarkerStillAdmittedRequiresHeldDescriptor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 	info, err := os.Lstat(filepath.Join(home, envmarker.Name))
 	if err != nil {
 		t.Fatal(err)
@@ -665,7 +665,7 @@ func TestNativeMarkerStillAdmittedRequiresHeldDescriptor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer held.Close()
+	defer func() { _ = held.Close() }()
 	if err := nativeMarkerStillAdmitted(root, info, held); err != nil {
 		t.Fatalf("held admitted marker refused: %v", err)
 	}
