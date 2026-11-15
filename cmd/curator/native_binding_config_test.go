@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -62,8 +63,16 @@ func TestNativeHomeBindingKnobAndCLIPrecedence(t *testing.T) {
 			homes := map[string]string{}
 			for _, id := range []string{"claude_code", "codex_cli", "opencode", "pi"} {
 				homes[id] = nativeBindingCLIDirectory(t)
-				if code, stdout, stderr := runProfile(t, source, "env", "config", "set", "native_home."+id, homes[id]); code != exitOK || !strings.Contains(stdout, envprofile.NativeHomeBindingsPath(source.path)) {
+				code, stdout, stderr := runProfile(t, source, "env", "config", "set", "native_home."+id, homes[id])
+				if code != exitOK {
 					t.Fatalf("knob set=%d: %s %s", code, stdout, stderr)
+				}
+				// Compare the decoded field: JSON escapes Windows path separators.
+				var report struct {
+					Source string `json:"source"`
+				}
+				if err := json.Unmarshal([]byte(stdout), &report); err != nil || report.Source != envprofile.NativeHomeBindingsPath(source.path) {
+					t.Fatalf("knob set source = %q (decode %v), want %q: %s", report.Source, err, envprofile.NativeHomeBindingsPath(source.path), stdout)
 				}
 			}
 			nativeBindingCLIMarker(t, homes["codex_cli"])
