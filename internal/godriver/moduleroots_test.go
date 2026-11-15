@@ -13,6 +13,7 @@ import (
 
 	"github.com/relux-works/curator/internal/buildsource"
 	"github.com/relux-works/curator/internal/conformancecoverage"
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // moduleRootsFixture is a frozen multi-module snapshot: one build root whose
@@ -639,6 +640,7 @@ func TestRealGoV1ModuleRootsBuildIsBoundedAndNotLaunched(t *testing.T) {
 	}
 	defer func() { _ = token.Close() }()
 
+	testtoolchain.LockHostGOROOT(t)
 	config := ConfigFromEnvironment(t.TempDir(), snapshot)
 	config.CuratorGo = filepath.Join(build.Default.GOROOT, "bin", platformGoName)
 	session, err := Establish(context.Background(), config)

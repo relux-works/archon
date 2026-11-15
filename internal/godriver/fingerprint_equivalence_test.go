@@ -15,6 +15,8 @@ import (
 	"strings"
 	"testing"
 	"unicode/utf8"
+
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // legacyRecord and legacyFingerprintToolchain are a verbatim preservation of the
@@ -428,6 +430,7 @@ func TestFingerprintTraversalMatchesLegacyOnRealToolchain(t *testing.T) {
 	if _, err := os.Stat(goroot); err != nil {
 		t.Skipf("GOROOT %s unreadable: %v", goroot, err)
 	}
+	testtoolchain.LockHostGOROOT(t)
 	digest, state := assertEquivalent(t, goroot)
 	if len(state) == 0 {
 		t.Fatal("real GOROOT produced no records")
@@ -1201,6 +1204,7 @@ func benchmarkRoot(b *testing.B) string {
 	if _, err := os.Stat(goroot); err != nil {
 		b.Skipf("GOROOT %s unreadable: %v", goroot, err)
 	}
+	testtoolchain.LockHostGOROOT(b)
 	return goroot
 }
 

@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/relux-works/curator/internal/godriver"
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // TestHostGoToolchainIsSelectableOnAnInventoryPlatform pins the one precondition
@@ -29,6 +30,7 @@ import (
 func TestHostGoToolchainIsSelectableOnAnInventoryPlatform(t *testing.T) {
 	t.Parallel()
 	requireNativeControlInventoryPlatform(t)
+	testtoolchain.LockHostGOROOT(t)
 	snapshot, err := godriver.Probe(context.Background(), godriver.ConfigFromEnvironment(t.TempDir()))
 	if err != nil {
 		t.Fatalf("the go-v1 boundary could not select the host Go installation: %v\n%s", err, hostToolchainFacts())

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -15,7 +14,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/relux-works/curator/internal/adapters"
 	"github.com/relux-works/curator/internal/buildcache"
@@ -92,24 +90,9 @@ func TestMain(m *testing.M) {
 		restoreGitEnv()
 		os.Exit(code)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
-	lock, err := testtoolchain.AcquireHostGOROOT(ctx, "cmd/curator TestMain")
-	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, "acquire package host GOROOT test lock:", err)
-		restorePath()
-		restoreGitEnv()
-		os.Exit(1)
-	}
 	code := m.Run()
 	restorePath()
 	restoreGitEnv()
-	if lock != nil {
-		if closeErr := lock.Close(); closeErr != nil {
-			_, _ = fmt.Fprintln(os.Stderr, "release package host GOROOT test lock:", closeErr)
-			code = 1
-		}
-	}
 	os.Exit(code)
 }
 
@@ -316,6 +299,7 @@ func compiledProject(t *testing.T) (string, string) {
 // consumer instead of the compiled provider itself.
 func compiledProjectDeclaring(t *testing.T, declarations string) (string, string) {
 	t.Helper()
+	testtoolchain.LockHostGOROOT(t)
 	root := t.TempDir()
 	home := filepath.Join(root, "home")
 	configPath := filepath.Join(home, "config.json")

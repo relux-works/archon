@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/relux-works/curator/internal/buildsource"
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // The opt-in witness drives the production frozen snapshot and worker with a
@@ -35,6 +36,7 @@ func TestColdRepositoryMeasurement(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer token.Close()
+	testtoolchain.LockHostGOROOT(t)
 	config := ConfigFromEnvironment(t.TempDir(), snapshot)
 	config.CuratorGo = filepath.Join(build.Default.GOROOT, "bin", platformGoName)
 	config.observePhase = func(phase string, elapsed time.Duration) { t.Logf("cold phase=%s elapsed=%s", phase, elapsed) }

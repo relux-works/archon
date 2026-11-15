@@ -967,6 +967,7 @@ func productionBinarySuffix() string {
 
 func TestProductionBinaryDispatchesRustOracleBeforeAmbientCargoDiscovery(t *testing.T) {
 	t.Parallel()
+	testtoolchain.LockHostGOROOT(t)
 	binary := filepath.Join(t.TempDir(), "curator"+productionBinarySuffix())
 	build := exec.Command(testtoolchain.Go(t), "build", "-o", binary, ".")
 	if output, err := build.CombinedOutput(); err != nil {

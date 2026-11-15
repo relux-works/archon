@@ -16,6 +16,7 @@ import (
 	"github.com/relux-works/curator/internal/install"
 	"github.com/relux-works/curator/internal/manifest"
 	"github.com/relux-works/curator/internal/marker"
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // globalPayload is the machine-readable document the machine-wide scope
@@ -78,6 +79,7 @@ func TestGlobalStatusRejectsSchema2SkillfileThroughCLI(t *testing.T) {
 // command, so the machine-wide scope activates a compiled command.
 func compiledGlobalScope(t *testing.T) string {
 	t.Helper()
+	testtoolchain.LockHostGOROOT(t)
 	home := globalScopeDeclaring(t, `{"name":"build-skill","tag":"v1"}`)
 	writeCompiledSkillRepo(t, filepath.Join(filepath.Dir(home), "skills", "build-skill"))
 	return home
@@ -599,6 +601,7 @@ func TestGlobalStatusReportsCompiledCurrentnessAndFailsCheck(t *testing.T) {
 func TestGlobalStatusReportsATransitivelyResolvedCompiledCommand(t *testing.T) {
 	t.Parallel()
 	requireNativeControlInventoryPlatform(t)
+	testtoolchain.LockHostGOROOT(t)
 	home := globalScopeDeclaring(t, `{"name":"consumer","tag":"v1"}`)
 	skillsRoot := filepath.Join(filepath.Dir(home), "skills")
 	writeCompiledSkillRepo(t, filepath.Join(skillsRoot, "build-skill"))

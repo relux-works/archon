@@ -85,8 +85,9 @@ func TestSignerRowsSurviveHostileGlobalGitConfig(t *testing.T) {
 	}
 	child := exec.Command(executable, "-test.v", "-test.count=1",
 		"-test.run", "^(TestSourceSignerVectorsAtProfileInstall|TestRevisionDoesNotBorrowTagSignature)$")
-	// The helper-process branch skips the package GOROOT lock this
-	// process already holds; it still runs TestMain's git isolation.
+	// These signer rows use fixture Git repositories and ssh-keygen only; they
+	// do not invoke or fingerprint the host Go toolchain, so the helper child
+	// needs no GOROOT lock. TestMain still applies Git isolation.
 	child.Env = append(env, cliHelperProcess+"=1")
 	output, err := child.CombinedOutput()
 	if err != nil {

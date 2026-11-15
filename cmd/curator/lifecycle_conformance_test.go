@@ -11,6 +11,7 @@ import (
 	"github.com/relux-works/curator/internal/conformancecoverage"
 	"github.com/relux-works/curator/internal/install"
 	"github.com/relux-works/curator/internal/manifest"
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // The published manager-lifecycle document is the only source of expected
@@ -296,6 +297,7 @@ func (fixture upgradeFixture) declareGlobal(t *testing.T, names ...string) {
 // a repository shared by two selected scopes is fetched exactly once.
 func TestAuthoritativeLifecycleUpgradeCasesAreExecutable(t *testing.T) {
 	t.Parallel()
+	testtoolchain.LockHostGOROOT(t)
 	document := authoritativeLifecycleDocument(t)
 	conformancecoverage.Run(t, "manager-lifecycle/upgrade-cases", document.UpgradeCases,
 		func(published authoritativeUpgradeCase) string { return published.Name },
