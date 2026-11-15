@@ -1458,11 +1458,20 @@ jobs:
           ref: b3ec7aa77ce3a2e0bfbf015aefe1f5ed6f5f5195
           path: .temp/sharing-baseline
           persist-credentials: false
+          # The nested checkout must not materialize unrelated long board paths.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/.task-board/
       - uses: actions/checkout@v4
         with:
           ref: db2e4139f91347e6d8d5e05492ed93d945296a02
           path: .temp/sharing-candidate
           persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/.task-board/
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
