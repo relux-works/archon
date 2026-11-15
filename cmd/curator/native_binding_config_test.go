@@ -134,8 +134,16 @@ func TestNativeHomeBindingKnobCommands(t *testing.T) {
 	if err != nil || !bytes.Equal(before, after) {
 		t.Fatalf("unknown knob changed sidecar: %v", err)
 	}
-	if code, stdout, stderr := runProfile(t, source, "env", "config", "show", "native_home"); code != exitOK || !strings.Contains(stdout, home) {
+	code, stdout, stderr := runProfile(t, source, "env", "config", "show", "native_home")
+	if code != exitOK {
 		t.Fatalf("knob map show=%d: %s %s", code, stdout, stderr)
+	}
+	// Compare the decoded binding: JSON escapes Windows path separators.
+	var shown struct {
+		Bindings map[string]string `json:"bindings"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &shown); err != nil || shown.Bindings["codex_cli"] != home {
+		t.Fatalf("knob map show binding = %q (decode %v), want %q: %s", shown.Bindings["codex_cli"], err, home, stdout)
 	}
 	if code, _, stderr := runProfile(t, source, "env", "config", "unset", "native_home.codex_cli"); code != exitOK {
 		t.Fatalf("unset=%d: %s", code, stderr)
