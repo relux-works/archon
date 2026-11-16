@@ -181,9 +181,9 @@ func purgeHomesWithBindings(home, profile string, bindings NativeHomeBindings) e
 			return purgeIncomplete("native adapter "+item.adapter+" marker", err)
 		}
 		if runtime.GOOS == "windows" {
-			// Windows refuses to delete a file held open without share-delete;
-			// its file IDs carry a reuse sequence, so the comparison above is
-			// strong without the held descriptor.
+			// Close first so the removal is not left delete-pending, keeping
+			// the name reserved until the handle closes. Windows file IDs carry
+			// a reuse sequence, so the comparison above stays strong.
 			_ = item.held.Close()
 		}
 		if err := item.root.Remove(envmarker.Name); err != nil && !errors.Is(err, os.ErrNotExist) {
@@ -371,7 +371,10 @@ func preflightNativeRemoveTree(root *os.Root, native, relative string) error {
 // refuses instead of deleting whatever now has that name. The admitted marker
 // stays open from admission until removal, so its inode remains allocated: a
 // replacement created after an unlink cannot reuse that inode number and pass
-// a device and inode comparison.
+// a device and inode comparison. On Windows the held handle shares delete,
+// so delete-and-recreate stays possible and is caught here by identity, while
+// a rename onto the held marker is refused by the OS for the whole purge; a
+// concurrent writer that replaces the marker by rename fails until purge ends.
 func nativeMarkerStillAdmitted(root *os.Root, admitted os.FileInfo, held *os.File) error {
 	if held == nil {
 		return errors.New("native marker is not held from admission")

@@ -567,8 +567,11 @@ func TestNativeHomeBindingPurgeRefusesMarkerSwappedAfterAdmission(t *testing.T) 
 	}
 	err = purgeHomesWithBindings(manager, "sample", bindings)
 	if runtime.GOOS == "windows" {
-		// Windows denies replacing a file that purge holds open, so the swap
-		// cannot happen at all; the purge then removes the admitted marker.
+		// Contract: while purge holds the admitted marker, Windows refuses a
+		// rename onto it (MoveFileEx REPLACE_EXISTING returns access denied),
+		// so the swap cannot happen; the purge then removes the admitted
+		// marker. Delete-and-recreate is still possible there, because the
+		// handle shares delete, and the identity check catches it.
 		if plantErr == nil || replacement != nil {
 			t.Fatalf("held marker was replaceable on Windows: applied=%v err=%v", replacement != nil, plantErr)
 		}
@@ -643,17 +646,6 @@ func TestNativeHomeBindingPurgeRefusesMarkerRecreatedAfterUnlink(t *testing.T) {
 		recreated, plantErr = os.Lstat(laterMarker)
 	}
 	err = purgeHomesWithBindings(manager, "sample", bindings)
-	if runtime.GOOS == "windows" {
-		// Windows denies deleting a file that purge holds open, so the
-		// marker cannot be unlinked and recreated; the purge then succeeds.
-		if plantErr == nil || recreated != nil {
-			t.Fatalf("held marker was deletable on Windows: applied=%v err=%v", recreated != nil, plantErr)
-		}
-		if err != nil {
-			t.Fatalf("purge after a denied unlink = %v; want success", err)
-		}
-		return
-	}
 	if plantErr != nil || recreated == nil {
 		t.Fatalf("unlink and recreate fixture applied=%v, err=%v", recreated != nil, plantErr)
 	}
