@@ -259,11 +259,19 @@ func useLocked(op *operation, home, name, environment, target string, clearScope
 			return nil, err
 		}
 	}
+	lock, _, err := readLock(home, effective)
+	if err != nil {
+		return nil, err
+	}
+	// Environments §10.1/§12.1: a switch materializes the lock, so the lock
+	// must agree with the effective overlay declarations of the profile it
+	// is about to materialize. The refusal precedes the identity migration
+	// and every surface write; profile use, install --use, import --use,
+	// and the update resync all reach this one seam.
+	if err := checkCompositionLock(effective, lock, policy); err != nil {
+		return nil, err
+	}
 	if hashing.WriteVersion() == hashing.VersionV2 {
-		lock, _, err := readLock(home, effective)
-		if err != nil {
-			return nil, err
-		}
 		if lock.ContentHashVersion() == hashing.VersionV1 {
 			req := &ResolveRequest{Home: home, Profile: effective, Machine: envregistry.DefaultMachineConfig(), Policy: policy}
 			migration, err := prepareIdentityMigration(op, req, []string{effective}, nil)

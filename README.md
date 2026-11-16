@@ -269,6 +269,16 @@ no profile is current. Pass `--use` or run `profile use <name>` to activate
 it. Missing runtimes during registration are warnings; explicit activation
 checks the required runtimes before writing.
 
+`profile compose <profile> add|remove` on an installed profile rebuilds that
+profile's lock from the complete resulting overlay declarations under the
+profile operation lock, then writes the declaration; before a profile has a
+lock only the declaration changes. The hardened `source_allowlist_empty`
+refusal applies to the lock rebuild, which resolves sources, and not to a
+declaration-only edit. `env resolve` and `profile use` compare the
+effective declarations with the lock and refuse a disagreement with
+`composition_lock_mismatch`, naming the missing or extra overlay members;
+rerunning `profile compose` or `profile update` converges the two.
+
 Source signer status includes signature `verification` (`verified`, `failed` or
 `unavailable`). An enforced failure retains `current=false`; unavailable verification
 prints `unknown` and a verification hint; `env status --check` fails on failed or

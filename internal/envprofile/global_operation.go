@@ -626,8 +626,11 @@ func retainInstallActivationSurfaces(undo *globalUndo, home string) {
 			delete(undo.postimages, path)
 		}
 	}
+	// ProfilesDir is deliberately not kept: the registration and lock live
+	// below it and must survive the rollback, so an absent-parent record for
+	// it could never be allowed to remove them.
 	keepParent := func(path string) bool {
-		if path == ProfilesDir(home) || path == ScopedDir(home) {
+		if path == ScopedDir(home) {
 			return true
 		}
 		for root := range undo.nativeRoots {

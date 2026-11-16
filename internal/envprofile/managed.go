@@ -2904,6 +2904,13 @@ func resolveVerified(req ResolveRequest, verify func(*ResolveRequest, envregistr
 	if lock.SchemaVersion == contextlock.SchemaVersion5 {
 		return nil, RefuseSkillPlanAdoption()
 	}
+	// Environments §10.1: the effective overlay declarations must agree with
+	// the lock before any fragment is emitted or any home is repaired. The
+	// stale lock is never treated as success and no overlay is re-resolved
+	// here; only profile compose or profile update converges the two.
+	if err := checkCompositionLock(profile, lock, policy); err != nil {
+		return nil, err
+	}
 	// Admit the marker authority before store repair, identity migration or
 	// native-state inspection can enter a mutation/recovery path.
 	if err := req.validateActivationCredentialSource(); err != nil {

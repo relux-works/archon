@@ -43,14 +43,15 @@ permissions:
   contents: read
 
 env:
-  # The one immutable committed conformance-root pin, referenced by every
-  # default and comparison job. This is curator-spec commit
-  # curator-spec v1.0.0-rc.14 peeled tag commit 43bf0a2506d5c354a73bbc3ea4623d4653db10c7; its conformance/v1
-  # manifest digest is sha256:6f832d813efc768ea154a7d5076b512ab4be6aa9409d92e11469d21ea9bc69f5.
+  # The one committed conformance-root pin, referenced by every default and
+  # comparison job. This is the curator-spec commit that carries the explicit
+  # install-activation and composition/lock contract (curator-spec PR #225,
+  # on v1.0.0-rc.14 ancestry); it moved off the rc.14 peeled tag commit
+  # 43bf0a2506d5c354a73bbc3ea4623d4653db10c7 together with curator PR #254.
   # The pin is not a release qualification or a conformance claim. Candidate
   # suites enter through the non-default `candidate-conformance` job only.
   # The root serves the whole module; suite-plan.sh defers nothing against it.
-  SPEC_PIN: 43bf0a2506d5c354a73bbc3ea4623d4653db10c7
+  SPEC_PIN: e9933859ac389f1e1f1efb7c5db5b43d981080fe
   # actions/setup-go only began forcing GOTOOLCHAIN=local in v6.0.0; this
   # workflow pins @v5, so without these two lines a job may download a
   # toolchain or read a per-user go env file. The identity step below reads

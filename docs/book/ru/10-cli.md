@@ -151,11 +151,20 @@ curator env status --check --json
 curator env resolve codex --profile review --format json
 ```
 
-`profile install` without `--use` registers the profile and writes its lock
-without changing the current profile or adapter homes, even when no profile
-is current. Pass `--use` or run `curator profile use review` to activate it.
-Missing runtimes during registration are warnings; explicit activation checks
-the required runtimes before writing.
+Install без `--use` только регистрирует профиль: разрешает closure, проводит
+audit и пишет lock, но не меняет current profile и не трогает adapter homes,
+даже если current profile ещё не выбран. Активация происходит только через
+`--use` или `curator profile use review`. Отсутствующий runtime при такой
+регистрации даёт warning; явная активация проверяет нужные runtimes до
+первой записи. ⟦работает сегодня⟧
+
+`profile compose review add|remove` на установленном профиле пересобирает его
+lock из полного набора overlay-деклараций, затем пишет саму декларацию.
+Hardened-отказ `source_allowlist_empty` относится к пересборке lock, которая
+резолвит источники, а не к правке одной декларации у профиля без lock. Если
+декларации и lock расходятся (например, после обрыва между двумя записями),
+`env resolve` и `profile use` отказывают с `composition_lock_mismatch`, а
+повтор `profile compose` или `profile update` сходится. ⟦работает сегодня⟧
 
 Repair создаёт или восстанавливает managed home в пределах lock, затем
 status и resolve проверяют результат. Отдельный `env resolve` с

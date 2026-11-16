@@ -176,6 +176,10 @@ func TestInstallWithoutUseLeavesHomesAndCurrentUntouched(t *testing.T) {
 					t.Fatalf("missing runtime warning does not name scoped adapter %s: %v", id, info.Warnings)
 				}
 			}
+			// beta is current nowhere, so no stale-home warning belongs here.
+			if strings.Contains(strings.Join(info.Warnings, "\n"), DiagHomeStale) {
+				t.Fatalf("registration of a non-current profile warned about stale homes: %v", info.Warnings)
+			}
 			if _, err := readSource(home, "beta"); err != nil {
 				t.Fatalf("registration missing after no-use install: %v", err)
 			}
@@ -187,7 +191,9 @@ func TestInstallWithoutUseLeavesHomesAndCurrentUntouched(t *testing.T) {
 }
 
 // This proves an explicit path reinstall can refresh its lock without
-// resynchronizing the profile's current adapter homes.
+// resynchronizing the profile's current adapter homes, and that it then warns
+// with environment_home_stale that the current homes lag the new lock; a
+// reinstall that leaves the lock unchanged warns nothing (negative control).
 func TestInstallReinstallWithoutUseLeavesCurrentHomesUntouched(t *testing.T) {
 	home := gitFixtureHome(t)
 	homes := pinHomes(t)
@@ -222,6 +228,20 @@ func TestInstallReinstallWithoutUseLeavesCurrentHomesUntouched(t *testing.T) {
 	}
 	if got := snapshotActivationTree(t, ScopedDir(home)); !reflect.DeepEqual(got, beforeScoped) {
 		t.Fatal("reinstall without --use changed scoped current markers")
+	}
+	stale := strings.Join(info.Warnings, "\n")
+	if !strings.Contains(stale, DiagHomeStale) || !strings.Contains(stale, "alpha") || !strings.Contains(stale, "profile use alpha") {
+		t.Fatalf("moved lock of the current profile did not warn that its homes are stale: %v", info.Warnings)
+	}
+	again, _, updated, err := Install(home, InstallOptions{Operand: source})
+	if err != nil || !updated {
+		t.Fatalf("unchanged reinstall updated=%t, err=%v", updated, err)
+	}
+	if again.LockHash != info.LockHash {
+		t.Fatal("unchanged source moved the lock")
+	}
+	if strings.Contains(strings.Join(again.Warnings, "\n"), DiagHomeStale) {
+		t.Fatalf("unchanged lock must not warn about stale homes: %v", again.Warnings)
 	}
 }
 
@@ -318,6 +338,10 @@ func TestUseRuntimePreflightIsScopedAndReadOnlyOnRefusal(t *testing.T) {
 
 // This proves a later adapter failure rolls back already-written homes and
 // current markers while keeping the new install record and lock available.
+// The positive control is the per-adapter result set: claude_code (ordered
+// before the broken codex home), opencode, and pi report OK, so homes were
+// written in this attempt and the byte-equal homes below are a rollback, not
+// a mutant that writes nothing once any adapter is broken.
 func TestInstallUseFailureRollsBackHomesButKeepsRegistrationAndLock(t *testing.T) {
 	home := gitFixtureHome(t)
 	homes := pinHomes(t)
@@ -344,6 +368,18 @@ func TestInstallUseFailureRollsBackHomesButKeepsRegistrationAndLock(t *testing.T
 	if activated || info.Name != "beta" {
 		t.Fatalf("failed activation result name=%q activated=%t", info.Name, activated)
 	}
+	written := map[string]bool{}
+	for _, result := range info.Activation {
+		written[result.Adapter] = result.OK
+	}
+	for _, id := range []string{"claude_code", "opencode", "pi"} {
+		if !written[id] {
+			t.Fatalf("positive control: adapter %s was not written before the failure was surfaced: %+v", id, info.Activation)
+		}
+	}
+	if ok, attempted := written["codex_cli"]; !attempted || ok {
+		t.Fatalf("codex_cli must fail on its regular-file home: %+v", info.Activation)
+	}
 	afterHomes := snapshotActivationHomes(t, homes)
 	for id, before := range beforeHomes {
 		if differences := activationTreeStateDifferences(before, afterHomes[id]); len(differences) != 0 {
@@ -363,6 +399,69 @@ func TestInstallUseFailureRollsBackHomesButKeepsRegistrationAndLock(t *testing.T
 		t.Fatalf("registration did not survive activation failure: %v", err)
 	}
 	if _, _, err := readLock(home, "beta"); err != nil {
+		t.Fatalf("lock did not survive activation failure: %v", err)
+	}
+}
+
+// This proves a first install --use on a clean machine, whose adapter homes
+// did not exist before, rolls a late adapter failure back to absent homes:
+// claude_code, codex_cli, and opencode were written (their OK rows are the
+// positive control), the directories the attempt created are gone afterwards,
+// no current marker appears, and the registration and lock remain. The
+// regular-file blocker standing in for the pi home is left as it was.
+func TestInstallUseFailureOnCleanMachineRemovesCreatedHomes(t *testing.T) {
+	home := gitFixtureHome(t)
+	homes := pinHomes(t)
+	for id, dir := range homes {
+		if _, err := os.Lstat(dir); !os.IsNotExist(err) {
+			t.Fatalf("fixture home %s exists before the install: %v", id, err)
+		}
+	}
+	blocker := filepath.Join(t.TempDir(), "pi-home-is-a-file")
+	if err := os.WriteFile(blocker, []byte("fixture blocker"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PI_CODING_AGENT_DIR", blocker)
+	blockerBefore := snapshotActivationTree(t, blocker)
+	source := t.TempDir()
+	writePackage(t, source, "alpha", "1.0.0", "alpha\n")
+	info, activated, _, err := Install(home, InstallOptions{Operand: source, Use: true})
+	if err == nil || !strings.Contains(err.Error(), DiagUsePartial) {
+		t.Fatalf("install --use error = %v, want a surfaced activation failure", err)
+	}
+	if activated || info.Name != "alpha" {
+		t.Fatalf("failed activation result name=%q activated=%t", info.Name, activated)
+	}
+	written := map[string]bool{}
+	for _, result := range info.Activation {
+		written[result.Adapter] = result.OK
+	}
+	for _, id := range []string{"claude_code", "codex_cli", "opencode"} {
+		if !written[id] {
+			t.Fatalf("positive control: adapter %s was not written before pi failed: %+v", id, info.Activation)
+		}
+	}
+	if ok, attempted := written["pi"]; !attempted || ok {
+		t.Fatalf("pi must fail on its regular-file home: %+v", info.Activation)
+	}
+	for _, id := range []string{"claude_code", "codex_cli", "opencode"} {
+		if _, err := os.Lstat(homes[id]); !os.IsNotExist(err) {
+			t.Fatalf("rollback left the created %s home in place: %v", id, err)
+		}
+	}
+	if differences := activationTreeStateDifferences(blockerBefore, snapshotActivationTree(t, blocker)); len(differences) != 0 {
+		t.Fatalf("rollback changed the pi blocker: %v", differences)
+	}
+	if current, err := Current(home); err != nil || current != "" {
+		t.Fatalf("current after failed first activation = %q, %v; want none", current, err)
+	}
+	if got := snapshotActivationTree(t, ScopedDir(home)); got != nil {
+		t.Fatalf("failed first activation wrote scoped current markers: %v", got)
+	}
+	if _, err := readSource(home, "alpha"); err != nil {
+		t.Fatalf("registration did not survive activation failure: %v", err)
+	}
+	if _, _, err := readLock(home, "alpha"); err != nil {
 		t.Fatalf("lock did not survive activation failure: %v", err)
 	}
 }

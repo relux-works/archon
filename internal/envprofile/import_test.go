@@ -349,22 +349,39 @@ func TestImportInvalidUTF8IsLoss(t *testing.T) {
 // TestImportPartialActivationKeepsLock drives Import --use on a fresh
 // machine whose native home already carries the detected file: the ordinary
 // path pipeline keeps its registration and lock, while activation preserves
-// native homes and current markers when it stops on the unmanaged file.
+// the homes the run actually uses — the detected claude home (refused by the
+// unmanaged conflict) and the absent codex, opencode, and pi homes that the
+// attempt created and the rollback removed again — and the current markers.
+// The OK rows of codex_cli, opencode, and pi are the positive control that
+// those homes were written before the rollback.
 func TestImportPartialActivationKeepsLock(t *testing.T) {
 	home := gitFixtureHome(t)
 	pinHomes(t)
 	seams := pinImportSeams(t)
 	writeNativeFile(t, seams.native["claude_code"], "CLAUDE.md", "hello\n")
-	beforeHomes := snapshotActivationHomes(t, seams.native)
-	beforeCurrent := snapshotActivationTree(t, CurrentFile(home))
-	beforeScoped := snapshotActivationTree(t, ScopedDir(home))
 	t.Setenv("CLAUDE_CONFIG_DIR", seams.native["claude_code"])
 	t.Setenv("CODEX_HOME", filepath.Join(t.TempDir(), "codex"))
 	t.Setenv("PI_CODING_AGENT_DIR", filepath.Join(t.TempDir(), "pi"))
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(t.TempDir(), "xdg"))
+	// Snapshot the homes the activation resolves through the variables set
+	// above, after they are set: these are the homes the run writes to.
+	activationHomes := map[string]string{
+		"claude_code": os.Getenv("CLAUDE_CONFIG_DIR"),
+		"codex_cli":   os.Getenv("CODEX_HOME"),
+		"opencode":    filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "opencode"),
+		"pi":          os.Getenv("PI_CODING_AGENT_DIR"),
+	}
+	beforeHomes := snapshotActivationHomes(t, activationHomes)
+	for _, id := range []string{"codex_cli", "opencode", "pi"} {
+		if beforeHomes[id] != nil {
+			t.Fatalf("fixture home %s exists before the import", id)
+		}
+	}
+	beforeCurrent := snapshotActivationTree(t, CurrentFile(home))
+	beforeScoped := snapshotActivationTree(t, ScopedDir(home))
 	options := seams.options(Policy{})
 	options.Use = true
-	_, activated, _, err := Import(home, options)
+	info, activated, _, err := Import(home, options)
 	// The activation stops per entry with the unmanaged conflict and
 	// the switch reports the ordinary partial diagnostic.
 	if err == nil || !strings.Contains(err.Error(), DiagUsePartial) {
@@ -373,14 +390,32 @@ func TestImportPartialActivationKeepsLock(t *testing.T) {
 	if activated {
 		t.Fatal("a conflicted activation must not report activated")
 	}
+	written := map[string]bool{}
+	for _, result := range info.Activation {
+		written[result.Adapter] = result.OK
+	}
+	if ok, attempted := written["claude_code"]; !attempted || ok {
+		t.Fatalf("claude_code must stop on the unmanaged file: %+v", info.Activation)
+	}
+	for _, id := range []string{"codex_cli", "opencode", "pi"} {
+		if !written[id] {
+			t.Fatalf("positive control: adapter %s was not written before the rollback: %+v", id, info.Activation)
+		}
+	}
 	if _, err := readSource(home, "imported"); err != nil {
 		t.Fatalf("registration did not survive conflicted activation: %v", err)
 	}
 	if _, _, err := readLock(home, "imported"); err != nil {
 		t.Fatalf("lock did not survive conflicted activation: %v", err)
 	}
-	if got := snapshotActivationHomes(t, seams.native); !reflect.DeepEqual(got, beforeHomes) {
-		t.Fatal("conflicted activation changed a detected native home")
+	afterHomes := snapshotActivationHomes(t, activationHomes)
+	if differences := activationTreeStateDifferences(beforeHomes["claude_code"], afterHomes["claude_code"]); len(differences) != 0 {
+		t.Fatalf("conflicted activation changed the detected native home: %v", differences)
+	}
+	for _, id := range []string{"codex_cli", "opencode", "pi"} {
+		if afterHomes[id] != nil {
+			t.Fatalf("rollback left the created %s home in place: %v", id, afterHomes[id])
+		}
 	}
 	if got := snapshotActivationTree(t, CurrentFile(home)); !reflect.DeepEqual(got, beforeCurrent) {
 		t.Fatal("conflicted activation changed machine current")

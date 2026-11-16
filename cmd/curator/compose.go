@@ -2,17 +2,22 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"slices"
 	"sort"
 	"strconv"
 
 	"github.com/relux-works/curator/internal/config"
+	"github.com/relux-works/curator/internal/envprofile"
 	"github.com/relux-works/curator/internal/identity"
 )
 
 // cmdProfileCompose implements `profile compose <profile> add|remove|list`
-// (cli/curator.md): it edits the machine overlays.<profile> list of
-// manager-config schema 2. The lock moves only on profile update.
+// (cli/curator.md, environments §12.1): add and remove edit the machine
+// overlays.<profile> list of manager-config schema 2 and, for an installed
+// profile with a lock, rebuild that lock from the complete resulting
+// composition under the same held profile operation before the declaration
+// is written. Before a profile has a lock only the declaration changes.
 func (c cli) cmdProfileCompose(cfg *config.Config, args []string) int {
 	if len(args) < 2 {
 		_, _ = fmt.Fprintln(c.stderr, "curator: profile compose <profile> add|remove|list [<source> [--range|--tag|--revision <ref>]] [--weight <n>]")
@@ -92,7 +97,7 @@ func (c cli) cmdComposeAdd(cfg *config.Config, profile string, args []string) in
 			_, _ = fmt.Fprintln(c.stderr, "curator: --weight must be a non-negative integer")
 			return exitUsage
 		}
-		entry["weight"] = parsed
+		entry["weight"] = float64(parsed)
 	}
 	object, err := config.ReadRaw(cfg.Path)
 	if err != nil {
@@ -113,23 +118,29 @@ func (c cli) cmdComposeAdd(cfg *config.Config, profile string, args []string) in
 	if raw, present := overlays[profile]; present {
 		list, _ = raw.([]any)
 	}
-	overlays[profile] = append(list, entry)
+	// Rerunning the same add after a crash between the lock and declaration
+	// writes must converge (environments §12.1), so an identical declaration
+	// is not appended twice: the lock is still rebuilt from the list as is.
+	if !containsOverlayEntry(list, entry) {
+		list = append(list, entry)
+	}
+	overlays[profile] = list
 	if schema, _ := object["schema_version"].(float64); schema == float64(config.SchemaVersion) {
 		object["schema_version"] = float64(config.SchemaVersion2)
 	}
-	if _, err := config.WriteRaw(cfg.Path, object); err != nil {
-		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
-		return exitFail
+	return c.composePublish(cfg, profile, object, "added overlay "+source+" to profile "+profile)
+}
+
+// containsOverlayEntry reports whether list already carries a declaration
+// equal to entry in every field (source, form, directory, weight).
+func containsOverlayEntry(list []any, entry map[string]any) bool {
+	for _, item := range list {
+		existing, _ := item.(map[string]any)
+		if existing != nil && reflect.DeepEqual(existing, entry) {
+			return true
+		}
 	}
-	// A locked overlays_allowed:false empties every overlay list at
-	// resolution with the manager §1 warning, so a declaration added here
-	// is inert until the policy changes. The list row already warns; the
-	// write row must not stay silent about the same fact.
-	if !cfg.Env.OverlaysAllowed {
-		_, _ = fmt.Fprintln(c.stderr, "warning: overlays_allowed is false: the added declaration is inert; resolution joins the root alone")
-	}
-	_, _ = fmt.Fprintf(c.stdout, "added overlay %s to profile %s; the lock moves on profile update\n", source, profile)
-	return exitOK
+	return false
 }
 
 func (c cli) cmdComposeRemove(cfg *config.Config, profile string, args []string) int {
@@ -170,11 +181,56 @@ func (c cli) cmdComposeRemove(cfg *config.Config, profile string, args []string)
 	}
 	overlays, _ := env["overlays"].(map[string]any)
 	overlays[profile] = kept
-	if _, err := config.WriteRaw(cfg.Path, object); err != nil {
+	return c.composePublish(cfg, profile, object, "removed overlay "+source+" from profile "+profile)
+}
+
+// composePublish validates the complete resulting declaration, rebuilds the
+// installed profile's lock from it, and writes the declaration — in that
+// order, under one held profile operation (environments §12.1). Nothing is
+// written when the resulting composition fails to validate, resolve, or
+// audit. An uninstalled profile, or one without a lock, gets only the
+// declaration; its first install resolves the overlays jointly.
+func (c cli) composePublish(cfg *config.Config, profile string, object map[string]any, summary string) int {
+	candidate, err := config.Parse(object, cfg.Path)
+	if err != nil {
 		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
 		return exitFail
 	}
-	_, _ = fmt.Fprintf(c.stdout, "removed overlay %s from profile %s; the lock moves on profile update\n", source, profile)
+	policy := envprofile.PolicyFromConfig(cfg)
+	resulting := envprofile.PolicyFromConfig(candidate).Overlays[profile]
+	overlays := make(map[string][]envprofile.OverlaySpec, len(policy.Overlays)+1)
+	for name, specs := range policy.Overlays {
+		overlays[name] = specs
+	}
+	overlays[profile] = resulting
+	policy.Overlays = overlays
+	result, err := envprofile.Compose(cfg.Home(), profile, envprofile.ComposeOptions{
+		Policy: policy, SurfacingSink: c.stdout, WarningSink: c.stderr,
+		PublishDeclaration: func() error {
+			_, err := config.WriteRaw(cfg.Path, object)
+			return err
+		},
+	})
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	// A locked overlays_allowed:false empties every overlay list at
+	// resolution with the manager §1 warning, so a declaration written here
+	// is inert until the policy changes; the lock is rebuilt root-only. The
+	// list row already warns; the write row must not stay silent about the
+	// same fact.
+	if !cfg.Env.OverlaysAllowed {
+		_, _ = fmt.Fprintln(c.stderr, "warning: overlays_allowed is false: the declaration is inert; resolution joins the root alone")
+	}
+	switch {
+	case !result.LockRebuilt:
+		_, _ = fmt.Fprintf(c.stdout, "%s; the profile has no lock, so only the declaration changed; the first install resolves the overlays jointly\n", summary)
+	case result.LockMoved:
+		_, _ = fmt.Fprintf(c.stdout, "%s; lock %s\n", summary, result.Info.LockHash)
+	default:
+		_, _ = fmt.Fprintf(c.stdout, "%s; lock unchanged (%s)\n", summary, result.Info.LockHash)
+	}
 	return exitOK
 }
 

@@ -866,7 +866,7 @@ func installLocked(op *operation, home string, options InstallOptions) (Info, bo
 			if isPath {
 				return reinstallPathLocked(op, home, name, source, input, options)
 			}
-			info, _, err := updateLocked(op, home, name, options.Policy, options.SurfacingSink, options.WarningSink, options.ConfirmSystemDelta, nil, nil, manager.fetchRaw, false)
+			info, moved, err := updateLocked(op, home, name, options.Policy, options.SurfacingSink, options.WarningSink, options.ConfirmSystemDelta, nil, nil, manager.fetchRaw, false)
 			if err != nil {
 				return Info{}, false, false, err
 			}
@@ -874,6 +874,7 @@ func installLocked(op *operation, home string, options InstallOptions) (Info, bo
 				return activateReinstall(op, home, name, info.Source, info.Lock, info.LockHash, info.Warnings, info.Surfacing, options.Policy)
 			}
 			info = withNoUseRuntimeWarnings(home, info, options.WarningSink)
+			info = withStaleCurrentWarning(home, name, moved, info, options.WarningSink)
 			return info, false, true, nil
 		}
 		return Info{}, false, false, fmt.Errorf("%s: profile %q is already installed", DiagNameTaken, name)
@@ -962,7 +963,7 @@ func installLocked(op *operation, home string, options InstallOptions) (Info, bo
 		info.Current = machine == name
 		return info, false, false, switchErr
 	}
-	rollback(nil)
+	_ = rollback(nil) // success: drop the undo journal; a nil cause always returns nil
 	info.Current = true
 	return info, true, false, nil
 }
@@ -1111,7 +1112,27 @@ func reinstallPathLocked(op *operation, home, name string, source Source, input 
 	}
 	info := Info{Name: name, Source: source, Lock: result.Lock, LockHash: hash, Current: machine == name, Warnings: warnings, Delta: deltaLines, Surfacing: surfacing}
 	info = withNoUseRuntimeWarnings(home, info, options.WarningSink)
+	info = withStaleCurrentWarning(home, name, true, info, options.WarningSink)
 	return info, false, true, nil
+}
+
+// withStaleCurrentWarning warns when a registration-only reinstall moved the
+// lock of a profile that is current in some scope: the install row without
+// --use deliberately re-materializes no adapter home (cli/curator.md), so the
+// live homes lag the new lock until an explicit profile use or profile sync.
+// An unmoved lock or a profile current nowhere warns nothing.
+func withStaleCurrentWarning(home, name string, moved bool, info Info, sink io.Writer) Info {
+	if !moved {
+		return info
+	}
+	inUse, err := InUseByAnyScope(home, name)
+	if err != nil || !inUse {
+		return info
+	}
+	warning := fmt.Sprintf("%s: profile %s is current and its adapter homes were not re-materialized by this reinstall; run 'curator profile use %s' or 'curator profile sync'", DiagHomeStale, name, name)
+	info.Warnings = append(info.Warnings, warning)
+	writeUpdateWarnings(sink, "", []string{warning})
+	return info
 }
 
 // activateReinstall runs only the install row's machine-scope activation
@@ -1133,7 +1154,7 @@ func activateReinstall(op *operation, home, name string, source Source, lock *co
 		info.Current = machine == name
 		return info, false, true, switchErr
 	}
-	rollback(nil)
+	_ = rollback(nil) // success: drop the undo journal; a nil cause always returns nil
 	info.Current = true
 	return info, true, true, nil
 }
