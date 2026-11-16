@@ -31,7 +31,7 @@ func pinOperatorHome(t *testing.T) {
 func TestProfileImportRow(t *testing.T) {
 	source, _ := profileHome(t)
 	pinOperatorHome(t)
-	if code, stdout, stderr := runProfile(t, source, "profile", "import"); code != exitOK {
+	if code, stdout, stderr := runProfile(t, source, "profile", "import", "--use"); code != exitOK {
 		t.Fatalf("import = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
 	} else if !strings.Contains(stdout, "installed and activated profile imported") {
 		t.Fatalf("stdout:\n%s\nstderr:\n%s", stdout, stderr)
@@ -431,7 +431,7 @@ func TestProfileInstallReinstallHonoursUseAndTakeover(t *testing.T) {
 		pinOperatorHome(t)
 		src := t.TempDir()
 		writeContextPackage(t, src, "tk", "1.0.0", "original\n")
-		if code, _, stderr := runProfile(t, source, "profile", "install", src, "--as", "tk"); code != exitOK {
+		if code, _, stderr := runProfile(t, source, "profile", "install", src, "--as", "tk", "--use"); code != exitOK {
 			t.Fatalf("install = %d\nstderr:\n%s", code, stderr)
 		}
 		if got := currentOf(t, source); got != "tk" {

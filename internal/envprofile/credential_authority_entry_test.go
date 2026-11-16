@@ -23,6 +23,7 @@ import (
 // Snapshots have the
 // byte/type/link-target limits stated in credential_source_repair_test.go.
 func TestCredentialAuthorityEntryPoints(t *testing.T) {
+	setActivationRuntimes(t, allActivationRuntimes()...)
 	type invocation struct {
 		err       error
 		callbacks int

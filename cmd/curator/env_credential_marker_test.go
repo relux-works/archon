@@ -20,6 +20,7 @@ func installCLIEnvProfile(t *testing.T, source stubConfigSource) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("profile install = %d\nstderr:\n%s", code, stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 }
 
 func cliEnvMarker(t *testing.T, source stubConfigSource, env string) (string, []byte, *envmarker.Marker) {
@@ -83,6 +84,7 @@ func TestEnvResolveCredentialRecordPathlessKeyring(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("profile install = %d\nstderr:\n%s", code, stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	if code, _, stderr := runProfile(t, source, "env", "resolve", "codex_cli", "--repair"); code != exitOK {
 		t.Fatalf("resolve --repair = %d\nstderr:\n%s", code, stderr)
 	}

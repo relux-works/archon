@@ -263,6 +263,12 @@ profiles through an explicit mutating operation such as `profile use default`
 (updates retain the existing builtin). Removing `default` refuses with
 `builtin_profile_remove_forbidden` before any mutation.
 
+`profile install` without `--use` registers and audits the profile and writes
+its lock without changing the current profile or any adapter home, even when
+no profile is current. Pass `--use` or run `profile use <name>` to activate
+it. Missing runtimes during registration are warnings; explicit activation
+checks the required runtimes before writing.
+
 Source signer status includes signature `verification` (`verified`, `failed` or
 `unavailable`). An enforced failure retains `current=false`; unavailable verification
 prints `unknown` and a verification hint; `env status --check` fails on failed or

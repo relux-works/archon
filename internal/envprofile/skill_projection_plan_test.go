@@ -168,6 +168,7 @@ func TestSkillPlanPreparationPublication(t *testing.T) {
 				if readErr != nil || loaded.SchemaVersion != 5 {
 					t.Fatalf("inspect v5: %v", readErr)
 				}
+				setActivationRuntimes(t, allActivationRuntimes()...)
 				if _, useErr := UseWithPolicy(f.home, "profile", "", "", false, Policy{}); useErr == nil || !strings.Contains(useErr.Error(), "profile_skill_companion_required") {
 					t.Fatalf("adoption refusal: %v", useErr)
 				}

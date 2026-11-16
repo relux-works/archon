@@ -518,9 +518,10 @@ func runSecurityPostureVectorOperation(t *testing.T, source stubConfigSource, tc
 	}
 }
 
-// Install an MCP-bearing profile through the production CLI under explicit
-// permissive policy, then restore the vector's B configuration. This models
-// an existing profile encountering hardened contradictions after the flip.
+// Install and explicitly activate an MCP-bearing profile through the
+// production CLI under permissive policy, then restore the vector's B
+// configuration. This models an existing profile encountering hardened
+// contradictions after the flip.
 func preparePostureStatusMCPProfile(t *testing.T, source stubConfigSource) {
 	t.Helper()
 	original, err := os.ReadFile(source.path)
@@ -549,6 +550,9 @@ func preparePostureStatusMCPProfile(t *testing.T, source stubConfigSource) {
 	code, stdout, stderr := runProfile(t, setupSource, "profile", "install", pkg)
 	if code != exitOK {
 		t.Fatalf("seed MCP profile = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+	}
+	if code, stdout, stderr = runProfile(t, setupSource, "profile", "use", "posture-root"); code != exitOK {
+		t.Fatalf("activate MCP profile = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
 	}
 }
 

@@ -28,6 +28,7 @@ type nativeGlobalFixture struct {
 
 func newNativeGlobalFixture(t *testing.T) nativeGlobalFixture {
 	t.Helper()
+	pinProfileAdapterRuntimes(t, allProfileAdapterRuntimes()...)
 	home := testgitenv.ShortTempDir(t)
 	t.Setenv("HOME", home)
 	t.Setenv("USERPROFILE", home)

@@ -18,6 +18,7 @@ import (
 
 func profileHome(t *testing.T) (stubConfigSource, string) {
 	t.Helper()
+	pinProfileAdapterRuntimes(t, allProfileAdapterRuntimes()...)
 	home := testgitenv.ShortTempDir(t)
 	source := stubConfigSource{
 		path: filepath.Join(home, "config.json"),
@@ -121,14 +122,14 @@ func TestGitFileURLHasNoBackslash(t *testing.T) {
 	}
 }
 
-// TestProfileInstallListUse drives install, list, and use through run():
-// install activates the first profile, list reports it, and use writes the
-// linked homes with markers.
+// TestProfileInstallListUse drives explicit install, list, and use through
+// run(): the first install activates, list reports it, and use writes linked
+// homes with markers.
 func TestProfileInstallListUse(t *testing.T) {
 	source, _ := profileHome(t)
 	pkg := t.TempDir()
 	writeContextPackage(t, pkg, "acme", "1.0.0", "hello\n")
-	if code, stdout, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
+	if code, stdout, stderr := runProfile(t, source, "profile", "install", pkg, "--use"); code != exitOK {
 		t.Fatalf("install = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
 	} else if !strings.Contains(stdout, "installed and activated profile acme") {
 		t.Fatalf("stdout:\n%s", stdout)
@@ -278,7 +279,7 @@ func TestProfileRemoveInUseIsAFailure(t *testing.T) {
 	source, _ := profileHome(t)
 	pkg := t.TempDir()
 	writeContextPackage(t, pkg, "acme", "1.0.0", "hello\n")
-	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
+	if code, _, stderr := runProfile(t, source, "profile", "install", pkg, "--use"); code != exitOK {
 		t.Fatalf("install stderr:\n%s", stderr)
 	}
 	code, _, stderr := runProfile(t, source, "profile", "remove", "acme")
@@ -442,7 +443,7 @@ func TestProfileScopedUseAndClear(t *testing.T) {
 	first, second := t.TempDir(), t.TempDir()
 	writeContextPackage(t, first, "one", "1.0.0", "one\n")
 	writeContextPackage(t, second, "two", "1.0.0", "two\n")
-	if code, _, stderr := runProfile(t, source, "profile", "install", first); code != exitOK {
+	if code, _, stderr := runProfile(t, source, "profile", "install", first, "--use"); code != exitOK {
 		t.Fatalf("install stderr:\n%s", stderr)
 	}
 	if code, _, stderr := runProfile(t, source, "profile", "install", second); code != exitOK {
@@ -667,6 +668,7 @@ func TestProfileInstallFileOperandIsRefused(t *testing.T) {
 // the use or sync call sites (M-D) admits the migration there and must fail
 // the corresponding subtest.
 func TestProfileListMigrationHonoursSystemPolicy(t *testing.T) {
+	pinProfileAdapterRuntimes(t, allProfileAdapterRuntimes()...)
 	for _, command := range [][]string{
 		{"profile", "use", "default"},
 		{"profile", "sync"},
@@ -718,7 +720,7 @@ func TestProfileInstallUseActivatesThroughSwitch(t *testing.T) {
 	first, second := t.TempDir(), t.TempDir()
 	writeContextPackage(t, first, "alpha", "1.0.0", "alpha\n")
 	writeContextPackage(t, second, "beta", "1.0.0", "beta\n")
-	if code, _, stderr := runProfile(t, source, "profile", "install", first); code != exitOK {
+	if code, _, stderr := runProfile(t, source, "profile", "install", first, "--use"); code != exitOK {
 		t.Fatalf("install alpha stderr:\n%s", stderr)
 	}
 	code, stdout, stderr := runProfile(t, source, "profile", "install", second, "--use")
@@ -758,8 +760,8 @@ func TestProfileInstallUsePartialLeavesCurrent(t *testing.T) {
 	first, second := t.TempDir(), t.TempDir()
 	writeContextPackage(t, first, "alpha", "1.0.0", "alpha\n")
 	writeContextPackage(t, second, "beta", "1.0.0", "beta\n")
-	if code, _, stderr := runProfile(t, source, "profile", "install", first); code != exitOK {
-		t.Fatalf("install alpha stderr:\n%s", stderr)
+	if code, _, stderr := runProfile(t, source, "profile", "install", first, "--use"); code != exitOK {
+		t.Fatalf("install alpha --use stderr:\n%s", stderr)
 	}
 	claude := os.Getenv("CLAUDE_CONFIG_DIR")
 	if err := os.RemoveAll(claude); err != nil {
@@ -775,7 +777,7 @@ func TestProfileInstallUsePartialLeavesCurrent(t *testing.T) {
 	if !strings.Contains(stderr, "profile_use_partial") {
 		t.Fatalf("stderr:\n%s", stderr)
 	}
-	if !strings.Contains(stdout, "installed profile beta (lock ") {
+	if !strings.Contains(stdout, "installed profile beta (lock ") || !strings.Contains(stdout, "not activated; fix and run 'curator profile use beta'") {
 		t.Fatalf("partial install must report its persisted profile, stdout:\n%s", stdout)
 	}
 	_, stdout, _ = runProfile(t, source, "profile", "list")
@@ -800,8 +802,7 @@ func TestProfileInstallUsePartialLeavesCurrent(t *testing.T) {
 // the early activation-refusal path through run(): the new profile lock is
 // published, then the machine policy refuses the activation before
 // materializeScope can return adapter rows. The CLI must still name the
-// installed profile. Requiring an Activation row to print it is the
-// narrowing mutant this test is intended to kill.
+// installed profile and say it was not activated, including the remedy.
 func TestProfileInstallFirstActivationFailureReportsPersistedProfile(t *testing.T) {
 	source, home := profileHome(t)
 	required := "required"
@@ -819,6 +820,9 @@ func TestProfileInstallFirstActivationFailureReportsPersistedProfile(t *testing.
 	}
 	if !strings.Contains(stdout, "installed profile beta (lock ") {
 		t.Fatalf("persisted first install was not reported:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "not activated; fix and run 'curator profile use beta'") {
+		t.Fatalf("activation failure omitted the recovery instruction:\n%s", stdout)
 	}
 	if strings.Contains(stdout, "switched (") {
 		t.Fatalf("activation was refused before materialization but reported an adapter switch:\n%s", stdout)
@@ -841,7 +845,7 @@ func TestProfileReinstallActivationFailureKeepsUpdatedWording(t *testing.T) {
 	alpha, beta := t.TempDir(), t.TempDir()
 	writeContextPackage(t, alpha, "alpha", "1.0.0", "alpha\n")
 	writeContextPackage(t, beta, "beta", "1.0.0", "beta\n")
-	if code, _, stderr := runProfile(t, source, "profile", "install", alpha); code != exitOK {
+	if code, _, stderr := runProfile(t, source, "profile", "install", alpha, "--use"); code != exitOK {
 		t.Fatalf("install alpha stderr:\n%s", stderr)
 	}
 	if code, _, stderr := runProfile(t, source, "profile", "install", beta); code != exitOK {
@@ -860,6 +864,9 @@ func TestProfileReinstallActivationFailureKeepsUpdatedWording(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "updated profile beta (lock ") {
 		t.Fatalf("partial reinstall lost its updated wording:\n%s", stdout)
+	}
+	if !strings.Contains(stdout, "not activated; fix and run 'curator profile use beta'") {
+		t.Fatalf("activation failure omitted the recovery instruction:\n%s", stdout)
 	}
 	if strings.Contains(stdout, "installed profile beta (lock ") {
 		t.Fatalf("partial reinstall was labeled as a fresh install:\n%s", stdout)

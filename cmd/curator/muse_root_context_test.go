@@ -57,6 +57,7 @@ func museRootProfile(t *testing.T, context json.RawMessage) stubConfigSource {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("install: exit %d: %s", code, stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	return source
 }
 

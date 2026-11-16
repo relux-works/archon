@@ -353,6 +353,7 @@ func TestNativeHomeUnsafeSelectionRefuses(t *testing.T) {
 // Every refusal preserves managed/profile/lock and both native fixture trees;
 // no credential payload is read, and no launch fragment may escape.
 func TestManagedCallerCustomOriginConflictRefuses(t *testing.T) {
+	setActivationRuntimes(t, allActivationRuntimes()...)
 	for _, mode := range []string{"verify", "repair-dry-run", "repair", "missing-native-default"} {
 		t.Run(mode, func(t *testing.T) {
 			fx, req := managedCallerFixtureAt(t, true)

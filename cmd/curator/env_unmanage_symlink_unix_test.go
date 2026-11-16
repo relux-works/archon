@@ -12,15 +12,15 @@ import (
 	"github.com/relux-works/curator/internal/envprofile"
 )
 
-// Drive run() through install, takeover, and unmanage. Seed a current profile
-// first so the subsequent install does not implicitly activate over the link.
+// Drive run() through explicit install, takeover, and unmanage so the first
+// adapter home exists before a synthetic operator symlink is seeded.
 func TestEnvUnmanageTakeoverRestoresSymlink(t *testing.T) {
 	for _, shape := range []string{"absolute", "relative", "dangling", "directory"} {
 		t.Run(shape, func(t *testing.T) {
 			source, _ := profileHome(t)
 			seed := t.TempDir()
 			writeContextPackage(t, seed, "seed", "1.0.0", "seed context\n")
-			if code, _, stderr := runProfile(t, source, "profile", "install", seed); code != exitOK {
+			if code, _, stderr := runProfile(t, source, "profile", "install", seed, "--use"); code != exitOK {
 				t.Fatalf("seed install exit %d: %s", code, stderr)
 			}
 			if code, _, stderr := runProfile(t, source, "env", "unmanage", "--env", "claude_code"); code != exitOK {

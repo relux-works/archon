@@ -151,11 +151,11 @@ curator env status --check --json
 curator env resolve codex --profile review --format json
 ```
 
-Install фиксирует выбранный профиль. Если current profile ещё не выбран,
-первый успешный install автоматически активирует `review`, даже без
-`--use`. Если current profile уже есть, install без `--use` сохраняет его.
-Для явного переключения существует `curator profile use review`.
-⟦работает сегодня⟧
+`profile install` without `--use` registers the profile and writes its lock
+without changing the current profile or adapter homes, even when no profile
+is current. Pass `--use` or run `curator profile use review` to activate it.
+Missing runtimes during registration are warnings; explicit activation checks
+the required runtimes before writing.
 
 Repair создаёт или восстанавливает managed home в пределах lock, затем
 status и resolve проверяют результат. Отдельный `env resolve` с

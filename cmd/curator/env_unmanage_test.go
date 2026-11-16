@@ -175,9 +175,8 @@ func newUnmanageFixture(t *testing.T, withTakeoverBackup bool) unmanageFixture {
 			t.Fatal(err)
 		}
 	}
-	// A first install activates automatically when there is no current
-	// profile. Seed a distinct current so the explicit scoped profile use
-	// below is the operation that records any takeover backup.
+	// Seed a distinct current so the explicit scoped profile use below is the
+	// operation that records any takeover backup.
 	if err := envprofile.SetCurrent(managerHome, "prior-profile"); err != nil {
 		t.Fatal(err)
 	}

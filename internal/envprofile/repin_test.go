@@ -30,6 +30,9 @@ func repinHead(t *testing.T, repo string) string {
 func newRepinFixture(t *testing.T) *repinFixture {
 	t.Helper()
 	f := &repinFixture{home: gitFixtureHome(t), repo: t.TempDir(), homes: pinHomes(t), ids: newGitIdentities(t)}
+	// Repin cases start from an activated profile; these task-local PATH entries
+	// satisfy only the runtime-presence check and are not launched.
+	setActivationRuntimes(t, allActivationRuntimes()...)
 	// Both directories contain the same package name; source identity must still
 	// refuse a directory switch even when the name and requirement match.
 	for _, dir := range []string{"profiles/one", "profiles/two"} {
@@ -41,8 +44,8 @@ func newRepinFixture(t *testing.T) *repinFixture {
 	gitRun(t, f.repo, "tag", "v1.0.0")
 	f.a = repinHead(t, f.repo)
 	f.operand = f.ids.serve(f.repo, "https://example.com/repin")
-	if _, _, _, err := Install(f.home, InstallOptions{Operand: f.operand, Directory: "profiles/one", Revision: f.a}); err != nil {
-		t.Fatal(err)
+	if _, activated, _, err := Install(f.home, InstallOptions{Operand: f.operand, Directory: "profiles/one", Revision: f.a, Use: true}); err != nil || !activated {
+		t.Fatalf("initial explicit use activated=%t, err=%v", activated, err)
 	}
 	writePackage(t, filepath.Join(f.repo, "profiles", "one"), "repin", "1.1.0", "revision B\n")
 	f.commit(t, "v1.1.0")

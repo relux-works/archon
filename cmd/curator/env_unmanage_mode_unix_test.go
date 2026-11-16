@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-// Drive run(), including install and takeover: the mode must survive both
-// backup creation and unmanage restoration, not just a helper invocation.
+// Drive run() through explicit install, takeover, and unmanage so the mode
+// survives backup creation and unmanage restoration.
 // Windows FileMode does not express DACLs; these are Unix permission checks.
 func TestEnvUnmanageTakeoverPreservesFileMode(t *testing.T) {
 	for _, mode := range []os.FileMode{0o600, 0o644, 0o751, 0o400} {
@@ -18,7 +18,7 @@ func TestEnvUnmanageTakeoverPreservesFileMode(t *testing.T) {
 			source, _ := profileHome(t)
 			pkg := t.TempDir()
 			writeContextPackage(t, pkg, "acme", "1.0.0", "managed context\n")
-			if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
+			if code, _, stderr := runProfile(t, source, "profile", "install", pkg, "--use"); code != exitOK {
 				t.Fatalf("profile install exit %d: %s", code, stderr)
 			}
 			// Install may activate the first profile. Unmanage before placing the

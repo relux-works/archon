@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -105,6 +106,74 @@ func TestImportLosslessInstallsThroughPathPipeline(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(seams.native["claude_code"], envmarker.Name)); !os.IsNotExist(err) {
 		t.Fatal("import without activation writes no marker")
+	}
+}
+
+// This proves import without --use can register a profile when no runtime is
+// installed, while preserving detected native files and leaving current
+// markers absent; missing runtimes are warnings only.
+func TestImportWithoutUseLeavesNativeHomesAndCurrentUntouched(t *testing.T) {
+	home := gitFixtureHome(t)
+	pinHomes(t)
+	seams := pinImportSeams(t)
+	writeNativeFile(t, seams.native["claude_code"], "CLAUDE.md", "operator context\n")
+	beforeHomes := snapshotActivationHomes(t, seams.native)
+	beforeCurrent := snapshotActivationTree(t, CurrentFile(home))
+	beforeScoped := snapshotActivationTree(t, ScopedDir(home))
+	t.Setenv("PATH", t.TempDir())
+	info, activated, _, err := Import(home, seams.options(Policy{}))
+	if err != nil || activated {
+		t.Fatalf("import without --use activated=%t, err=%v", activated, err)
+	}
+	if got := snapshotActivationHomes(t, seams.native); !reflect.DeepEqual(got, beforeHomes) {
+		t.Fatal("import without --use changed a detected native home")
+	}
+	if got := snapshotActivationTree(t, CurrentFile(home)); !reflect.DeepEqual(got, beforeCurrent) {
+		t.Fatal("import without --use wrote a machine current marker")
+	}
+	if got := snapshotActivationTree(t, ScopedDir(home)); !reflect.DeepEqual(got, beforeScoped) {
+		t.Fatal("import without --use wrote scoped current markers")
+	}
+	if _, err := readSource(home, "imported"); err != nil {
+		t.Fatalf("import registration missing: %v", err)
+	}
+	if _, _, err := readLock(home, "imported"); err != nil {
+		t.Fatalf("import lock missing: %v", err)
+	}
+	if current, err := Current(home); err != nil || current != "" {
+		t.Fatalf("import without --use set current=%q, err=%v", current, err)
+	}
+	if !strings.Contains(strings.Join(info.Warnings, "\n"), "adapter_runtime_missing") ||
+		!strings.Contains(strings.Join(info.Warnings, "\n"), "claude_code") {
+		t.Fatalf("missing scoped runtimes not reported as warnings: %v", info.Warnings)
+	}
+}
+
+// This proves import --use refuses a missing selected runtime before it
+// creates profile records or alters the detected native inventory.
+func TestImportUseMissingRuntimeRefusesBeforeWrites(t *testing.T) {
+	home := gitFixtureHome(t)
+	pinHomes(t)
+	seams := pinImportSeams(t)
+	writeNativeFile(t, seams.native["claude_code"], "CLAUDE.md", "operator context\n")
+	beforeHomes := snapshotActivationHomes(t, seams.native)
+	beforeManager := snapshotActivationTree(t, home)
+	setActivationRuntimes(t, "claude", "codex", "opencode")
+	options := seams.options(Policy{})
+	options.Use = true
+	if _, _, _, err := Import(home, options); err == nil ||
+		!strings.Contains(err.Error(), DiagAdapterRuntimeMissing) ||
+		!strings.Contains(err.Error(), "adapter pi") || !strings.Contains(err.Error(), "runtime pi") {
+		t.Fatalf("import --use missing-runtime error = %v", err)
+	}
+	if got := snapshotActivationHomes(t, seams.native); !reflect.DeepEqual(got, beforeHomes) {
+		t.Fatal("refused import --use changed a detected native home")
+	}
+	if got := snapshotActivationTree(t, home); !reflect.DeepEqual(got, beforeManager) {
+		t.Fatal("refused import --use wrote profile state")
+	}
+	if _, err := readSource(home, "imported"); err == nil {
+		t.Fatal("refused import --use left a registration")
 	}
 }
 
@@ -277,21 +346,25 @@ func TestImportInvalidUTF8IsLoss(t *testing.T) {
 	}
 }
 
-// TestImportPartialActivationKeepsLock drives Import on a fresh machine
-// whose native home already carries the detected file: the ordinary path
-// pipeline installs the lock, and the activation it attempts under the
-// section 9.1 rules stops on the unmanaged file without --takeover —
-// converging it remains the takeover switch's job.
+// TestImportPartialActivationKeepsLock drives Import --use on a fresh
+// machine whose native home already carries the detected file: the ordinary
+// path pipeline keeps its registration and lock, while activation preserves
+// native homes and current markers when it stops on the unmanaged file.
 func TestImportPartialActivationKeepsLock(t *testing.T) {
 	home := gitFixtureHome(t)
 	pinHomes(t)
 	seams := pinImportSeams(t)
 	writeNativeFile(t, seams.native["claude_code"], "CLAUDE.md", "hello\n")
+	beforeHomes := snapshotActivationHomes(t, seams.native)
+	beforeCurrent := snapshotActivationTree(t, CurrentFile(home))
+	beforeScoped := snapshotActivationTree(t, ScopedDir(home))
 	t.Setenv("CLAUDE_CONFIG_DIR", seams.native["claude_code"])
 	t.Setenv("CODEX_HOME", filepath.Join(t.TempDir(), "codex"))
 	t.Setenv("PI_CODING_AGENT_DIR", filepath.Join(t.TempDir(), "pi"))
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(t.TempDir(), "xdg"))
-	_, activated, _, err := Import(home, seams.options(Policy{}))
+	options := seams.options(Policy{})
+	options.Use = true
+	_, activated, _, err := Import(home, options)
 	// The activation stops per entry with the unmanaged conflict and
 	// the switch reports the ordinary partial diagnostic.
 	if err == nil || !strings.Contains(err.Error(), DiagUsePartial) {
@@ -300,8 +373,20 @@ func TestImportPartialActivationKeepsLock(t *testing.T) {
 	if activated {
 		t.Fatal("a conflicted activation must not report activated")
 	}
-	if _, statErr := readSource(home, "imported"); statErr != nil {
-		t.Fatal("the ordinary pipeline keeps the installed lock past a conflicted activation")
+	if _, err := readSource(home, "imported"); err != nil {
+		t.Fatalf("registration did not survive conflicted activation: %v", err)
+	}
+	if _, _, err := readLock(home, "imported"); err != nil {
+		t.Fatalf("lock did not survive conflicted activation: %v", err)
+	}
+	if got := snapshotActivationHomes(t, seams.native); !reflect.DeepEqual(got, beforeHomes) {
+		t.Fatal("conflicted activation changed a detected native home")
+	}
+	if got := snapshotActivationTree(t, CurrentFile(home)); !reflect.DeepEqual(got, beforeCurrent) {
+		t.Fatal("conflicted activation changed machine current")
+	}
+	if got := snapshotActivationTree(t, ScopedDir(home)); !reflect.DeepEqual(got, beforeScoped) {
+		t.Fatal("conflicted activation changed scoped currents")
 	}
 }
 

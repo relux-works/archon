@@ -220,6 +220,7 @@ func TestSecurityPostureHardenedMCPContradictionFailsEnvStatusCheck(t *testing.T
 	if code, stdout, stderr := runProfile(t, source, "profile", "install", root); code != exitOK {
 		t.Fatalf("permissive MCP profile install = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
 	}
+	setEnvTestCurrent(t, source, "posture-root")
 	lockedConfig := map[string]any{
 		"schema_version":   2,
 		"security_posture": config.SecurityPostureHardened,

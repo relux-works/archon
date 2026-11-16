@@ -28,6 +28,7 @@ func TestEnvResolveAcceptsAliases(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("install stderr:\n%s", stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	cases := []struct{ alias, canonical, variable string }{
 		{"claude", "claude_code", "CLAUDE_CONFIG_DIR"},
 		{"codex", "codex_cli", "CODEX_HOME"},
@@ -88,6 +89,7 @@ func TestProfileUseEnvAliases(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", first); code != exitOK {
 		t.Fatalf("install stderr:\n%s", stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	second := t.TempDir()
 	writeContextPackage(t, second, "other", "1.0.0", "hello\n")
 	if code, _, stderr := runProfile(t, source, "profile", "install", second, "--as", "other"); code != exitOK {
@@ -156,6 +158,7 @@ func TestEnvStatusPrintsCanonicalAfterAliasUse(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", first); code != exitOK {
 		t.Fatalf("install stderr:\n%s", stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	second := t.TempDir()
 	writeContextPackage(t, second, "other", "1.0.0", "hello\n")
 	if code, _, stderr := runProfile(t, source, "profile", "install", second, "--as", "other"); code != exitOK {

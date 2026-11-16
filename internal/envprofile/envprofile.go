@@ -69,6 +69,7 @@ const (
 	DiagInUse                           = "profile_in_use"
 	DiagNotFound                        = "profile_not_found"
 	DiagImportNameTaken                 = "profile_import_name_taken"
+	DiagAdapterRuntimeMissing           = "adapter_runtime_missing"
 	// DiagLockUnavailable reports that the manager-home mutation lock
 	// could not be acquired within the bounded wait (manager §2.5).
 	DiagLockUnavailable = "environment_lock_unavailable"
@@ -182,6 +183,9 @@ type Info struct {
 	Delta      []string
 	Surfacing  []string
 	Activation []EntryResult
+	// ActivationAttempted distinguishes a post-publication activation failure
+	// from a preflight or install failure so the CLI can report durable state.
+	ActivationAttempted bool
 }
 
 // validProfileName reports whether name may be installed.
@@ -585,10 +589,10 @@ func (p Policy) Admission() contextmaterialize.Admission {
 // key locked to a profile name, a machine-scope switch to any other
 // profile is a configuration error. A scoped switch, an unlocked knob,
 // and the required profile itself carry no refusal. Every path that
-// reaches the machine-scope switch — profile use (clear or not), profile
-// install --use, first-install auto-activation, import --use, and resync —
-// funnels through the single gate in useLocked, so one gate covers them
-// all.
+// reaches the machine-scope switch — profile use (clear or not), install
+// --use, import --use, and resync — funnels through the single gate in
+// useLocked. Install and import reach this gate only when their explicit
+// --use option was supplied.
 func (p Policy) CheckMachineUse(name string) error {
 	if p.RequireCurrent == nil || *p.RequireCurrent == name {
 		return nil
@@ -705,16 +709,20 @@ type InstallOptions struct {
 // every member's store entry. A git operand takes at most one requirement
 // flag (default range latest); a path operand takes none and no directory.
 //
-// Activation on install performs the §9.2 switch: when the machine has no
-// current profile (first install) or the operator passes Use, Install
-// attempts every entry, reports per-adapter results in Info.Activation,
-// records the new current only when the whole scope materialized, and
-// reports profile_use_partial when it did not (the lock is still written;
-// only the activation is partial).
+// Activation on install follows explicit intent: only Use performs the
+// §9.2 switch. Install attempts every entry, reports per-adapter results in
+// Info.Activation, and records the new current only when the whole scope
+// materialized. A failed activation rolls back adapter homes/current markers
+// while keeping the installed registration and lock.
 //
 // Install holds the manager-home mutation lock and publishes its records
 // through the operation journal (see lock.go).
 func Install(home string, options InstallOptions) (Info, bool, bool, error) {
+	if options.Use {
+		if err := requireAdapterRuntimes(home, "", ""); err != nil {
+			return Info{}, false, false, err
+		}
+	}
 	if options.As != "" {
 		if err := refusePreparedSkillPlanAdoption(home, options.As); err != nil {
 			return Info{}, false, false, err
@@ -723,7 +731,12 @@ func Install(home string, options InstallOptions) (Info, bool, bool, error) {
 	if err := options.Policy.checkHardenedProfileMutation(); err != nil {
 		return Info{}, false, false, err
 	}
-	op, err := beginOperation(home)
+	op, err := beginOperationValidated(home, func() error {
+		if !options.Use {
+			return nil
+		}
+		return requireAdapterRuntimes(home, "", "")
+	})
 	if err != nil {
 		return Info{}, false, false, err
 	}
@@ -853,19 +866,14 @@ func installLocked(op *operation, home string, options InstallOptions) (Info, bo
 			if isPath {
 				return reinstallPathLocked(op, home, name, source, input, options)
 			}
-			info, _, err := updateLocked(op, home, name, options.Policy, options.SurfacingSink, options.WarningSink, options.ConfirmSystemDelta, nil, nil, manager.fetchRaw)
+			info, _, err := updateLocked(op, home, name, options.Policy, options.SurfacingSink, options.WarningSink, options.ConfirmSystemDelta, nil, nil, manager.fetchRaw, false)
 			if err != nil {
 				return Info{}, false, false, err
 			}
-			// The update phase above already re-materialized every
-			// scope on this profile when the lock moved; the install
-			// row's activation still runs below whether the pin moved
-			// or not, exactly as on a path reinstall.
-			if activate, err := reinstallActivation(home, name, options.Use); err != nil {
-				return Info{}, false, false, err
-			} else if activate {
+			if options.Use {
 				return activateReinstall(op, home, name, info.Source, info.Lock, info.LockHash, info.Warnings, info.Surfacing, options.Policy)
 			}
+			info = withNoUseRuntimeWarnings(home, info, options.WarningSink)
 			return info, false, true, nil
 		}
 		return Info{}, false, false, fmt.Errorf("%s: profile %q is already installed", DiagNameTaken, name)
@@ -935,24 +943,27 @@ func installLocked(op *operation, home string, options InstallOptions) (Info, bo
 	if err != nil {
 		return Info{}, false, false, err
 	}
-	if machine != "" && !options.Use {
+	if !options.Use {
 		info := Info{Name: name, Source: source, Lock: result.Lock, LockHash: hash, Current: machine == name, Warnings: warnings, Surfacing: surfacing}
+		info = withNoUseRuntimeWarnings(home, info, options.WarningSink)
 		return info, false, false, nil
 	}
-	// Activation performs the §9.2 switch under the same held operation:
-	// every entry is attempted, per-adapter results are collected, and the
-	// new current is recorded only when the whole scope materialized.
-	// useLocked publishes the current through the journal on success and
-	// leaves it unchanged with profile_use_partial on failure.
+	// Explicit activation keeps the registration and lock while compensating
+	// any adapter-home/current changes if the complete switch fails.
+	rollback := beginInstallActivationRollback(op, home)
 	results, switchErr := useLocked(op, home, name, "", "", false, options.Policy)
-	machine, err = Current(home)
-	if err != nil {
-		return Info{}, false, false, err
-	}
-	info := Info{Name: name, Source: source, Lock: result.Lock, LockHash: hash, Current: machine == name, Warnings: warnings, Surfacing: surfacing, Activation: results}
+	info := Info{Name: name, Source: source, Lock: result.Lock, LockHash: hash, Warnings: warnings, Surfacing: surfacing, Activation: results, ActivationAttempted: true}
 	if switchErr != nil {
+		switchErr = rollback(switchErr)
+		machine, currentErr := Current(home)
+		if currentErr != nil {
+			return info, false, false, errors.Join(switchErr, currentErr)
+		}
+		info.Current = machine == name
 		return info, false, false, switchErr
 	}
+	rollback(nil)
+	info.Current = true
 	return info, true, false, nil
 }
 
@@ -965,16 +976,10 @@ func installLocked(op *operation, home string, options InstallOptions) (Info, bo
 // the fresh input rather than from the store snapshot, which is what makes a
 // reinstall move the pin while an update must not.
 //
-// A reinstall is still the install row (cli/curator.md), so it honours the
-// install row's flags: --use activates the installed root when it is not
-// current (a machine with no current activates the same way a first install
-// does), and --takeover covers the unmanaged files the activation or the
-// resync would write (environments §9.5). Both ride the useLocked seam, so
-// the locked require_current_profile gate applies here exactly as on every
-// other machine-scope switch. Without --use and with a current recorded, a
-// reinstall only re-materializes scopes already on the profile, exactly as
-// an update does. The reinstall always reports updated, never a fresh
-// install: activated reports whether the install row's activation ran.
+// A reinstall is still the install row (cli/curator.md): only --use activates
+// the installed root. Without --use it updates registration/lock state and
+// leaves every adapter home and current marker untouched. The reinstall
+// always reports updated, never a fresh install.
 func reinstallPathLocked(op *operation, home, name string, source Source, input contextresolve.Input, options InstallOptions) (Info, bool, bool, error) {
 	policy := options.Policy
 	manager := newGitManager(home).withPolicy(policy)
@@ -1040,9 +1045,7 @@ func reinstallPathLocked(op *operation, home, name string, source Source, input 
 		// activation below (re-)materializes any surface.
 		surfacing = carrySurfacing(options.SurfacingSink, surfacing)
 		writeUpdateWarnings(options.WarningSink, "", warnings)
-		if activate, err := reinstallActivation(home, name, options.Use); err != nil {
-			return Info{}, false, false, err
-		} else if activate {
+		if options.Use {
 			return activateReinstall(op, home, name, source, result.Lock, oldHash, warnings, surfacing, policy)
 		}
 		machine, err := Current(home)
@@ -1050,6 +1053,7 @@ func reinstallPathLocked(op *operation, home, name string, source Source, input 
 			return Info{}, false, false, err
 		}
 		info := Info{Name: name, Source: source, Lock: result.Lock, LockHash: oldHash, Current: machine == name, Warnings: warnings, Surfacing: surfacing}
+		info = withNoUseRuntimeWarnings(home, info, options.WarningSink)
 		return info, false, true, nil
 	}
 	warnings := resolutionWarnings(result)
@@ -1098,64 +1102,39 @@ func reinstallPathLocked(op *operation, home, name string, source Source, input 
 		return Info{}, false, false, err
 	}
 	hash := contextlock.HashBytes(canonical)
-	if activate, err := reinstallActivation(home, name, options.Use); err != nil {
-		return Info{}, false, false, err
-	} else if activate {
+	if options.Use {
 		return activateReinstall(op, home, name, source, result.Lock, hash, warnings, surfacing, policy)
 	}
-	if err := resyncCurrentScopes(op, home, name, policy); err != nil {
-		return Info{}, false, false, err
-	}
 	machine, err := Current(home)
 	if err != nil {
 		return Info{}, false, false, err
 	}
-	return Info{Name: name, Source: source, Lock: result.Lock, LockHash: hash, Current: machine == name, Warnings: warnings, Delta: deltaLines, Surfacing: surfacing}, false, true, nil
+	info := Info{Name: name, Source: source, Lock: result.Lock, LockHash: hash, Current: machine == name, Warnings: warnings, Delta: deltaLines, Surfacing: surfacing}
+	info = withNoUseRuntimeWarnings(home, info, options.WarningSink)
+	return info, false, true, nil
 }
 
-// reinstallActivation reports whether a same-source path reinstall must run
-// the install row's activation: the machine records no current (first
-// installs activate and say so), or the operator passed --use and the
-// installed root is not current. A --takeover without --use activates
-// nothing by itself — takeover covers only the files the carrying operation
-// would write (§9.5), and a reinstall that switches nothing writes no
-// native surface — so the flag alone never flips this.
-func reinstallActivation(home, name string, use bool) (bool, error) {
-	machine, err := Current(home)
-	if err != nil {
-		return false, err
-	}
-	if machine == "" {
-		return true, nil
-	}
-	return use && machine != name, nil
-}
-
-// activateReinstall runs the install row's activation for a reinstall: the
-// §9.2 machine-scope switch through useLocked — with the operation's
-// takeover flag and under the locked require_current_profile gate — then
-// the resync of every scoped current already on the profile. A partial
-// switch leaves the recorded current unchanged and returns the switch
-// error, exactly as a fresh install does; the lock work (published above
-// when the pin moved) still stands.
+// activateReinstall runs only the install row's machine-scope activation
+// through useLocked — with the operation's takeover flag and under the
+// locked require_current_profile gate. Environment-scoped currents are
+// outside install's machine scope and remain untouched. A failed activation
+// restores its adapter homes and current markers; the published registration
+// and lock remain available for a later explicit use.
 func activateReinstall(op *operation, home, name string, source Source, lock *contextlock.Lock, hash string, warnings, surfacing []string, policy Policy) (Info, bool, bool, error) {
+	rollback := beginInstallActivationRollback(op, home)
 	results, switchErr := useLocked(op, home, name, "", "", false, policy)
-	machine, err := Current(home)
-	if err != nil {
-		return Info{}, false, true, err
-	}
-	info := Info{Name: name, Source: source, Lock: lock, LockHash: hash, Current: machine == name, Warnings: warnings, Surfacing: surfacing, Activation: results}
+	info := Info{Name: name, Source: source, Lock: lock, LockHash: hash, Warnings: warnings, Surfacing: surfacing, Activation: results, ActivationAttempted: true}
 	if switchErr != nil {
+		switchErr = rollback(switchErr)
+		machine, currentErr := Current(home)
+		if currentErr != nil {
+			return info, false, true, errors.Join(switchErr, currentErr)
+		}
+		info.Current = machine == name
 		return info, false, true, switchErr
 	}
-	if err := resyncScopedScopes(op, home, name, policy); err != nil {
-		return info, false, true, err
-	}
-	machine, err = Current(home)
-	if err != nil {
-		return Info{}, false, true, err
-	}
-	info.Current = machine == name
+	rollback(nil)
+	info.Current = true
 	return info, true, true, nil
 }
 
@@ -1246,7 +1225,7 @@ func UpdateWithOptions(home, name string, options UpdateOptions) (info Info, mov
 			}
 		}()
 	}
-	return updateLocked(op, home, name, options.Policy, options.SurfacingSink, options.WarningSink, options.ConfirmSystemDelta, options.readRegularFile, options.RootRequirement, nil)
+	return updateLocked(op, home, name, options.Policy, options.SurfacingSink, options.WarningSink, options.ConfirmSystemDelta, options.readRegularFile, options.RootRequirement, nil, true)
 }
 
 // updateLocked re-resolves under the held operation lock.
@@ -1255,8 +1234,9 @@ func UpdateWithOptions(home, name string, options UpdateOptions) (info Info, mov
 // delegates here (a same-source reinstall), keyed by canonical identity, so
 // the locked-source refresh fetches from the descriptor the operator named.
 // An update with nothing requested passes nil and refreshes through the
-// caches' stored remotes.
-func updateLocked(op *operation, home, name string, policy Policy, sink, warningSink io.Writer, confirmSystemDelta bool, readRegularFile func(string) (stateread.File, error), requirement *Requirement, requested map[string]string) (Info, bool, error) {
+// caches' stored remotes. resync is false for profile install/reinstall so
+// no-use registration cannot materialize adapter homes as a side effect.
+func updateLocked(op *operation, home, name string, policy Policy, sink, warningSink io.Writer, confirmSystemDelta bool, readRegularFile func(string) (stateread.File, error), requirement *Requirement, requested map[string]string, resync bool) (Info, bool, error) {
 	if readRegularFile == nil {
 		readRegularFile = stateread.ReadRegularFile
 	}
@@ -1402,7 +1382,7 @@ func updateLocked(op *operation, home, name string, policy Policy, sink, warning
 		// the rows still print exactly once.
 		surfacing = carrySurfacing(sink, surfacing)
 		writeUpdateWarnings(warningSink, name, warnings)
-		if requirement == nil {
+		if resync && requirement == nil {
 			if err := syncCurrentNativeSkills(op, home, name, policy); err != nil {
 				return Info{}, false, err
 			}
@@ -1468,8 +1448,10 @@ func updateLocked(op *operation, home, name string, policy Policy, sink, warning
 		return Info{}, false, err
 	}
 	hash := contextlock.HashBytes(canonical)
-	if err := resyncCurrentScopes(op, home, name, policy); err != nil {
-		return Info{}, false, err
+	if resync {
+		if err := resyncCurrentScopes(op, home, name, policy); err != nil {
+			return Info{}, false, err
+		}
 	}
 	machine, err := Current(home)
 	if err != nil {

@@ -139,14 +139,15 @@ func TestPathOverlayTrustedSystemModuleRemainsAdmitted(t *testing.T) {
 }
 
 // TestPathOverlayFailureBlocksResolveAndMakesStatusNonCurrent drives the
-// path directory contract after install. The path is inspected again by
-// Resolve and Status, no fragment is emitted, and no rebuild is planned.
+// path directory contract after explicit activation. The path is inspected
+// again by Resolve and Status, no fragment is emitted, and no rebuild is planned.
 func TestPathOverlayFailureBlocksResolveAndMakesStatusNonCurrent(t *testing.T) {
 	home := gitFixtureHome(t)
 	pinHomes(t)
+	setActivationRuntimes(t, allActivationRuntimes()...)
 	root, overlay, policy := pathOverlayFixture(t, "")
-	if _, _, _, err := Install(home, InstallOptions{Operand: root, Policy: policy}); err != nil {
-		t.Fatal(err)
+	if _, activated, _, err := Install(home, InstallOptions{Operand: root, Use: true, Policy: policy}); err != nil || !activated {
+		t.Fatalf("explicit profile use activated=%t, err=%v", activated, err)
 	}
 	restore, err := makeWorldWritableDirectoryForTest(overlay)
 	if err != nil {
@@ -193,6 +194,7 @@ func TestPathSourceMutationsRejectUntrustedOverlayBeforeDefaultWrites(t *testing
 		t.Run(operation, func(t *testing.T) {
 			home := gitFixtureHome(t)
 			pinHomes(t)
+			setActivationRuntimes(t, allActivationRuntimes()...)
 			root, overlay, policy := pathOverlayFixture(t, "")
 			if _, _, _, err := Install(home, InstallOptions{Operand: root, Policy: policy}); err != nil {
 				t.Fatal(err)

@@ -1,0 +1,368 @@
+package envprofile
+
+import (
+	"os"
+	"path/filepath"
+	"reflect"
+	"runtime"
+	"sort"
+	"strings"
+	"testing"
+)
+
+type activationTreeEntry struct {
+	Kind    string
+	Mode    uint32
+	ModTime int64
+	Data    []byte
+	Link    string
+}
+
+// snapshotActivationTree records bytes, links, modes, and mtimes without
+// following links, so unchanged homes also prove that no rewrite occurred.
+func snapshotActivationTree(t *testing.T, root string) map[string]activationTreeEntry {
+	t.Helper()
+	if _, err := os.Lstat(root); os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		t.Fatalf("inspect snapshot root %s: %v", root, err)
+	}
+	entries := map[string]activationTreeEntry{}
+	err := filepath.WalkDir(root, func(path string, _ os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		info, err := os.Lstat(path)
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		entry := activationTreeEntry{Mode: uint32(info.Mode()), ModTime: info.ModTime().UnixNano()}
+		switch {
+		case info.Mode()&os.ModeSymlink != 0:
+			entry.Kind = "symlink"
+			entry.Link, err = os.Readlink(path)
+		case info.IsDir():
+			entry.Kind = "directory"
+		case info.Mode().IsRegular():
+			entry.Kind = "file"
+			entry.Data, err = os.ReadFile(path)
+		default:
+			entry.Kind = "other"
+		}
+		if err != nil {
+			return err
+		}
+		entries[rel] = entry
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("snapshot tree %s: %v", root, err)
+	}
+	return entries
+}
+
+func snapshotActivationHomes(t *testing.T, homes map[string]string) map[string]map[string]activationTreeEntry {
+	t.Helper()
+	result := make(map[string]map[string]activationTreeEntry, len(homes))
+	for id, home := range homes {
+		result[id] = snapshotActivationTree(t, home)
+	}
+	return result
+}
+
+// activationTreeStateDifferences compares restored content, links, modes, and
+// entry sets. Compensating writes may update timestamps; the no-use tests use
+// full snapshots to prove that no write occurred at all.
+func activationTreeStateDifferences(before, after map[string]activationTreeEntry) []string {
+	paths := make([]string, 0, len(before)+len(after))
+	seen := map[string]bool{}
+	for path := range before {
+		seen[path] = true
+		paths = append(paths, path)
+	}
+	for path := range after {
+		if !seen[path] {
+			paths = append(paths, path)
+		}
+	}
+	sort.Strings(paths)
+	var differences []string
+	for _, path := range paths {
+		oldEntry, oldOK := before[path]
+		newEntry, newOK := after[path]
+		if !oldOK || !newOK || oldEntry.Kind != newEntry.Kind || oldEntry.Mode != newEntry.Mode ||
+			oldEntry.Link != newEntry.Link || string(oldEntry.Data) != string(newEntry.Data) {
+			differences = append(differences, path)
+		}
+	}
+	return differences
+}
+
+func setActivationRuntimes(t *testing.T, runtimes ...string) string {
+	t.Helper()
+	bin := t.TempDir()
+	for _, name := range runtimes {
+		filename, contents := name, "#!/bin/sh\nexit 0\n"
+		mode := os.FileMode(0o755)
+		if runtime.GOOS == "windows" {
+			filename += ".cmd"
+			contents = "@echo off\r\nexit /b 0\r\n"
+			mode = 0o644
+			t.Setenv("PATHEXT", ".COM;.EXE;.BAT;.CMD")
+		}
+		if err := os.WriteFile(filepath.Join(bin, filename), []byte(contents), mode); err != nil {
+			t.Fatalf("write runtime fixture %s: %v", name, err)
+		}
+	}
+	path := bin
+	if activationRuntimeFallbackPath != "" {
+		path += string(os.PathListSeparator) + activationRuntimeFallbackPath
+	}
+	t.Setenv("PATH", path)
+	return bin
+}
+
+func allActivationRuntimes() []string { return []string{"claude", "codex", "opencode", "pi"} }
+
+// This proves a no-use registration writes its source and lock while leaving
+// native homes and current markers byte-for-byte unchanged, with and without
+// a prior current. Missing runtimes stay warnings naming only active adapters.
+func TestInstallWithoutUseLeavesHomesAndCurrentUntouched(t *testing.T) {
+	for _, seededCurrent := range []bool{false, true} {
+		name := "no-current"
+		if seededCurrent {
+			name = "existing-current"
+		}
+		t.Run(name, func(t *testing.T) {
+			home := gitFixtureHome(t)
+			homes := pinHomes(t)
+			if seededCurrent {
+				setActivationRuntimes(t, allActivationRuntimes()...)
+				alpha := t.TempDir()
+				writePackage(t, alpha, "alpha", "1.0.0", "alpha\n")
+				if _, activated, _, err := Install(home, InstallOptions{Operand: alpha, Use: true}); err != nil || !activated {
+					t.Fatalf("seed alpha activation = %t, %v", activated, err)
+				}
+			}
+			beforeHomes := snapshotActivationHomes(t, homes)
+			beforeCurrent := snapshotActivationTree(t, CurrentFile(home))
+			beforeScoped := snapshotActivationTree(t, ScopedDir(home))
+			emptyBin := t.TempDir()
+			t.Setenv("PATH", emptyBin)
+			source := t.TempDir()
+			writePackage(t, source, "beta", "1.0.0", "beta\n")
+			info, activated, _, err := Install(home, InstallOptions{Operand: source})
+			if err != nil || activated {
+				t.Fatalf("install without --use activated=%t, err=%v", activated, err)
+			}
+			if got := snapshotActivationHomes(t, homes); !reflect.DeepEqual(got, beforeHomes) {
+				t.Fatal("install without --use changed an adapter home")
+			}
+			if got := snapshotActivationTree(t, CurrentFile(home)); !reflect.DeepEqual(got, beforeCurrent) {
+				t.Fatal("install without --use changed the machine current marker")
+			}
+			if got := snapshotActivationTree(t, ScopedDir(home)); !reflect.DeepEqual(got, beforeScoped) {
+				t.Fatal("install without --use changed scoped current markers")
+			}
+			if len(info.Warnings) == 0 {
+				t.Fatal("missing scoped runtimes produced no warning")
+			}
+			for _, id := range []string{"claude_code", "codex_cli", "opencode", "pi"} {
+				if !strings.Contains(strings.Join(info.Warnings, "\n"), id) {
+					t.Fatalf("missing runtime warning does not name scoped adapter %s: %v", id, info.Warnings)
+				}
+			}
+			if _, err := readSource(home, "beta"); err != nil {
+				t.Fatalf("registration missing after no-use install: %v", err)
+			}
+			if _, _, err := readLock(home, "beta"); err != nil {
+				t.Fatalf("lock missing after no-use install: %v", err)
+			}
+		})
+	}
+}
+
+// This proves an explicit path reinstall can refresh its lock without
+// resynchronizing the profile's current adapter homes.
+func TestInstallReinstallWithoutUseLeavesCurrentHomesUntouched(t *testing.T) {
+	home := gitFixtureHome(t)
+	homes := pinHomes(t)
+	setActivationRuntimes(t, allActivationRuntimes()...)
+	source := t.TempDir()
+	writePackage(t, source, "alpha", "1.0.0", "before\n")
+	if _, activated, _, err := Install(home, InstallOptions{Operand: source, Use: true}); err != nil || !activated {
+		t.Fatalf("seed install activated=%t, err=%v", activated, err)
+	}
+	beforeHomes := snapshotActivationHomes(t, homes)
+	beforeCurrent := snapshotActivationTree(t, CurrentFile(home))
+	beforeScoped := snapshotActivationTree(t, ScopedDir(home))
+	oldLock, oldHash, err := readLock(home, "alpha")
+	if err != nil || oldLock == nil {
+		t.Fatalf("read original lock: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(source, "context", "a.md"), []byte("after\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	info, activated, updated, err := Install(home, InstallOptions{Operand: source})
+	if err != nil || activated || !updated {
+		t.Fatalf("reinstall activated=%t updated=%t, err=%v", activated, updated, err)
+	}
+	if info.LockHash == oldHash {
+		t.Fatal("changed source did not update the persisted lock")
+	}
+	if got := snapshotActivationHomes(t, homes); !reflect.DeepEqual(got, beforeHomes) {
+		t.Fatal("reinstall without --use changed an adapter home")
+	}
+	if got := snapshotActivationTree(t, CurrentFile(home)); !reflect.DeepEqual(got, beforeCurrent) {
+		t.Fatal("reinstall without --use changed the machine current marker")
+	}
+	if got := snapshotActivationTree(t, ScopedDir(home)); !reflect.DeepEqual(got, beforeScoped) {
+		t.Fatal("reinstall without --use changed scoped current markers")
+	}
+}
+
+// This proves reinstall --use changes only machine-scope adapter homes and
+// does not require or rewrite an adapter already assigned to an environment
+// scope.
+func TestInstallUseLeavesEnvironmentScopedAdapterUntouched(t *testing.T) {
+	home := gitFixtureHome(t)
+	homes := pinHomes(t)
+	setActivationRuntimes(t, allActivationRuntimes()...)
+	source := t.TempDir()
+	writePackage(t, source, "alpha", "1.0.0", "before\n")
+	if _, activated, _, err := Install(home, InstallOptions{Operand: source, Use: true}); err != nil || !activated {
+		t.Fatalf("seed install activated=%t, err=%v", activated, err)
+	}
+	scopedProfile := t.TempDir()
+	writePackage(t, scopedProfile, "scoped", "1.0.0", "scoped\n")
+	if _, _, _, err := Install(home, InstallOptions{Operand: scopedProfile}); err != nil {
+		t.Fatalf("install scoped profile: %v", err)
+	}
+	if _, err := UseWithPolicy(home, "scoped", "codex_cli", "", false, Policy{}); err != nil {
+		t.Fatalf("assign codex_cli scope: %v", err)
+	}
+	codexBefore := snapshotActivationTree(t, homes["codex_cli"])
+	if err := os.WriteFile(filepath.Join(source, "context", "a.md"), []byte("after\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	setActivationRuntimes(t, "claude", "opencode", "pi")
+	if _, activated, updated, err := Install(home, InstallOptions{Operand: source, Use: true}); err != nil || !activated || !updated {
+		t.Fatalf("machine-scope reinstall activated=%t updated=%t, err=%v", activated, updated, err)
+	}
+	if got := snapshotActivationTree(t, homes["codex_cli"]); !reflect.DeepEqual(got, codexBefore) {
+		t.Fatal("machine-scope reinstall changed the environment-scoped codex home")
+	}
+	scoped, err := ScopedCurrents(home)
+	if err != nil || scoped["env:codex_cli"] != "scoped" {
+		t.Fatalf("codex scoped current=%q, err=%v; want scoped", scoped["env:codex_cli"], err)
+	}
+	claude, err := os.ReadFile(filepath.Join(homes["claude_code"], "CLAUDE.md"))
+	if err != nil || !strings.Contains(string(claude), "after") {
+		t.Fatalf("machine-scope home was not updated: %s err=%v", claude, err)
+	}
+}
+
+// This proves runtime refusal precedes every profile write, while selected
+// environment scope checks only its adapter and machine scope omits adapters
+// already owned by a scoped current.
+func TestUseRuntimePreflightIsScopedAndReadOnlyOnRefusal(t *testing.T) {
+	home := gitFixtureHome(t)
+	homes := pinHomes(t)
+	source := t.TempDir()
+	writePackage(t, source, "alpha", "1.0.0", "alpha\n")
+	if _, _, _, err := Install(home, InstallOptions{Operand: source}); err != nil {
+		t.Fatal(err)
+	}
+	beforeHomes := snapshotActivationHomes(t, homes)
+	beforeManager := snapshotActivationTree(t, home)
+	setActivationRuntimes(t, "claude", "opencode", "pi")
+	beta := t.TempDir()
+	writePackage(t, beta, "beta", "1.0.0", "beta\n")
+	if info, activated, updated, err := Install(home, InstallOptions{Operand: beta, Use: true}); err == nil ||
+		!strings.Contains(err.Error(), DiagAdapterRuntimeMissing) || activated || updated || info.Name != "" {
+		t.Fatalf("install --use with a missing scoped runtime = info=%+v activated=%t updated=%t err=%v", info, activated, updated, err)
+	}
+	if got := snapshotActivationTree(t, home); !reflect.DeepEqual(got, beforeManager) {
+		t.Fatal("refused install --use changed manager state before writing registration or lock")
+	}
+	if _, err := readSource(home, "beta"); !isStateAbsent(err) {
+		t.Fatalf("refused install --use left a registration: %v", err)
+	}
+	if _, _, err := readLock(home, "beta"); !isStateAbsent(err) {
+		t.Fatalf("refused install --use left a lock: %v", err)
+	}
+	if _, err := UseWithPolicy(home, "alpha", "codex_cli", "", false, Policy{}); err == nil ||
+		!strings.Contains(err.Error(), DiagAdapterRuntimeMissing) ||
+		!strings.Contains(err.Error(), "codex_cli") || !strings.Contains(err.Error(), "codex") {
+		t.Fatalf("missing scoped runtime error = %v", err)
+	}
+	if got := snapshotActivationHomes(t, homes); !reflect.DeepEqual(got, beforeHomes) {
+		t.Fatal("refused scoped use changed an adapter home")
+	}
+	if got := snapshotActivationTree(t, home); !reflect.DeepEqual(got, beforeManager) {
+		t.Fatal("refused scoped use wrote manager state")
+	}
+	setActivationRuntimes(t, "codex")
+	if _, err := UseWithPolicy(home, "alpha", "codex_cli", "", false, Policy{}); err != nil {
+		t.Fatalf("codex-only scoped use failed with its runtime present: %v", err)
+	}
+	setActivationRuntimes(t, "claude", "opencode", "pi")
+	if _, err := UseWithPolicy(home, "alpha", "", "", false, Policy{}); err != nil {
+		t.Fatalf("machine use refused a missing runtime outside machine scope: %v", err)
+	}
+}
+
+// This proves a later adapter failure rolls back already-written homes and
+// current markers while keeping the new install record and lock available.
+func TestInstallUseFailureRollsBackHomesButKeepsRegistrationAndLock(t *testing.T) {
+	home := gitFixtureHome(t)
+	homes := pinHomes(t)
+	setActivationRuntimes(t, allActivationRuntimes()...)
+	alpha := t.TempDir()
+	writePackage(t, alpha, "alpha", "1.0.0", "alpha\n")
+	if _, activated, _, err := Install(home, InstallOptions{Operand: alpha, Use: true}); err != nil || !activated {
+		t.Fatalf("seed install activated=%t, err=%v", activated, err)
+	}
+	beforeHomes := snapshotActivationHomes(t, homes)
+	beforeCurrent := snapshotActivationTree(t, CurrentFile(home))
+	beforeScoped := snapshotActivationTree(t, ScopedDir(home))
+	blocker := filepath.Join(t.TempDir(), "codex-home-is-a-file")
+	if err := os.WriteFile(blocker, []byte("fixture blocker"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CODEX_HOME", blocker)
+	beta := t.TempDir()
+	writePackage(t, beta, "beta", "1.0.0", "beta\n")
+	info, activated, _, err := Install(home, InstallOptions{Operand: beta, Use: true})
+	if err == nil || !strings.Contains(err.Error(), DiagUsePartial) {
+		t.Fatalf("install --use error = %v, want a surfaced activation failure", err)
+	}
+	if activated || info.Name != "beta" {
+		t.Fatalf("failed activation result name=%q activated=%t", info.Name, activated)
+	}
+	afterHomes := snapshotActivationHomes(t, homes)
+	for id, before := range beforeHomes {
+		if differences := activationTreeStateDifferences(before, afterHomes[id]); len(differences) != 0 {
+			t.Fatalf("failed install --use did not restore adapter %s state: %v", id, differences)
+		}
+	}
+	if got := snapshotActivationTree(t, CurrentFile(home)); !reflect.DeepEqual(got, beforeCurrent) {
+		t.Fatal("failed install --use changed the machine current marker")
+	}
+	if got := snapshotActivationTree(t, ScopedDir(home)); !reflect.DeepEqual(got, beforeScoped) {
+		t.Fatal("failed install --use changed scoped current markers")
+	}
+	if current, err := Current(home); err != nil || current != "alpha" {
+		t.Fatalf("current after failed activation = %q, %v; want alpha", current, err)
+	}
+	if _, err := readSource(home, "beta"); err != nil {
+		t.Fatalf("registration did not survive activation failure: %v", err)
+	}
+	if _, _, err := readLock(home, "beta"); err != nil {
+		t.Fatalf("lock did not survive activation failure: %v", err)
+	}
+}

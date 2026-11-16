@@ -91,8 +91,8 @@ func (c cli) cmdProfileImport(cfg *config.Config, args []string) int {
 		printEntryResult(c, result)
 	}
 	if err != nil {
-		if len(info.Activation) > 0 && info.Name != "" {
-			_, _ = fmt.Fprintf(c.stdout, "installed profile %s (lock %s)\n", info.Name, info.LockHash)
+		if info.ActivationAttempted && info.Name != "" {
+			_, _ = fmt.Fprintf(c.stdout, "installed profile %s (lock %s), not activated; fix and run 'curator profile use %s'\n", info.Name, info.LockHash, info.Name)
 		}
 		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
 		return exitFail
@@ -139,16 +139,15 @@ func (c cli) cmdProfileInstall(cfg *config.Config, args []string) int {
 		printEntryResult(c, result)
 	}
 	if err != nil {
-		// Info.Name is populated only after the profile records are
-		// published. Activation can fail before materializeScope returns
-		// any per-adapter results (for example, a locked current-profile
-		// refusal), so the lock still needs an operator-visible line.
-		if info.Name != "" {
+		// Activation can fail before materializeScope returns per-adapter
+		// results (for example, a locked current-profile refusal). Report
+		// durable registration only when activation was actually attempted.
+		if info.Name != "" && info.ActivationAttempted {
 			verb := "installed"
 			if updated {
 				verb = "updated"
 			}
-			_, _ = fmt.Fprintf(c.stdout, "%s profile %s (lock %s)\n", verb, info.Name, info.LockHash)
+			_, _ = fmt.Fprintf(c.stdout, "%s profile %s (lock %s), not activated; fix and run 'curator profile use %s'\n", verb, info.Name, info.LockHash, info.Name)
 		}
 		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
 		return exitFail
@@ -246,8 +245,8 @@ func (c cli) cmdProfileUse(cfg *config.Config, args []string) int {
 	}
 	// The locked require_current_profile gate lives at the §9.2
 	// machine-scope switch itself (useLocked via UseWithPolicy), not at
-	// this row: install --use, first-install auto-activation, and import
-	// --use reach the same seam. A scoped switch is unaffected.
+	// this row: install --use and import --use reach the same seam. A
+	// scoped switch is unaffected.
 	policy := envprofile.PolicyFromConfig(cfg)
 	policy.Takeover = *takeover
 	results, err := envprofile.UseWithPolicy(cfg.Home(), name, envregistry.NormalizeEnvID(*env), *target, *clearScope, policy)

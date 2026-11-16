@@ -126,6 +126,7 @@ func (lock borrowedGlobalLock) AssertCurrent() error {
 // generations also compensates retention pruning on an unsuccessful attempt.
 type globalUndo struct {
 	managerHome      string
+	nativeRoots      map[string]bool
 	entries          map[string]*globalImage
 	absentParents    map[string]bool
 	parentModes      map[string]os.FileMode
@@ -142,6 +143,27 @@ func (err *GlobalCompensationError) Error() string {
 	return fmt.Sprintf("global profile compensation failed; pending profile lock retained: %v", err.Cause)
 }
 func (err *GlobalCompensationError) Unwrap() error { return err.Cause }
+
+// beginInstallActivationRollback captures only surfaces written by the
+// explicit install activation phase. Registration and lock publication have
+// already completed before this is called, so they stay available when a
+// later adapter fails.
+func beginInstallActivationRollback(op *operation, home string) func(error) error {
+	undo := &globalUndo{entries: map[string]*globalImage{}, managerHome: home}
+	op.undo = undo
+	return func(cause error) error {
+		if cause == nil {
+			op.undo = nil
+			return nil
+		}
+		retainInstallActivationSurfaces(undo, home)
+		if err := undo.restore(); err != nil {
+			return errors.Join(cause, &GlobalCompensationError{Cause: err})
+		}
+		op.undo = nil
+		return cause
+	}
+}
 
 type globalImage struct {
 	mode     os.FileMode
@@ -537,6 +559,10 @@ func (op *operation) captureNative(native string, adapter Adapter, skills []skil
 	if op.undo == nil {
 		return nil
 	}
+	if op.undo.nativeRoots == nil {
+		op.undo.nativeRoots = map[string]bool{}
+	}
+	op.undo.nativeRoots[filepath.Clean(native)] = true
 	paths := []string{filepath.Join(native, adapter.Target), filepath.Join(native, envmarker.Name), filepath.Join(native, ".agent-environment-backup")}
 	prior, err := envmarker.Read(native)
 	if err != nil {
@@ -573,6 +599,64 @@ func (op *operation) captureNative(native string, adapter Adapter, skills []skil
 	}
 	return op.capture(paths...)
 }
+
+func withinPath(root, path string) bool {
+	rel, err := filepath.Rel(root, path)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+// retainInstallActivationSurfaces excludes registration, locks, caches, and
+// other manager records from install activation rollback. Only captured native
+// adapter state and machine/scoped current markers are restored.
+func retainInstallActivationSurfaces(undo *globalUndo, home string) {
+	keepPath := func(path string) bool {
+		if path == CurrentFile(home) || withinPath(ScopedDir(home), path) {
+			return true
+		}
+		for root := range undo.nativeRoots {
+			if withinPath(root, path) {
+				return true
+			}
+		}
+		return false
+	}
+	for path := range undo.entries {
+		if !keepPath(path) {
+			delete(undo.entries, path)
+			delete(undo.postimages, path)
+		}
+	}
+	keepParent := func(path string) bool {
+		if path == ProfilesDir(home) || path == ScopedDir(home) {
+			return true
+		}
+		for root := range undo.nativeRoots {
+			if path == root || withinPath(root, path) {
+				return true
+			}
+		}
+		return false
+	}
+	for path := range undo.parentPostimages {
+		if !keepParent(path) {
+			delete(undo.parentPostimages, path)
+			delete(undo.absentParents, path)
+			delete(undo.parentModes, path)
+		}
+	}
+	for path := range undo.absentParents {
+		if !keepParent(path) {
+			delete(undo.absentParents, path)
+			delete(undo.parentModes, path)
+		}
+	}
+	for path := range undo.parentModes {
+		if !keepParent(path) {
+			delete(undo.parentModes, path)
+		}
+	}
+}
+
 func (op *operation) captureManaged(plan *homePlan, seeds *seedBundle, recorded map[string]bool) error {
 	if op.undo == nil {
 		return nil

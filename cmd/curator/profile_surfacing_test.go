@@ -71,7 +71,8 @@ const surfacingToolManifest = `{"schema_version": 1, "name": "tool", "version": 
 
 const surfacingToolRow = `mcp-declaration tool 1.0.0 stdio command=npx args=["-y","tool"] env_names=["TOOL_TOKEN"]`
 
-// TestProfileInstallListsStdioCommands drives profile install on a root
+// TestProfileInstallListsStdioCommands drives registration-only profile
+// install on a root
 // requiring a stdio declaration: stdout lists the exact §2.3 row before
 // the installed report, stderr carries mcp_package_allowlist_empty, and
 // env status repeats the row with the S4 posture.
@@ -91,6 +92,9 @@ func TestProfileInstallListsStdioCommands(t *testing.T) {
 	code, stdout, stderr := runProfile(t, source, "profile", "install", "https://example.com/withmcp")
 	if code != exitOK {
 		t.Fatalf("install = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+	}
+	if err := envprofile.SetCurrent(source.cfg.Home(), "withmcp"); err != nil {
+		t.Fatalf("seed current profile for the synthetic status fixture: %v", err)
 	}
 	rowAt := strings.Index(stdout, surfacingToolRow)
 	if rowAt < 0 {

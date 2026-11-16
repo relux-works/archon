@@ -8,6 +8,10 @@ import (
 	"testing"
 )
 
+// activationRuntimeFallbackPath keeps ordinary test tools available when a
+// fixture installs synthetic adapter runtimes on PATH.
+var activationRuntimeFallbackPath string
+
 // gitFileURL renders a local fixture repository path as the file:// remote
 // a git [url ...] section matches. The value is written into git
 // configuration, where a backslash is an escape: a raw Windows temporary
@@ -88,6 +92,7 @@ func TestMain(m *testing.M) {
 	if err := os.Setenv("PATH", filepath.Join(testHome, "bin")+string(os.PathListSeparator)+os.Getenv("PATH")); err != nil {
 		panic(err)
 	}
+	activationRuntimeFallbackPath = os.Getenv("PATH")
 	code := m.Run()
 	restoreGitEnv()
 	_ = os.RemoveAll(testHome)
