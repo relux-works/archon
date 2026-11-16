@@ -298,9 +298,12 @@ assert 'a host-capability skip is recorded and allowed' 0 run_gate "$S" env CI_G
 assert_contains 'PATH child uses registered helper-process wording' \
   't.Skip("helper process: only runs in the planted PATH subprocess")' \
   "$ROOTDIR/cmd/curator/testpath_test.go"
-go_missing_reason_pattern='^real Go toolchain unavailable: selected executable is unavailable: (stat /[[:alnum:][:punct:][:blank:]]*absent-go: no such file or directory|GetFileAttributesEx [A-Za-z]:\\[[:alnum:][:punct:][:blank:]]*absent-go: The system cannot find the file specified[.])$'
+go_missing_posix_pattern='^real Go toolchain unavailable: selected executable is unavailable: (stat /[[:alnum:][:punct:][:blank:]]*/absent-go: no such file or directory)$'
+go_missing_windows_pattern='^real Go toolchain unavailable: selected executable is unavailable: (GetFileAttributesEx [A-Za-z]:\\[[:alnum:][:punct:][:blank:]]*\\absent-go: The system cannot find the file specified[.])$'
 go_missing_posix_reason='real Go toolchain unavailable: selected executable is unavailable: stat /fixture/absent-go: no such file or directory'
 go_missing_windows_reason='real Go toolchain unavailable: selected executable is unavailable: GetFileAttributesEx C:\\fixture\\absent-go: The system cannot find the file specified.'
+assert 'shipped skip table excludes the synthetic PATH-go identity' 0 \
+	awk -F'\t' '$5 == "internal/testfixture" && $6 == "TestDeclaredPathSkip" { found++ } END { if (NR == 0) exit 2; if (found) exit 1; exit 0 }' "$CLASSES"
 for path_goos in linux darwin windows; do
   for path_kind in helper go signer; do
     case "$path_kind" in
@@ -312,9 +315,12 @@ for path_goos in linux darwin windows; do
         ;;
       go)
         path_reason="$go_missing_posix_reason"
-        [ "$path_goos" = windows ] && path_reason="$go_missing_windows_reason"
+        path_pattern="$go_missing_posix_pattern"
+        if [ "$path_goos" = windows ]; then
+          path_reason="$go_missing_windows_reason"
+          path_pattern="$go_missing_windows_pattern"
+        fi
         path_nearby="unexpected: $path_reason"
-        path_pattern="$go_missing_reason_pattern"
         path_class='host-capability'
         ;;
       signer)
@@ -324,17 +330,35 @@ for path_goos in linux darwin windows; do
         path_class='host-capability'
         ;;
     esac
+    path_classes="$CLASSES"
+    if [ "$path_kind" = go ]; then
+      path_classes="$WORK/path-classes-go-$path_goos.tsv"
+      cp "$CLASSES" "$path_classes"
+      printf '%s\t%s\tscoped\t%s\tinternal/testfixture\tTestDeclaredPathSkip\t%s\t-\n' \
+        host-capability "$path_pattern" \
+        'the PATH-go self-test fixture is synthetic and exists only in this WORK table' \
+        "$path_goos" >>"$path_classes"
+    fi
     { ev pass internal/buildcache TestWindowsProtectedStateMatrix
       ev pass internal/shell TestPowerShellHookRunsOnEveryPrompt
       ev pass internal/godriver TestProbeRejectsAnUncoveredPlatformBeforeTheWorker
       evout internal/testfixture TestDeclaredPathSkip "$path_reason"
       ev skip internal/testfixture TestDeclaredPathSkip; } >"$S"
+    if [ "$path_kind" = go ]; then
+      rm -f "$WORK/gate-ev/skips-observed.tsv"
+      assert "shipped table rejects synthetic PATH-go identity on $path_goos" 1 \
+        run_gate "$S" env CI_GATE_GOOS="$path_goos"
+      assert_contains 'shipped synthetic PATH-go identity fails on exact scope' \
+        'FATAL-scope' "$WORK/gate-ev/skips-observed.tsv"
+    fi
+    rm -f "$WORK/gate-ev/skips-observed.tsv"
     assert "declared PATH $path_kind skip passes on $path_goos" 0 \
-      run_gate "$S" env CI_GATE_GOOS="$path_goos"
+      run_gate "$S" env CI_GATE_GOOS="$path_goos" CI_SKIP_CLASSES="$path_classes"
     assert_contains 'PATH skip is recorded with its intended class and allowed verdict' \
       "$(printf '%s\tallowed-' "$path_class")" "$WORK/gate-ev/skips-observed.tsv"
 
-    PATH_PATTERN="$path_pattern" awk -F'\t' '$2 != ENVIRON["PATH_PATTERN"]' "$CLASSES" >"$WORK/path-classes-minus.tsv"
+    PATH_PATTERN="$path_pattern" awk -F'\t' '$2 != ENVIRON["PATH_PATTERN"]' "$path_classes" >"$WORK/path-classes-minus.tsv"
+    rm -f "$WORK/gate-ev/skips-observed.tsv"
     assert "missing PATH $path_kind declaration refuses on $path_goos" 1 \
       run_gate "$S" env CI_GATE_GOOS="$path_goos" CI_SKIP_CLASSES="$WORK/path-classes-minus.tsv"
     assert_contains 'missing PATH declaration fails for the intended skip' \
@@ -346,7 +370,7 @@ for path_goos in linux darwin windows; do
       evout internal/testfixture TestDeclaredPathSkip "$path_nearby"
       ev skip internal/testfixture TestDeclaredPathSkip; } >"$S"
     assert "nearby undeclared PATH $path_kind skip refuses on $path_goos" 1 \
-      run_gate "$S" env CI_GATE_GOOS="$path_goos"
+      run_gate "$S" env CI_GATE_GOOS="$path_goos" CI_SKIP_CLASSES="$path_classes"
     assert_contains 'nearby PATH reason remains unclassified' \
       'UNCLASSIFIED' "$WORK/gate-ev/skips-observed.tsv"
 
@@ -357,9 +381,37 @@ for path_goos in linux darwin windows; do
         ev pass internal/godriver TestProbeRejectsAnUncoveredPlatformBeforeTheWorker
         evout internal/testfixture TestDeclaredPathSkip "$path_relative_reason"
         ev skip internal/testfixture TestDeclaredPathSkip; } >"$S"
+      rm -f "$WORK/gate-ev/skips-observed.tsv"
       assert "drive-relative Go path is not a missing-tool skip on $path_goos" 1 \
-        run_gate "$S" env CI_GATE_GOOS="$path_goos"
+        run_gate "$S" env CI_GATE_GOOS="$path_goos" CI_SKIP_CLASSES="$path_classes"
       assert_contains 'drive-relative Go path remains unclassified' \
+        'UNCLASSIFIED' "$WORK/gate-ev/skips-observed.tsv"
+
+      path_cross_reason="$go_missing_windows_reason"
+      if [ "$path_goos" = windows ]; then
+        path_cross_reason="$go_missing_posix_reason"
+      fi
+      { ev pass internal/buildcache TestWindowsProtectedStateMatrix
+        ev pass internal/shell TestPowerShellHookRunsOnEveryPrompt
+        ev pass internal/godriver TestProbeRejectsAnUncoveredPlatformBeforeTheWorker
+        evout internal/testfixture TestDeclaredPathSkip "$path_cross_reason"
+        ev skip internal/testfixture TestDeclaredPathSkip; } >"$S"
+      rm -f "$WORK/gate-ev/skips-observed.tsv"
+      assert "cross-platform Go error form is refused on $path_goos" 1 \
+        run_gate "$S" env CI_GATE_GOOS="$path_goos" CI_SKIP_CLASSES="$path_classes"
+      assert_contains 'cross-platform Go error form reaches its exact scope refusal' \
+        'FATAL-scope' "$WORK/gate-ev/skips-observed.tsv"
+
+      path_no_separator_reason="${path_reason/absent-go/xyzabsent-go}"
+      { ev pass internal/buildcache TestWindowsProtectedStateMatrix
+        ev pass internal/shell TestPowerShellHookRunsOnEveryPrompt
+        ev pass internal/godriver TestProbeRejectsAnUncoveredPlatformBeforeTheWorker
+        evout internal/testfixture TestDeclaredPathSkip "$path_no_separator_reason"
+        ev skip internal/testfixture TestDeclaredPathSkip; } >"$S"
+      rm -f "$WORK/gate-ev/skips-observed.tsv"
+      assert "Go basename without a separator is refused on $path_goos" 1 \
+        run_gate "$S" env CI_GATE_GOOS="$path_goos" CI_SKIP_CLASSES="$path_classes"
+      assert_contains 'Go basename without a separator remains unclassified' \
         'UNCLASSIFIED' "$WORK/gate-ev/skips-observed.tsv"
 
       if [ "$path_goos" = windows ]; then
@@ -369,8 +421,9 @@ for path_goos in linux darwin windows; do
           ev pass internal/godriver TestProbeRejectsAnUncoveredPlatformBeforeTheWorker
           evout internal/testfixture TestDeclaredPathSkip "$path_nearby_op"
           ev skip internal/testfixture TestDeclaredPathSkip; } >"$S"
+        rm -f "$WORK/gate-ev/skips-observed.tsv"
         assert 'nearby Windows file operation is not a missing-tool skip' 1 \
-          run_gate "$S" env CI_GATE_GOOS=windows
+          run_gate "$S" env CI_GATE_GOOS=windows CI_SKIP_CLASSES="$path_classes"
         assert_contains 'nearby Windows operation remains unclassified' \
           'UNCLASSIFIED' "$WORK/gate-ev/skips-observed.tsv"
 
@@ -380,36 +433,40 @@ for path_goos in linux darwin windows; do
           ev pass internal/godriver TestProbeRejectsAnUncoveredPlatformBeforeTheWorker
           evout internal/testfixture TestDeclaredPathSkip "$path_nearby_reason"
           ev skip internal/testfixture TestDeclaredPathSkip; } >"$S"
+        rm -f "$WORK/gate-ev/skips-observed.tsv"
         assert 'nearby Windows missing-file reason is not a missing-tool skip' 1 \
-          run_gate "$S" env CI_GATE_GOOS=windows
+          run_gate "$S" env CI_GATE_GOOS=windows CI_SKIP_CLASSES="$path_classes"
         assert_contains 'nearby Windows reason remains unclassified' \
           'UNCLASSIFIED' "$WORK/gate-ev/skips-observed.tsv"
       fi
 
+      path_wrong_goos=windows
       if [ "$path_goos" = windows ]; then
-        { ev pass internal/buildcache TestWindowsProtectedStateMatrix
-          ev pass internal/shell TestPowerShellHookRunsOnEveryPrompt
-          ev pass internal/godriver TestProbeRejectsAnUncoveredPlatformBeforeTheWorker
-          evout internal/testfixture TestDeclaredPathSkip "$path_reason"
-          ev skip internal/testfixture TestDeclaredPathSkip; } >"$S"
-        PATH_PATTERN="$path_pattern" awk -F'\t' -v OFS='\t' '
-            $2 == ENVIRON["PATH_PATTERN"] && $3 == "scoped" && $5 == "internal/testfixture" && $6 == "TestDeclaredPathSkip" { $7 = "linux,darwin"; matched++ }
+        path_wrong_goos=linux,darwin
+      fi
+      { ev pass internal/buildcache TestWindowsProtectedStateMatrix
+        ev pass internal/shell TestPowerShellHookRunsOnEveryPrompt
+        ev pass internal/godriver TestProbeRejectsAnUncoveredPlatformBeforeTheWorker
+        evout internal/testfixture TestDeclaredPathSkip "$path_reason"
+        ev skip internal/testfixture TestDeclaredPathSkip; } >"$S"
+      PATH_PATTERN="$path_pattern" PATH_WRONG_GOOS="$path_wrong_goos" awk -F'\t' -v OFS='\t' '
+            $2 == ENVIRON["PATH_PATTERN"] && $3 == "scoped" && $5 == "internal/testfixture" && $6 == "TestDeclaredPathSkip" { $7 = ENVIRON["PATH_WRONG_GOOS"]; matched++ }
             { print }
             END { if (matched != 1) exit 1 }
-          ' "$CLASSES" >"$WORK/path-classes-minus-windows.tsv"
+          ' "$path_classes" >"$WORK/path-classes-wrong-goos.tsv"
         path_platform_fixture_status=$?
         assert 'PATH-go platform control fixture narrows exactly its row' 0 \
           test "$path_platform_fixture_status" -eq 0
-        assert 'PATH-go platform control fixture excludes Windows' 0 \
-          env PATH_PATTERN="$path_pattern" awk -F'\t' '
-            $2 == ENVIRON["PATH_PATTERN"] && $3 == "scoped" && $5 == "internal/testfixture" && $6 == "TestDeclaredPathSkip" && $7 == "linux,darwin" { matched++ }
+        assert "PATH-go wrong-platform control fixture declares $path_wrong_goos" 0 \
+          env PATH_PATTERN="$path_pattern" PATH_WRONG_GOOS="$path_wrong_goos" awk -F'\t' '
+            $2 == ENVIRON["PATH_PATTERN"] && $3 == "scoped" && $5 == "internal/testfixture" && $6 == "TestDeclaredPathSkip" && $7 == ENVIRON["PATH_WRONG_GOOS"] { matched++ }
             END { if (matched != 1) exit 1 }
-          ' "$WORK/path-classes-minus-windows.tsv"
-        assert 'PATH-go is refused outside its declared GOOS list' 1 \
-          run_gate "$S" env CI_GATE_GOOS=windows CI_SKIP_CLASSES="$WORK/path-classes-minus-windows.tsv"
+          ' "$WORK/path-classes-wrong-goos.tsv"
+        rm -f "$WORK/gate-ev/skips-observed.tsv"
+        assert "PATH-go is refused outside its declared GOOS list on $path_goos" 1 \
+          run_gate "$S" env CI_GATE_GOOS="$path_goos" CI_SKIP_CLASSES="$WORK/path-classes-wrong-goos.tsv"
         assert_contains 'PATH-go wrong platform reaches intended scope refusal' \
           'FATAL-scope' "$WORK/gate-ev/skips-observed.tsv"
-      fi
     fi
   done
 done
@@ -731,36 +788,37 @@ scoped_gate() {
 awk -F'\t' '$3 == "scoped" {print}' "$CLASSES" >"$SCOPED/rows.tsv"
 scope_row_count=$(awk 'END {print NR + 0}' "$SCOPED/rows.tsv")
 scope_controlled_count=0
-scoped_count_is() {
-	local expected_count="$1" inventory_file="$2" actual_count
-	actual_count=$(awk -F'\t' '$3 == "scoped" {n++} END {print n + 0}' "$inventory_file")
-	test "$actual_count" -eq "$expected_count"
+scoped_inventory_is() {
+	local expected_total="$1" expected_host="$2" expected_opt_in="$3" expected_platform="$4" inventory_file="$5"
+	awk -F'\t' -v total="$expected_total" -v host="$expected_host" -v opt_in="$expected_opt_in" -v platform="$expected_platform" '
+		$3 == "scoped" { rows++; if ($1 == "host-capability") host_rows++; else if ($1 == "opt-in") opt_in_rows++; else if ($1 == "platform-control") platform_rows++ }
+		END { exit !(rows + 0 == total && host_rows + 0 == host && opt_in_rows + 0 == opt_in && platform_rows + 0 == platform) }
+	' "$inventory_file"
 }
-exact_scoped_count() { scoped_count_is 22 "$1"; }
-scope_host_count=$(awk -F'\t' '$1 == "host-capability" && $3 == "scoped" {n++} END {print n + 0}' "$CLASSES")
-scope_opt_in_count=$(awk -F'\t' '$1 == "opt-in" && $3 == "scoped" {n++} END {print n + 0}' "$CLASSES")
-scope_platform_count=$(awk -F'\t' '$1 == "platform-control" && $3 == "scoped" {n++} END {print n + 0}' "$CLASSES")
-assert "scoped inventory has exactly 22 rows (15 host-capability + 2 opt-in + 5 platform-control)" 0 \
-	test "$scope_row_count" -eq 22 -a "$scope_host_count" -eq 15 -a "$scope_opt_in_count" -eq 2 -a "$scope_platform_count" -eq 5
-assert 'exact-count check accepts the unchanged 22-row inventory' 0 \
-	exact_scoped_count "$SCOPED/rows.tsv"
+assert 'operative shipped-table pin is exactly 30 scoped rows (23 host-capability + 2 opt-in + 5 platform-control)' 0 \
+	scoped_inventory_is 30 23 2 5 "$CLASSES"
+assert 'the scoped-row control inventory matches its frozen 30/23/2/5 composition' 0 \
+	scoped_inventory_is 30 23 2 5 "$SCOPED/rows.tsv"
 cp "$SCOPED/rows.tsv" "$SCOPED/count-plus.tsv"
-sed -n '1p' "$SCOPED/rows.tsv" >>"$SCOPED/count-plus.tsv"
-assert 'plus-one count control contains 23 scoped rows' 0 \
-	scoped_count_is 23 "$SCOPED/count-plus.tsv"
+awk -F'\t' '$1 == "host-capability" && $3 == "scoped" {print; found=1; exit} END {if (!found) exit 1}' \
+	"$SCOPED/rows.tsv" >>"$SCOPED/count-plus.tsv"
+assert 'plus-one control is exactly 31 scoped rows (24 host-capability + 2 opt-in + 5 platform-control)' 0 \
+	scoped_inventory_is 31 24 2 5 "$SCOPED/count-plus.tsv"
 assert 'exact-count check rejects a plus-one scoped row' 1 \
-	exact_scoped_count "$SCOPED/count-plus.tsv"
-awk -F'\t' '$3 == "scoped" && !removed {removed=1; next} {print} END {if (!removed) exit 1}' \
+	scoped_inventory_is 30 23 2 5 "$SCOPED/count-plus.tsv"
+awk -F'\t' '$1 == "host-capability" && $3 == "scoped" && !removed {removed=1; next} {print} END {if (!removed) exit 1}' \
 	"$SCOPED/rows.tsv" >"$SCOPED/count-minus.tsv"
-assert 'minus-one count control contains 21 scoped rows' 0 \
-	scoped_count_is 21 "$SCOPED/count-minus.tsv"
+assert 'minus-one control is exactly 29 scoped rows (22 host-capability + 2 opt-in + 5 platform-control)' 0 \
+	scoped_inventory_is 29 22 2 5 "$SCOPED/count-minus.tsv"
 assert 'exact-count check rejects a removed scoped row' 1 \
-	exact_scoped_count "$SCOPED/count-minus.tsv"
+	scoped_inventory_is 30 23 2 5 "$SCOPED/count-minus.tsv"
 while IFS="$(printf '\t')" read -r scope_class scope_pattern scope_policy scope_note scope_pkg scope_test scope_goos scope_cap; do
 	scope_reason="${scope_pattern#^}"; scope_reason="${scope_reason%\$}"
-	if [ "$scope_pattern" = "$go_missing_reason_pattern" ]; then
-		scope_reason="$go_missing_windows_reason"
-	fi
+	scope_control_goos=windows
+	case "$scope_pattern" in
+		"$go_missing_posix_pattern") scope_reason="$go_missing_posix_reason"; scope_control_goos=linux ;;
+		"$go_missing_windows_pattern") scope_reason="$go_missing_windows_reason" ;;
+	esac
 	# Store rehearsal cases have exact opt-in ledger rows. A missing class
 	# therefore fails their required reason before the generic unclassified gate.
 	scope_unknown_verdict=FATAL-unclassified
@@ -768,28 +826,28 @@ while IFS="$(printf '\t')" read -r scope_class scope_pattern scope_policy scope_
 	scope_gate="$SCOPED/folding/platform-case-gate.sh"
 	# Exact known case/GOOS positive beside the reviewer's unrelated-test witness.
 	for scope_target in $(echo "$scope_goos" | tr ',' ' '); do
-		scope_target_reason="$scope_reason"
-		if [ "$scope_pattern" = "$go_missing_reason_pattern" ] && [ "$scope_target" != windows ]; then
-			scope_target_reason="$go_missing_posix_reason"
-		fi
 		assert "scoped exact case passes on $scope_target: $scope_test" 0 \
-			scoped_gate "$scope_gate" "$CLASSES" "$scope_target" "$scope_pkg" "$scope_test" "$scope_target_reason"
+			scoped_gate "$scope_gate" "$CLASSES" "$scope_target" "$scope_pkg" "$scope_test" "$scope_reason"
 	done
 	scope_unrelated=TestReadPurityStatusMissingStore
 	[ "$scope_pkg" = cmd/curator ] && scope_unrelated=TestMuseRootContextCopyFallback
 	assert "unrelated Windows test cannot borrow reason: $scope_test" 1 \
-		scoped_gate "$scope_gate" "$CLASSES" windows "$scope_pkg" "$scope_unrelated" "$scope_reason"
+		scoped_gate "$scope_gate" "$CLASSES" "$scope_control_goos" "$scope_pkg" "$scope_unrelated" "$scope_reason"
 	assert_contains 'borrowed reason fails its intended scope' 'FATAL-scope' "$SCOPED/evidence/skips-observed.tsv"
 	assert "same test name in another package cannot borrow reason: $scope_test" 1 \
-		scoped_gate "$scope_gate" "$CLASSES" windows internal/marker "$scope_test" "$scope_reason"
+		scoped_gate "$scope_gate" "$CLASSES" "$scope_control_goos" internal/marker "$scope_test" "$scope_reason"
 	assert "a child cannot inherit an exact scope: $scope_test" 1 \
-		scoped_gate "$scope_gate" "$CLASSES" windows "$scope_pkg" "$scope_test/extra" "$scope_reason"
+		scoped_gate "$scope_gate" "$CLASSES" "$scope_control_goos" "$scope_pkg" "$scope_test/extra" "$scope_reason"
 	if [ "$scope_goos" = windows ]; then
 		for scope_target in linux darwin; do
 			assert "Windows-only reason refuses on $scope_target: $scope_test" 1 \
-				scoped_gate "$scope_gate" "$CLASSES" "$scope_target" "$scope_pkg" "$scope_test" "$scope_reason"
+			scoped_gate "$scope_gate" "$CLASSES" "$scope_target" "$scope_pkg" "$scope_test" "$scope_reason"
 			assert_contains 'wrong-platform reason fails its intended scope' 'FATAL-scope' "$SCOPED/evidence/skips-observed.tsv"
 		done
+	elif [ "$scope_pattern" = "$go_missing_posix_pattern" ]; then
+		assert 'POSIX absent-toolchain reason is refused on Windows' 1 \
+			scoped_gate "$scope_gate" "$CLASSES" windows "$scope_pkg" "$scope_test" "$scope_reason"
+		assert_contains 'POSIX wrong-platform reason reaches exact scope refusal' 'FATAL-scope' "$SCOPED/evidence/skips-observed.tsv"
 	fi
 	# Claim: a broad matching row cannot repeal an earlier scoped reason,
 	# including when another exact scoped declaration shares that reason.
@@ -797,21 +855,21 @@ while IFS="$(printf '\t')" read -r scope_class scope_pattern scope_policy scope_
 	printf '%s\t%s\tallow\tsynthetic overlapping broad allowance\n' \
 		"$scope_class" "$scope_pattern" >>"$SCOPED/overlap.tsv"
 	assert "broad overlap cannot repeal exact scope: $scope_test" 1 \
-		scoped_gate "$scope_gate" "$SCOPED/overlap.tsv" windows "$scope_pkg" "$scope_unrelated" "$scope_reason"
+		scoped_gate "$scope_gate" "$SCOPED/overlap.tsv" "$scope_control_goos" "$scope_pkg" "$scope_unrelated" "$scope_reason"
 	assert_contains 'broad overlap reaches the scoped refusal' 'FATAL-scope' "$SCOPED/evidence/skips-observed.tsv"
 	assert "broad overlap preserves exact positive: $scope_test" 0 \
-		scoped_gate "$scope_gate" "$SCOPED/overlap.tsv" windows "$scope_pkg" "$scope_test" "$scope_reason"
+		scoped_gate "$scope_gate" "$SCOPED/overlap.tsv" "$scope_control_goos" "$scope_pkg" "$scope_test" "$scope_reason"
 	awk '{ old = "} else if (!broad) broad = i"; at = index($0, old); if (at) { $0 = substr($0, 1, at - 1) "} else return i" substr($0, at + length(old)); n++ } print }
 		END { if (n != 1) exit 1 }' "$GATE" >"$SCOPED/folding/broad-mutant.sh"
 	assert "control catches broad-overlap regression: $scope_test" 0 \
-		scoped_gate "$SCOPED/folding/broad-mutant.sh" "$SCOPED/overlap.tsv" windows "$scope_pkg" "$scope_unrelated" "$scope_reason"
+		scoped_gate "$SCOPED/folding/broad-mutant.sh" "$SCOPED/overlap.tsv" "$scope_control_goos" "$scope_pkg" "$scope_unrelated" "$scope_reason"
 
 	# An otherwise tolerant exact ledger row cannot repeal a scoped declaration.
 	cp "$SHIPPED" "$SCOPED/tolerant.tsv"
 	printf '%s\t%s\t-\tlinux,darwin,windows\t%s\tsynthetic toleration control\n' \
 		"$scope_pkg" "$scope_unrelated" "$scope_class" >>"$SCOPED/tolerant.tsv"
 	assert "ledger toleration cannot buy another case's allowance: $scope_test" 1 \
-		scoped_gate "$scope_gate" "$CLASSES" windows "$scope_pkg" "$scope_unrelated" "$scope_reason" "$SCOPED/tolerant.tsv"
+		scoped_gate "$scope_gate" "$CLASSES" "$scope_control_goos" "$scope_pkg" "$scope_unrelated" "$scope_reason" "$SCOPED/tolerant.tsv"
 	assert_contains 'ledger bypass refuses for scope, not absent required cases' 'FATAL-scope' "$SCOPED/evidence/skips-observed.tsv"
 
 	# Both anchors matter independently. Narrowing mutants remove just one
@@ -819,24 +877,24 @@ while IFS="$(printf '\t')" read -r scope_class scope_pattern scope_policy scope_
 	for scope_edge in prefix suffix; do
 		if [ "$scope_edge" = prefix ]; then scope_near="unexpected: $scope_reason"; else scope_near="$scope_reason unexpectedly"; fi
 		assert "anchored $scope_edge reason refuses: $scope_test" 1 \
-			scoped_gate "$scope_gate" "$CLASSES" windows "$scope_pkg" "$scope_test" "$scope_near"
+			scoped_gate "$scope_gate" "$CLASSES" "$scope_control_goos" "$scope_pkg" "$scope_test" "$scope_near"
 		assert_contains 'nearby reason reaches its intended rejection' "$scope_unknown_verdict" "$SCOPED/evidence/skips-observed.tsv"
 		SCOPE_PATTERN="$scope_pattern" SCOPE_EDGE="$scope_edge" awk -F'\t' -v OFS='\t' '
 			$2 == ENVIRON["SCOPE_PATTERN"] { if (ENVIRON["SCOPE_EDGE"] == "prefix") sub(/^\^/, "", $2); else sub(/\$$/, "", $2) } {print}
 		' "$CLASSES" >"$SCOPED/anchor-mutant.tsv"
 		assert "control catches removed $scope_edge anchor: $scope_test" 0 \
-			scoped_gate "$scope_gate" "$SCOPED/anchor-mutant.tsv" windows "$scope_pkg" "$scope_test" "$scope_near"
+			scoped_gate "$scope_gate" "$SCOPED/anchor-mutant.tsv" "$scope_control_goos" "$scope_pkg" "$scope_test" "$scope_near"
 	done
 	SCOPE_PATTERN="$scope_pattern" awk -F'\t' '$2 != ENVIRON["SCOPE_PATTERN"]' "$CLASSES" >"$SCOPED/removed.tsv"
 	assert "exact reason needs its declaration: $scope_test" 1 \
-		scoped_gate "$scope_gate" "$SCOPED/removed.tsv" windows "$scope_pkg" "$scope_test" "$scope_reason"
+		scoped_gate "$scope_gate" "$SCOPED/removed.tsv" "$scope_control_goos" "$scope_pkg" "$scope_test" "$scope_reason"
 	assert_contains 'removed declaration reaches its intended rejection' "$scope_unknown_verdict" "$SCOPED/evidence/skips-observed.tsv"
 
 	# Narrowing mutant: restoring global allow recreates each unrelated-test bug.
 	SCOPE_PATTERN="$scope_pattern" awk -F'\t' -v OFS='\t' '$2 == ENVIRON["SCOPE_PATTERN"] {$3 = "allow"} {print}' \
 		"$CLASSES" >"$SCOPED/policy-mutant.tsv"
 	assert "control catches global-allow regression: $scope_test" 0 \
-		scoped_gate "$scope_gate" "$SCOPED/policy-mutant.tsv" windows "$scope_pkg" "$scope_unrelated" "$scope_reason"
+		scoped_gate "$scope_gate" "$SCOPED/policy-mutant.tsv" "$scope_control_goos" "$scope_pkg" "$scope_unrelated" "$scope_reason"
 	scope_controlled_count=$((scope_controlled_count + 1))
 done <"$SCOPED/rows.tsv"
 assert "all $scope_row_count scoped rows reached their controls ($scope_controlled_count)" 0 \
