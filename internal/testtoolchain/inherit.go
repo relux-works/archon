@@ -82,14 +82,56 @@ func inheritHostGOROOTLockAt(t testing.TB, command *exec.Cmd, root string) bool 
 
 func hostGOROOTLeaseFor(root, owner string) *hostGOROOTLease {
 	hostGOROOTLeases.Lock()
-	defer hostGOROOTLeases.Unlock()
 	lease := hostGOROOTLeases.byRoot[root]
 	if lease == nil || !hostGOROOTLeaseAdmits(lease, owner) {
+		hostGOROOTLeases.Unlock()
 		return nil
 	}
-	copy := *lease
-	copy.tests = append([]string(nil), lease.tests...)
-	return &copy
+	clone := *lease
+	clone.tests = append([]string(nil), lease.tests...)
+	hostGOROOTLeases.Unlock()
+	if !clone.inherited || hostGOROOTInheritedLeaseStillHeld(root, clone.owner) {
+		return &clone
+	}
+
+	// Remove only the entry that failed validation. A concurrent replacement
+	// must remain available to its own admitted test scope.
+	hostGOROOTLeases.Lock()
+	if hostGOROOTLeases.byRoot[root] == lease {
+		delete(hostGOROOTLeases.byRoot, root)
+	}
+	hostGOROOTLeases.Unlock()
+	return nil
+}
+
+func hostGOROOTInheritedLeaseStillHeld(root string, owner hostGOROOTOwner) bool {
+	if !hostGOROOTProcessAlive(owner.PID) || !hostGOROOTOwnerEqual(readHostGOROOTOwner(filepath.Join(root, "holder.json")), owner) {
+		return false
+	}
+	manager, err := managerlock.New(root)
+	if err != nil {
+		return false
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 75*time.Millisecond)
+	probe, err := manager.AcquireExistingHomeOnly(ctx)
+	cancel()
+	if err == nil {
+		_ = probe.Close()
+		return false
+	}
+	if !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
+		return false
+	}
+	return hostGOROOTProcessAlive(owner.PID) && hostGOROOTOwnerEqual(readHostGOROOTOwner(filepath.Join(root, "holder.json")), owner)
+}
+
+func releaseInheritedHostGOROOTLease(root string, owner hostGOROOTOwner) {
+	hostGOROOTLeases.Lock()
+	defer hostGOROOTLeases.Unlock()
+	lease := hostGOROOTLeases.byRoot[root]
+	if lease != nil && lease.inherited && hostGOROOTOwnerEqual(&lease.owner, owner) {
+		delete(hostGOROOTLeases.byRoot, root)
+	}
 }
 
 func hostGOROOTLeaseAdmits(lease *hostGOROOTLease, owner string) bool {
@@ -155,28 +197,7 @@ func inheritHostGOROOTLease(root, owner string) *hostGOROOTLease {
 			break
 		}
 	}
-	if !allowed || !hostGOROOTProcessAlive(marker.Owner.PID) {
-		return nil
-	}
-	path := filepath.Join(root, "holder.json")
-	if !hostGOROOTOwnerEqual(readHostGOROOTOwner(path), marker.Owner) {
-		return nil
-	}
-	manager, err := managerlock.New(root)
-	if err != nil {
-		return nil
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 75*time.Millisecond)
-	defer cancel()
-	probe, err := manager.AcquireExistingHomeOnly(ctx)
-	if err == nil {
-		_ = probe.Close()
-		return nil
-	}
-	if !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
-		return nil
-	}
-	if !hostGOROOTProcessAlive(marker.Owner.PID) || !hostGOROOTOwnerEqual(readHostGOROOTOwner(path), marker.Owner) {
+	if !allowed || !hostGOROOTInheritedLeaseStillHeld(root, marker.Owner) {
 		return nil
 	}
 	lease := &hostGOROOTLease{owner: marker.Owner, inherited: true, tests: append([]string(nil), marker.Tests...)}
@@ -191,12 +212,13 @@ func hostGOROOTOwnerEqual(actual *hostGOROOTOwner, expected hostGOROOTOwner) boo
 func hostGOROOTRunPatternMatches(pattern, testName string) bool {
 	patterns := strings.Split(pattern, "/")
 	names := strings.Split(testName, "/")
-	if len(patterns) > len(names) {
-		return false
-	}
-	for index, part := range patterns {
+	for index, name := range names {
+		if index >= len(patterns) {
+			break
+		}
+		part := patterns[index]
 		expression, err := regexp.Compile(part)
-		if err != nil || !expression.MatchString(names[index]) {
+		if err != nil || !expression.MatchString(name) {
 			return false
 		}
 	}

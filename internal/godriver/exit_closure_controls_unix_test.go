@@ -35,6 +35,7 @@ func TestWorkerExitNarrowingControls(t *testing.T) {
 					args = append([]string{"test", "-overlay", overlay}, args[1:]...)
 				}
 				c := exec.CommandContext(t.Context(), testtoolchain.Go(t), args...)
+				testtoolchain.InheritHostGOROOTLock(t, c)
 				b, err := c.CombinedOutput()
 				if overlay == "" {
 					if err != nil || !strings.Contains(string(b), "--- PASS:") {

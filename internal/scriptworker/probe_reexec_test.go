@@ -22,6 +22,8 @@ func TestLandlockProbeModeTerminatesAffectedTestBinaries(t *testing.T) {
 				binary += ".exe"
 			}
 			compile := exec.Command(testtoolchain.Go(t), "test", "-c", "-o", binary, "../../"+pkg) // #nosec G204 -- fixed repository test packages
+			// This -c invocation only builds a binary; the explicit call guards this Go-test route but admits no child test selection.
+			testtoolchain.InheritHostGOROOTLock(t, compile)
 			if output, err := compile.CombinedOutput(); err != nil {
 				t.Fatalf("build: %v\n%s", err, output)
 			}
