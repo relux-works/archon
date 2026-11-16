@@ -41,6 +41,7 @@ func writePackage(t *testing.T, root, name, version, module string) {
 
 func pinHomes(t *testing.T) map[string]string {
 	t.Helper()
+	setActivationRuntimes(t, allActivationRuntimes()...)
 	// Native-home boundary tests need a physical fixture root, not macOS's
 	// symlinked /var alias.
 	base := bindingDirectory(t)
@@ -74,7 +75,7 @@ func TestInstallPathAndList(t *testing.T) {
 	pinHomes(t)
 	source := t.TempDir()
 	writePackage(t, source, "acme", "1.0.0", "hello\n")
-	info, activated, updated, err := Install(home, InstallOptions{Operand: source})
+	info, activated, updated, err := Install(home, InstallOptions{Operand: source, Use: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +100,7 @@ func TestInstallPathAndList(t *testing.T) {
 		t.Fatal(err)
 	}
 	if current != "acme" {
-		t.Fatalf("first install must activate, current=%q", current)
+		t.Fatalf("explicit install --use must activate, current=%q", current)
 	}
 }
 
@@ -298,6 +299,9 @@ func TestRemoveRefusesCurrent(t *testing.T) {
 	writePackage(t, source, "acme", "1.0.0", "hello\n")
 	if _, _, _, err := Install(home, InstallOptions{Operand: source}); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := Use(home, "acme", "", "", false); err != nil {
+		t.Fatalf("activate acme before checking removal refusal: %v", err)
 	}
 	if err := Remove(home, "acme", false); err == nil || !strings.Contains(err.Error(), DiagInUse) {
 		t.Fatalf("error %v carries no %s", err, DiagInUse)
@@ -518,6 +522,9 @@ func TestScopedUseAndClear(t *testing.T) {
 	}
 	if _, _, _, err := Install(home, InstallOptions{Operand: second}); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := Use(home, "one", "", "", false); err != nil {
+		t.Fatalf("activate one before scoped switching: %v", err)
 	}
 	if _, err := Use(home, "two", "codex_cli", "", false); err != nil {
 		t.Fatal(err)

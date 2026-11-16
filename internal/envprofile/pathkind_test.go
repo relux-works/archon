@@ -267,9 +267,8 @@ func TestPathSnapshotImmutableAcrossUpdateSyncUse(t *testing.T) {
 		t.Fatalf("pin moved across update/sync/use: %q -> %q", before.StateHash, afterAll.StateHash)
 	}
 	// The §1 reinstall is the one operator path that refreshes the
-	// snapshot: installing the edited tree under the same name must move
-	// the pin and re-materialize the current profile's surface with the
-	// new bytes.
+	// snapshot. Without explicit activation it moves the pin while leaving
+	// the already-current native surface unchanged.
 	reinstalled, activated, isUpdated, err := Install(home, InstallOptions{Operand: source, As: "pk"})
 	if err != nil {
 		t.Fatalf("reinstall: %v", err)
@@ -286,10 +285,17 @@ func TestPathSnapshotImmutableAcrossUpdateSyncUse(t *testing.T) {
 	}
 	payload, err := os.ReadFile(filepath.Join(homes["claude_code"], "CLAUDE.md")) // #nosec G304 -- test home
 	if err != nil {
-		t.Fatalf("re-materialized surface: %v", err)
+		t.Fatalf("read existing surface: %v", err)
 	}
-	if !strings.Contains(string(payload), "EDITED AFTER INSTALL") {
-		t.Fatalf("reinstall left the materialized surface stale:\n%s", payload)
+	if !strings.Contains(string(payload), "original") || strings.Contains(string(payload), "EDITED AFTER INSTALL") {
+		t.Fatalf("reinstall without --use changed the existing surface:\n%s", payload)
+	}
+	if _, err := UseWithPolicy(home, "pk", "", "", false, Policy{}); err != nil {
+		t.Fatalf("explicit use after reinstall: %v", err)
+	}
+	payload, err = os.ReadFile(filepath.Join(homes["claude_code"], "CLAUDE.md")) // #nosec G304 -- test home
+	if err != nil || !strings.Contains(string(payload), "EDITED AFTER INSTALL") {
+		t.Fatalf("explicit use did not materialize the updated snapshot:\n%s err=%v", payload, err)
 	}
 	// The edit is real even without the reinstall path: a fresh install of
 	// the edited tree under another name pins a different hash, so the
@@ -511,14 +517,18 @@ func TestUpdatePathSnapshotNameMismatchIsSourceInvalid(t *testing.T) {
 func TestPathReinstallBareAndNonCurrentMovesPin(t *testing.T) {
 	home := gitFixtureHome(t)
 	pinHomes(t)
+	setActivationRuntimes(t, allActivationRuntimes()...)
 	bare := filepath.Join(t.TempDir(), "source")
 	writeManifestPackage(t, bare,
 		`{"schema_version": 1, "name": "bare", "version": "1.0.0",`+
 			`"context": {"modules": [{"path": "a.md"}]}}`+"\n",
 		map[string]string{"a.md": "original\n"})
-	info, _, _, err := Install(home, InstallOptions{Operand: bare})
+	info, activated, _, err := Install(home, InstallOptions{Operand: bare, Use: true})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if !activated {
+		t.Fatal("initial explicit use did not activate the bare profile")
 	}
 	if info.Name != "bare" {
 		t.Fatalf("profile %q, want the manifest name", info.Name)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/relux-works/curator/internal/config"
 	"github.com/relux-works/curator/internal/envmarker"
+	"github.com/relux-works/curator/internal/envprofile"
 )
 
 // These tests drive the production run() entry point for the stage (c)
@@ -31,7 +32,7 @@ func pinOperatorHome(t *testing.T) {
 func TestProfileImportRow(t *testing.T) {
 	source, _ := profileHome(t)
 	pinOperatorHome(t)
-	if code, stdout, stderr := runProfile(t, source, "profile", "import"); code != exitOK {
+	if code, stdout, stderr := runProfile(t, source, "profile", "import", "--use"); code != exitOK {
 		t.Fatalf("import = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
 	} else if !strings.Contains(stdout, "installed and activated profile imported") {
 		t.Fatalf("stdout:\n%s\nstderr:\n%s", stdout, stderr)
@@ -42,6 +43,37 @@ func TestProfileImportRow(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "imported") {
 		t.Fatalf("list stdout:\n%s", stdout)
+	}
+}
+
+// TestProfileImportWithoutUseRow drives `profile import` without --use
+// through run() on a machine with no current profile: the row registers the
+// imported profile, prints the registration with the activation hint, records
+// no current, and writes no native home.
+func TestProfileImportWithoutUseRow(t *testing.T) {
+	source, home := profileHome(t)
+	pinOperatorHome(t)
+	code, stdout, stderr := runProfile(t, source, "profile", "import")
+	if code != exitOK {
+		t.Fatalf("import = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+	}
+	if !strings.Contains(stdout, "installed profile imported (root ") || !strings.Contains(stdout, "activate with 'curator profile use imported'") {
+		t.Fatalf("stdout must report the registration and the activation hint:\n%s", stdout)
+	}
+	if strings.Contains(stdout, "installed and activated") || strings.Contains(stdout, "switched") {
+		t.Fatalf("import without --use must not report an activation:\n%s", stdout)
+	}
+	if current, err := envprofile.Current(home); err != nil || current != "" {
+		t.Fatalf("import without --use set current=%q, err=%v", current, err)
+	}
+	for _, dir := range []string{os.Getenv("CLAUDE_CONFIG_DIR"), os.Getenv("CODEX_HOME"), filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "opencode"), os.Getenv("PI_CODING_AGENT_DIR")} {
+		if _, err := os.Lstat(dir); !os.IsNotExist(err) {
+			t.Fatalf("import without --use wrote adapter home %s: %v", filepath.Base(dir), err)
+		}
+	}
+	code, stdout, stderr = runProfile(t, source, "profile", "list")
+	if code != exitOK || !strings.Contains(stdout, "imported") || strings.Contains(stdout, "current") {
+		t.Fatalf("list = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
 	}
 }
 
@@ -431,7 +463,7 @@ func TestProfileInstallReinstallHonoursUseAndTakeover(t *testing.T) {
 		pinOperatorHome(t)
 		src := t.TempDir()
 		writeContextPackage(t, src, "tk", "1.0.0", "original\n")
-		if code, _, stderr := runProfile(t, source, "profile", "install", src, "--as", "tk"); code != exitOK {
+		if code, _, stderr := runProfile(t, source, "profile", "install", src, "--as", "tk", "--use"); code != exitOK {
 			t.Fatalf("install = %d\nstderr:\n%s", code, stderr)
 		}
 		if got := currentOf(t, source); got != "tk" {

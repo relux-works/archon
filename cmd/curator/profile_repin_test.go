@@ -33,7 +33,7 @@ func TestProfileUpdateRepin(t *testing.T) {
 			a := repinCommit(t, repo)
 			const operand = "https://example.com/repin"
 			serveGitRepos(t, map[string]string{operand: repo})
-			if code, _, stderr := runProfile(t, source, "profile", "install", operand, "--revision", a); code != exitOK {
+			if code, _, stderr := runProfile(t, source, "profile", "install", operand, "--revision", a, "--use"); code != exitOK {
 				t.Fatalf("install: %d %s", code, stderr)
 			}
 			before, err := envprofile.List(home)
@@ -112,7 +112,7 @@ func TestProfileUpdateRepinUsage(t *testing.T) {
 	source, home := profileHome(t)
 	pkg := t.TempDir()
 	writeContextPackage(t, pkg, "path-profile", "1.0.0", "path context\n")
-	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
+	if code, _, stderr := runProfile(t, source, "profile", "install", pkg, "--use"); code != exitOK {
 		t.Fatalf("install: %d %s", code, stderr)
 	}
 	cases := [][]string{

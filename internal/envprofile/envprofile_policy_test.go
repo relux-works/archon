@@ -152,6 +152,9 @@ func TestMachineClearReachesSeamGate(t *testing.T) {
 	if _, _, _, err := Install(home, InstallOptions{Operand: second}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := UseWithPolicy(home, "one", "", "", false, Policy{}); err != nil {
+		t.Fatalf("activate one before checking the machine-clear gate: %v", err)
+	}
 	required := "acme"
 	locked := Policy{OverlaysAllowed: true, RequireCurrent: &required, RequireCurrentLocked: true}
 	if _, err := UseWithPolicy(home, "bogus", "", "", true, locked); err == nil || !strings.Contains(err.Error(), "takes no profile operand") {

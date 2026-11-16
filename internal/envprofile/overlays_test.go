@@ -36,8 +36,10 @@ func chapterOrder(t *testing.T, path string) []string {
 }
 
 // installComposedPair installs a path root with a path overlay through the
-// production Install and returns the manager home and profile name.
-func installComposedPair(t *testing.T) (string, string) {
+// production Install and returns the manager home, the profile name, and the
+// policy that declares the overlay — the switch must carry the same effective
+// declarations the lock was built from (environments §10.1).
+func installComposedPair(t *testing.T) (string, string, Policy) {
 	t.Helper()
 	home := gitFixtureHome(t)
 	pinHomes(t)
@@ -59,7 +61,7 @@ func installComposedPair(t *testing.T) (string, string) {
 	if _, _, _, err := Install(home, InstallOptions{Operand: root, Policy: base}); err != nil {
 		t.Fatal(err)
 	}
-	return home, "acme"
+	return home, "acme", base
 }
 
 // TestPrecedencePrimitivesDriveEmission drives the production switch under
@@ -78,16 +80,14 @@ func TestPrecedencePrimitivesDriveEmission(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.winner+"/"+tc.placement, func(t *testing.T) {
-			home, profile := installComposedPair(t)
+			home, profile, policy := installComposedPair(t)
 			// The helper already resolved the weighed lock; the switch
 			// reads it from the store and emits under the candidate
-			// precedence pair.
-			policy := Policy{
-				OverlaysAllowed:      true,
-				OverlayDefaultWeight: 1000,
-				PrecedenceWinner:     tc.winner,
-				PrecedencePlacement:  tc.placement,
-			}
+			// precedence pair. The overlay declaration stays in the
+			// policy: a switch whose declarations disagree with the lock
+			// is composition_lock_mismatch, not a precedence case.
+			policy.PrecedenceWinner = tc.winner
+			policy.PrecedencePlacement = tc.placement
 			results, err := UseWithPolicy(home, profile, "", "", false, policy)
 			if err != nil {
 				t.Fatal(err)

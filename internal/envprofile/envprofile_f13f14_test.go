@@ -12,8 +12,8 @@ import (
 
 // Production entry points under test: Install, Current, Use.
 //
-// F13 covers install activation as a §9.2 switch: first install and
-// InstallOptions.Use must attempt every entry, record the new current only
+// F13 covers explicit install activation as a §9.2 switch: InstallOptions.Use
+// must attempt every entry, record the new current only
 // when the whole scope materialized, and report profile_use_partial when it
 // did not. A mutant that only moves the current pointer (the pre-fix shape)
 // or that drops materialization for one adapter must fail these tests.
@@ -31,7 +31,7 @@ func TestInstallUseSwitchesAndAgrees(t *testing.T) {
 	homes := pinHomes(t)
 	first := t.TempDir()
 	writePackage(t, first, "alpha", "1.0.0", "alpha\n")
-	if _, _, _, err := Install(home, InstallOptions{Operand: first}); err != nil {
+	if _, _, _, err := Install(home, InstallOptions{Operand: first, Use: true}); err != nil {
 		t.Fatalf("install alpha: %v", err)
 	}
 	second := t.TempDir()
@@ -81,7 +81,7 @@ func TestInstallUsePartialLeavesCurrent(t *testing.T) {
 	homes := pinHomes(t)
 	first := t.TempDir()
 	writePackage(t, first, "alpha", "1.0.0", "alpha\n")
-	if _, _, _, err := Install(home, InstallOptions{Operand: first}); err != nil {
+	if _, _, _, err := Install(home, InstallOptions{Operand: first, Use: true}); err != nil {
 		t.Fatalf("install alpha: %v", err)
 	}
 	// Break one adapter home: replace its directory with a regular file so

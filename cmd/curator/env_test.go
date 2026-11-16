@@ -32,6 +32,7 @@ func TestEnvResolveBareStaleIsAFailure(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("install stderr:\n%s", stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	code, stdout, stderr := runProfile(t, source, "env", "resolve", "codex_cli")
 	if code != exitFail {
 		t.Fatalf("resolve = %d, want %d", code, exitFail)
@@ -55,6 +56,7 @@ func TestEnvResolveRepairEmitsFragment(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("install stderr:\n%s", stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	code, stdout, stderr := runProfile(t, source, "env", "resolve", "codex_cli", "--repair")
 	if code != exitOK {
 		t.Fatalf("resolve --repair = %d\nstderr:\n%s", code, stderr)
@@ -94,6 +96,7 @@ func TestEnvResolveRejectsSwappedStoreEntry(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("profile install = %d\nstderr:\n%s", code, stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	if code, _, stderr := runProfile(t, source, "env", "resolve", "codex_cli", "--repair"); code != exitOK {
 		t.Fatalf("env resolve --repair = %d\nstderr:\n%s", code, stderr)
 	}
@@ -173,6 +176,13 @@ func loadEnvironmentIsolationConfig(t *testing.T, source stubConfigSource, userJ
 	return source
 }
 
+func setEnvTestCurrent(t *testing.T, source stubConfigSource, profile string) {
+	t.Helper()
+	if err := envprofile.SetCurrent(source.cfg.Home(), profile); err != nil {
+		t.Fatalf("seed current profile %q for the synthetic environment fixture: %v", profile, err)
+	}
+}
+
 func installEnvTestProfile(t *testing.T, source stubConfigSource) {
 	t.Helper()
 	pkg := t.TempDir()
@@ -180,6 +190,7 @@ func installEnvTestProfile(t *testing.T, source stubConfigSource) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("profile install = %d\nstderr:\n%s", code, stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 }
 
 // TestEnvResolveIsolatedSystemLockUsesDirection drives system-config-v2
@@ -314,6 +325,10 @@ func TestEnvStatusMatrix(t *testing.T) {
 	writeContextPackage(t, pkg, "acme", "1.0.0", "hello\n")
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("install stderr:\n%s", stderr)
+	}
+	// A machine-current profile can still have no scoped current or homes.
+	if err := envprofile.SetCurrent(source.cfg.Home(), "acme"); err != nil {
+		t.Fatalf("seed current profile for the unprovisioned status fixture: %v", err)
 	}
 	code, stdout, _ := runProfile(t, source, "env", "status", "--check")
 	if code != exitFail {
@@ -559,6 +574,7 @@ func TestEnvStatusReportsDroppedSystemModuleThroughCLI(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", "https://example.com/sysroot"); code != exitOK {
 		t.Fatalf("profile install = %d\nstderr:\n%s", code, stderr)
 	}
+	setEnvTestCurrent(t, source, "sysroot")
 	if code, _, stderr := runProfile(t, source, "env", "resolve", "claude_code", "--profile", "sysroot", "--repair"); code != exitOK {
 		t.Fatalf("env resolve --repair = %d\nstderr:\n%s", code, stderr)
 	}
@@ -676,6 +692,7 @@ func TestEnvStatusS4Posture(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("install stderr:\n%s", stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	code, stdout, _ := runProfile(t, source, "env", "status")
 	if code != exitOK {
 		t.Fatalf("status = %d\n%s", code, stdout)
@@ -733,6 +750,7 @@ func TestEnvStatusEffectivePassableList(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("install stderr:\n%s", stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	code, stdout, _ := runProfile(t, source, "env", "status")
 	if code != exitOK {
 		t.Fatalf("status = %d\n%s", code, stdout)
@@ -762,6 +780,7 @@ func TestEnvResolvePreserveLockRepairBindsUnchangedLock(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatal(stderr)
 	}
+	setEnvTestCurrent(t, source, "sample")
 	path := filepath.Join(envprofile.ProfileDir(source.cfg.Home(), "sample"), "lock.json")
 	before, err := os.ReadFile(path)
 	if err != nil {
@@ -799,6 +818,7 @@ func TestEnvResolvePreserveLockRefusesCurrentV1AndPlainRepairMigrates(t *testing
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatal(stderr)
 	}
+	setEnvTestCurrent(t, source, "sample")
 	if code, _, stderr := runProfile(t, source, "env", "resolve", "pi", "--repair"); code != exitOK {
 		t.Fatal(stderr)
 	}

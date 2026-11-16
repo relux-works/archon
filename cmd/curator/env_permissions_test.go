@@ -228,6 +228,7 @@ func TestEnvResolveEmitsPermissionsV2AtProductionEntry(t *testing.T) {
 			if code, _, stderr := runFileConfigProfile(t, source.path, "profile", "install", pkg); code != exitOK {
 				t.Fatalf("install = %d\nstderr:\n%s", code, stderr)
 			}
+			setEnvTestCurrent(t, source, "acme")
 			code, stdout, stderr := runFileConfigProfile(t, source.path,
 				"env", "resolve", "codex_cli", "--repair", "--format", "json")
 			if code != exitOK {

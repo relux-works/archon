@@ -613,9 +613,11 @@ func TestMaterializeCaptureObjectBounds(t *testing.T) {
 	requireCaptureRefusal(t, req, DiagMaterializeCaptureDrift)
 }
 
-// Real profile use and scope sync wait behind capture, then complete against
-// isolated native homes. Multi-file output remains one verified generation.
+// This proves profile use and scope sync wait behind capture, then finish
+// without exposing a torn prompt. Task-local PATH fixtures satisfy only the
+// LookPath preflight; the adapter executables are not started by these calls.
 func TestMaterializeCaptureSerializesProfileWriters(t *testing.T) {
+	setActivationRuntimes(t, allActivationRuntimes()...)
 	for _, writer := range []string{"use", "sync"} {
 		t.Run(writer, func(t *testing.T) {
 			fx, req := captureFixture(t)

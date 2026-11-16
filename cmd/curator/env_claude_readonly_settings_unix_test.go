@@ -15,11 +15,12 @@ import (
 // resolve and status report writable drift without mutating it, and repair
 // restores the invariant. This same positive test is the main-branch plant.
 func TestEnvClaudeReadOnlySettings(t *testing.T) {
+	pinProfileAdapterRuntimes(t, allProfileAdapterRuntimes()...)
 	source := writeMachineConfig(t, `{"schema_version":2,"security_posture":"permissive","skills_root":"x","projects":{}}`)
 	writeNativeCredentials(t)
 	pkg := t.TempDir()
 	writeContextPackage(t, pkg, "acme", "1.0.0", "hello\n")
-	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
+	if code, _, stderr := runProfile(t, source, "profile", "install", pkg, "--use"); code != exitOK {
 		t.Fatal(code, stderr)
 	}
 	if code, _, stderr := runProfile(t, source, "env", "config", "set", "claude_settings_mode.acme", "read-only"); code != exitOK {

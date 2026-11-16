@@ -604,7 +604,6 @@ cmd/curator	TestProfileInstallReinstallHonoursUseAndTakeover	linux,darwin,window
 cmd/curator	TestResolveTakeoverRequiresRepair	linux,darwin,windows	-	-	env resolve --takeover without --repair is a usage error
 cmd/curator	TestSyncTakeoverFlagParses	linux,darwin,windows	-	-	profile sync accepts --takeover
 cmd/curator	TestProfileInstallUseLockedRequireRefuses	linux,darwin,windows	-	-	install --use of another profile under a locked require_current_profile is refused at the seam
-cmd/curator	TestProfileInstallFirstActivationLockedRequireRefuses	linux,darwin,windows	-	-	first-install auto-activation of another profile under a locked require is refused
 cmd/curator	TestProfileUseClearOperandIsUsage	linux,darwin,windows	-	-	profile use with an operand beside --clear is a usage error that moves no current
 cmd/curator	TestProfileScopedUseUnaffectedByLockedRequire	linux,darwin,windows	-	-	a scoped switch and its clearing succeed under a locked require_current_profile while the machine switch is refused
 cmd/curator	TestProfileImportUseLockedRequireRefuses	linux,darwin,windows	-	-	import --use of another profile under a locked require_current_profile is refused at the seam

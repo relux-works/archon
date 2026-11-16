@@ -13,9 +13,9 @@ import (
 
 // The exact-source CLI rejects the r2 context-module witness before publishing
 // source/lock metadata or contact bytes in either native root document. Clean
-// and reserved-host modules install and appear in both documents. Context
-// manifests have no capability declaration; declared skill hosts are covered by
-// TestProfileInstallMarkdownScope and TestProfileInstallMarkdownCaseAliasesCLI.
+// and reserved-host modules appear in both documents only with explicit --use.
+// Context manifests have no capability declaration; declared skill hosts are
+// covered by TestProfileInstallMarkdownScope and TestProfileInstallMarkdownCaseAliasesCLI.
 func TestProfileInstallMarkdownContextCLI(t *testing.T) {
 	root, err := filepath.Abs("../..")
 	if err != nil {
@@ -42,6 +42,7 @@ func TestProfileInstallMarkdownContextCLI(t *testing.T) {
 			home := gitFixtureHome(t)
 			pinOperatorHome(t, home)
 			homes := pinHomes(t)
+			setActivationRuntimes(t, allActivationRuntimes()...)
 			profile := t.TempDir()
 			writePackage(t, profile, "review-context", "1.0.0", tc.body)
 			configPath := filepath.Join(home, "config.json")
@@ -58,7 +59,7 @@ func TestProfileInstallMarkdownContextCLI(t *testing.T) {
 			}
 			t.Setenv("CURATOR_CONFIG", configPath)
 			t.Setenv("CURATOR_SYSTEM_CONFIG", systemPath)
-			command := exec.Command(binary, "profile", "install", profile)
+			command := exec.Command(binary, "profile", "install", profile, "--use")
 			output, err := command.CombinedOutput()
 			native := []string{filepath.Join(homes["claude_code"], "CLAUDE.md"), filepath.Join(homes["codex_cli"], "AGENTS.md")}
 			if !tc.allowed {

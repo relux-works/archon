@@ -156,6 +156,9 @@ func Use(home, name, environment, target string, clearScope bool) ([]EntryResult
 // UseWithPolicy switches under the machine gates of policy (environments
 // §9.1). The CLI passes the gates of its already-loaded configuration.
 func UseWithPolicy(home, name, environment, target string, clearScope bool, policy Policy) ([]EntryResult, error) {
+	if err := requireAdapterRuntimes(home, environment, target); err != nil {
+		return nil, err
+	}
 	candidate := name
 	if clearScope {
 		candidate = ""
@@ -163,7 +166,9 @@ func UseWithPolicy(home, name, environment, target string, clearScope bool, poli
 	if err := refusePreparedSkillPlanAdoption(home, candidate); err != nil {
 		return nil, err
 	}
-	op, err := beginOperation(home)
+	op, err := beginOperationValidated(home, func() error {
+		return requireAdapterRuntimes(home, environment, target)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +241,7 @@ func useLocked(op *operation, home, name, environment, target string, clearScope
 	// machine-scope switch: every path that will publish the machine
 	// current below — profile use (clear or not; the CLI rejects the
 	// combination but the seam does not rely on it), install --use,
-	// first-install auto-activation, import --use, and resync — funnels
+	// import --use, and resync — funnels
 	// through this one gate before any write, not through any one CLI
 	// row. It precedes the installed check, so a machine-scope switch to
 	// another profile is a configuration error even when that profile is
@@ -254,11 +259,19 @@ func useLocked(op *operation, home, name, environment, target string, clearScope
 			return nil, err
 		}
 	}
+	lock, _, err := readLock(home, effective)
+	if err != nil {
+		return nil, err
+	}
+	// Environments §10.1/§12.1: a switch materializes the lock, so the lock
+	// must agree with the effective overlay declarations of the profile it
+	// is about to materialize. The refusal precedes the identity migration
+	// and every surface write; profile use, install --use, import --use,
+	// and the update resync all reach this one seam.
+	if err := checkCompositionLock(effective, lock, policy); err != nil {
+		return nil, err
+	}
 	if hashing.WriteVersion() == hashing.VersionV2 {
-		lock, _, err := readLock(home, effective)
-		if err != nil {
-			return nil, err
-		}
 		if lock.ContentHashVersion() == hashing.VersionV1 {
 			req := &ResolveRequest{Home: home, Profile: effective, Machine: envregistry.DefaultMachineConfig(), Policy: policy}
 			migration, err := prepareIdentityMigration(op, req, []string{effective}, nil)
@@ -298,6 +311,9 @@ func useLocked(op *operation, home, name, environment, target string, clearScope
 		if err := op.publish(map[string][]byte{CurrentFile(home): []byte(effective + "\n")}, removals...); err != nil {
 			return results, fmt.Errorf("%s: the scope is partially switched; the recorded current is unchanged", DiagUsePartial)
 		}
+		if err := op.recordPostimages(append([]string{CurrentFile(home)}, removals...)...); err != nil {
+			return results, fmt.Errorf("%s: the scope is partially switched; record current postimage: %w", DiagUsePartial, err)
+		}
 	} else {
 		machine, err := Current(home)
 		if err != nil {
@@ -307,11 +323,20 @@ func useLocked(op *operation, home, name, environment, target string, clearScope
 			// A scope-clear is one unlink under the held lock: crash
 			// before it retries the clear, crash after it has converged.
 			// It is not journaled as an absence target in this stage.
+			scopePath := filepath.Join(ScopedDir(home), scopeFileName(scope))
+			if err := op.capture(scopePath); err != nil {
+				return results, err
+			}
 			if err := SetScoped(home, scope, "", true); err != nil {
 				return results, err
 			}
+			if err := op.recordPostimages(scopePath); err != nil {
+				return results, fmt.Errorf("%s: record scoped-current postimage: %w", DiagUsePartial, err)
+			}
 		} else if err := op.publish(map[string][]byte{filepath.Join(ScopedDir(home), scopeFileName(scope)): []byte(effective + "\n")}); err != nil {
 			return results, fmt.Errorf("%s: the scope is partially switched; the recorded current is unchanged", DiagUsePartial)
+		} else if err := op.recordPostimages(filepath.Join(ScopedDir(home), scopeFileName(scope))); err != nil {
+			return results, fmt.Errorf("%s: the scope is partially switched; record scoped-current postimage: %w", DiagUsePartial, err)
 		}
 	}
 	return results, nil

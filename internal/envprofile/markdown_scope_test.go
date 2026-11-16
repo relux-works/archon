@@ -128,6 +128,7 @@ func TestProfileInstallMarkdownCaseAliasesCLI(t *testing.T) {
 			home := gitFixtureHome(t)
 			pinOperatorHome(t, home)
 			homes := pinHomes(t)
+			setActivationRuntimes(t, allActivationRuntimes()...)
 			ids := newGitIdentities(t)
 			caps := `{}`
 			if tc.declared {
@@ -166,7 +167,7 @@ func TestProfileInstallMarkdownCaseAliasesCLI(t *testing.T) {
 			}
 			t.Setenv("CURATOR_CONFIG", configPath)
 			t.Setenv("CURATOR_SYSTEM_CONFIG", systemPath)
-			command := exec.Command(binary, "profile", "install", profile)
+			command := exec.Command(binary, "profile", "install", profile, "--use")
 			output, err := command.CombinedOutput()
 			if !allowed {
 				exit, ok := err.(*exec.ExitError)

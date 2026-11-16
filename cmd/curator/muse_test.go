@@ -99,6 +99,7 @@ func TestMuseCLIFragmentAndFakeLaunch(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("install: %d %s", code, stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	code, stdout, stderr := runProfile(t, source, "env", "resolve", "muse", "--repair", "--format", "json")
 	if code != exitOK {
 		t.Fatalf("resolve: %d %s", code, stderr)
@@ -378,6 +379,7 @@ func museCLIProfile(t *testing.T) stubConfigSource {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("install: %d %s", code, stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	return source
 }
 

@@ -46,6 +46,7 @@ func installPiProfile(t *testing.T, source stubConfigSource) (link, oldTarget, a
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("install stderr:\n%s", stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	if code, _, stderr := runProfile(t, source, "env", "resolve", "pi", "--repair"); code != exitOK {
 		t.Fatalf("resolve pi --repair = %d\nstderr:\n%s", code, stderr)
 	}
@@ -172,6 +173,7 @@ func TestEnvMigrateConflictRefuses(t *testing.T) {
 	if code, _, stderr := runProfile(t, source, "profile", "install", pkg); code != exitOK {
 		t.Fatalf("install stderr:\n%s", stderr)
 	}
+	setEnvTestCurrent(t, source, "acme")
 	if code, _, stderr := runProfile(t, source, "env", "resolve", "codex_cli", "--repair"); code != exitOK {
 		t.Fatalf("resolve codex_cli --repair = %d\nstderr:\n%s", code, stderr)
 	}

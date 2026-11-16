@@ -23,6 +23,7 @@ import (
 	"github.com/relux-works/curator/internal/privatedir"
 	"github.com/relux-works/curator/internal/runtimestore"
 	"github.com/relux-works/curator/internal/skillruntime"
+	"github.com/relux-works/curator/internal/testruntimes"
 )
 
 // The fixture supplies an explicitly trusted adapter contract. It does not
@@ -265,8 +266,29 @@ func TestProfileRuntimePublication(t *testing.T) {
 						t.Fatalf("published routing is not private: %v", err)
 					}
 				}
-				// Public adoption remains unavailable even with prepared shims and
-				// an admitted internal publisher; the refusal preserves both records.
+				// Public adoption is an explicit activation, so its runtime
+				// preflight runs first: with no adapter runtime on PATH the
+				// refusal is adapter_runtime_missing and it writes nothing —
+				// the published lock and current stay byte-identical. With
+				// the shared runtime stand-ins the adoption gate itself still
+				// refuses, preserving both records.
+				currentPath := filepath.Join(e.home, "profiles/current")
+				currentBefore, err := os.ReadFile(currentPath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				hostPath := os.Getenv("PATH")
+				t.Setenv("PATH", t.TempDir())
+				if _, err := envprofile.UseWithPolicy(e.home, "profile", "", "", false, policy); err == nil || !strings.Contains(err.Error(), envprofile.DiagAdapterRuntimeMissing) {
+					t.Fatalf("public adoption without runtimes: %v", err)
+				}
+				if lockNow, err := os.ReadFile(path); err != nil || !bytes.Equal(after, lockNow) {
+					t.Fatalf("runtime refusal changed the published lock: %v", err)
+				}
+				if currentNow, err := os.ReadFile(currentPath); err != nil || !bytes.Equal(currentBefore, currentNow) {
+					t.Fatalf("runtime refusal moved current: %v", err)
+				}
+				testruntimes.Pin(t, hostPath, testruntimes.All()...)
 				if _, err := envprofile.UseWithPolicy(e.home, "profile", "", "", false, policy); err == nil || !strings.Contains(err.Error(), skillruntime.CompanionRequired) {
 					t.Fatalf("public adoption gate: %v", err)
 				}

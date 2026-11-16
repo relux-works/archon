@@ -107,17 +107,18 @@ func TestSkillProjectionCoreSelection(t *testing.T) {
 	}
 }
 
-// A repository-root package with board/research/vendor inputs installs, while
-// all native and managed skill surfaces expose only selected context. Exported
-// scripts and declared runtime/build roots stay out; command-less scripts and
-// declared visible Markdown remain readable. Both fallback writers copy exactly
-// the same tree as the production links for Claude and Codex.
+// A repository-root package with board/research/vendor inputs activates only
+// with explicit use, and native and managed skill surfaces expose the selected
+// context. Exported scripts and declared runtime/build roots stay out;
+// command-less scripts and declared visible Markdown remain readable. Both
+// fallback writers copy the same tree as the production links for Claude and Codex.
 func TestProfileSkillProjectionPublication(t *testing.T) {
 	for _, commands := range []bool{false, true} {
 		t.Run(fmt.Sprintf("commands-%t", commands), func(t *testing.T) {
 			home := gitFixtureHome(t)
 			pinOperatorHome(t, home)
 			native := pinHomes(t)
+			setActivationRuntimes(t, allActivationRuntimes()...)
 			ids := newGitIdentities(t)
 			manifest := `{"schema_version":3,"capabilities":{"network":["api.example.net"]}}`
 			if commands {
@@ -145,9 +146,9 @@ func TestProfileSkillProjectionPublication(t *testing.T) {
 			operand := ids.serve(repo, "https://example.com/skills/scoped-guide")
 			profile := t.TempDir()
 			writeManifestPackage(t, profile, `{"schema_version":1,"name":"scope-profile","version":"1.0.0","requires":{"skills":{"scoped-guide":{"git":"`+operand+`","range":"*"}}}}`, nil)
-			info, _, _, err := Install(home, InstallOptions{Operand: profile})
-			if err != nil {
-				t.Fatal(err)
+			info, activated, _, err := Install(home, InstallOptions{Operand: profile, Use: true})
+			if err != nil || !activated {
+				t.Fatalf("explicit profile use activated=%t, err=%v", activated, err)
 			}
 			member, ok := info.Lock.Find(contextlock.KindSkill, "scoped-guide")
 			if !ok {

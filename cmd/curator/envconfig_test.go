@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/relux-works/curator/internal/config"
+	"github.com/relux-works/curator/internal/envprofile"
 	"github.com/relux-works/curator/internal/testgitenv"
 )
 
@@ -395,11 +396,10 @@ func TestProfileInstallUseLockedRequireRefuses(t *testing.T) {
 	}
 }
 
-// TestProfileInstallFirstActivationLockedRequireRefuses drives the
-// first-install auto-activation through the same seam: on a fresh machine
-// with the key locked to acme, installing another profile without --use
-// still attempts the §9.2 switch and is refused.
-func TestProfileInstallFirstActivationLockedRequireRefuses(t *testing.T) {
+// TestProfileInstallWithoutUseSkipsLockedCurrentGate proves registration
+// without --use does not attempt a machine switch; the same profile refuses
+// only when explicit activation is requested.
+func TestProfileInstallWithoutUseSkipsLockedCurrentGate(t *testing.T) {
 	source, home := profileHome(t)
 	userPath := filepath.Join(home, "machine.json")
 	if err := os.WriteFile(userPath, []byte(`{"schema_version": 2, "security_posture": "permissive", "skills_root": "x", "projects": {}}`), 0o600); err != nil {
@@ -420,8 +420,16 @@ func TestProfileInstallFirstActivationLockedRequireRefuses(t *testing.T) {
 	other := t.TempDir()
 	writeContextPackage(t, other, "other", "1.0.0", "hello\n")
 	code, _, stderr := runProfile(t, source, "profile", "install", other, "--as", "other")
-	if code != exitFail || !strings.Contains(stderr, "environments.require_current_profile") {
-		t.Fatalf("first install of another profile = %d\nstderr:\n%s", code, stderr)
+	if code != exitOK {
+		t.Fatalf("registration without activation = %d\nstderr:\n%s", code, stderr)
+	}
+	if current, err := envprofile.Current(home); err != nil || current != "" {
+		t.Fatalf("registration without --use set current=%q, err=%v", current, err)
+	}
+	code, stdout, stderr := runProfile(t, source, "profile", "install", other, "--as", "other", "--use")
+	if code != exitFail || !strings.Contains(stderr, "environments.require_current_profile") ||
+		!strings.Contains(stdout, "not activated; fix and run 'curator profile use other'") {
+		t.Fatalf("explicit activation = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
 	}
 }
 
@@ -520,9 +528,8 @@ func TestProfileScopedUseUnaffectedByLockedRequire(t *testing.T) {
 // seam through run(): on a fresh machine with the key locked to acme,
 // `profile import --as other --use` installs the reassembled profile
 // through the path pipeline and is refused at the §9.2 switch naming the
-// locked knob, moving no current. The same seam covers the first-install
-// auto-activation, which fires on this fresh machine with or without
-// --use.
+// locked knob, moving no current. Registration without --use does not
+// attempt that machine-scope switch.
 func TestProfileImportUseLockedRequireRefuses(t *testing.T) {
 	source, home := profileHome(t)
 	pinOperatorHome(t)

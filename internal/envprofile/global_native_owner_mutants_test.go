@@ -54,8 +54,13 @@ func TestGlobalNativeOwnershipNarrowingControls(t *testing.T) {
 		{"retain-old-direct-pin", "internal/envprofile/global.go", "\tif addition != nil {\n\t\tidentity", "\tfor _, member := range oldLock.Members { if member.Kind == contextlock.KindSkill { input.Direct = append(input.Direct, contextresolve.Requirement{Kind: contextlock.KindSkill, Name: member.Name, Source: member.Source, Revision: member.Commit, Directory: member.Directory}) } }\n\tif addition != nil {\n\t\tidentity", "./cmd/curator", "^TestGlobalNativeOwnerNewDeclarationAfterProfile$", "TestGlobalNativeOwnerNewDeclarationAfterProfile", "want 0"},
 		{"resurrect-removed-declaration", "internal/envprofile/global.go", "\tif addition != nil {\n\t\tidentity", "\tfor _, member := range oldLock.Members { if member.Kind == contextlock.KindSkill { input.Direct = append(input.Direct, contextresolve.Requirement{Kind: contextlock.KindSkill, Name: member.Name, Source: member.Source, Revision: member.Commit, Directory: member.Directory}) } }\n\tif addition != nil {\n\t\tidentity", "./cmd/curator", "^TestGlobalNativeOwnerRemoval$/^direct-only$", "TestGlobalNativeOwnerRemoval/direct-only", "native skill appeared before global install"},
 		{"omit-profile-compensation", "internal/envprofile/global_operation.go", "if resultErr == nil {", "if true {", "./cmd/curator", "^TestGlobalNativeOwnerCanonicalRefusal$", "TestGlobalNativeOwnerCanonicalRefusal", "canonical refusal changed profile/native state"},
-		{"omit-parent-mode-compensation", "internal/envprofile/global_operation.go", "for parent, mode := range undo.parentModes {", "for parent, mode := range map[string]os.FileMode{} {", "./cmd/curator", "^TestGlobalNativeOwnerCanonicalRefusal$", "TestGlobalNativeOwnerCanonicalRefusal", "canonical refusal changed profile/native state"},
+		// Canonical refusal happens before parent-mode restoration; use a witness
+		// that publishes to an existing parent and then checks its exact rollback.
+		{"omit-parent-mode-compensation", "internal/envprofile/global_operation.go", "for parent, mode := range undo.parentModes {", "for parent, mode := range map[string]os.FileMode{} {", "./internal/envprofile", "^TestGlobalProfileCompensationParentModes$/^created=false$/^changed=false$", "TestGlobalProfileCompensationParentModes/created=false/changed=false", "exact rollback lost original parent mode"},
 		{"follow-compensation-parent", "internal/envprofile/global_operation.go", "if op.undo.managerHome != \"\" {", "if false {", "./internal/envprofile", "^TestGlobalProfileCompensationParentLinkRefuses$", "TestGlobalProfileCompensationParentLinkRefuses", "snapshot followed a manager parent link"},
+		// Environments §10.1: a resolve that skips the effective-overlay check
+		// emits a fragment from a lock the declarations disagree with.
+		{"skip-effective-overlay-check", "internal/envprofile/composition.go", "if len(missing) == 0 && len(extra) == 0 {", "if true {", "./internal/envprofile", "^TestResolveRefusesCompositionLockMismatch$", "TestResolveRefusesCompositionLockMismatch", "resolve admitted a lock that disagrees with the effective overlay declarations"},
 		{"rollback-unmanaged-extended-lock", "internal/envprofile/global_operation.go", "if errors.As(err, &conflict) && info.Lock != nil {", "if errors.As(err, &conflict) && info.Lock == nil {", "./cmd/curator", "^TestGlobalAddConflictRetainsLockAndProfileSyncTakeoverRecovers$", "TestGlobalAddConflictRetainsLockAndProfileSyncTakeoverRecovers", "default lock has no new-skill member"},
 		{"omit-pending-install-record", "internal/envprofile/global_operation.go", "retainedRecords = map[string][]byte{lockPath(home, info.Name): retainedLock, sourcePath(home, info.Name): source}", "_ = source; retainedRecords = map[string][]byte{lockPath(home, info.Name): retainedLock}", "./cmd/curator", "^TestGlobalNativeOwnerFreshAddConflict$", "TestGlobalNativeOwnerFreshAddConflict", "profile native owner lost"},
 		{"second-publisher", "internal/adapters/stage.go", "if preserved[name] {", "if preserved[name] && name != \"shared-skill\" {", "./cmd/curator", "^TestGlobalNativeOwnerCleanBootstrapInstall$", "TestGlobalNativeOwnerCleanBootstrapInstall", "want 0"},
@@ -88,6 +93,14 @@ func TestGlobalNativeOwnershipNarrowingControls(t *testing.T) {
 			}
 			if plant.name == "lock-before-real-private-build" && godriver.InventoryPlatform(runtime.GOOS) == "" {
 				t.Skipf("rc5-native-control-inventory-v2 defines no record for host %s", runtime.GOOS)
+			}
+			if plant.name == "omit-parent-mode-compensation" {
+				positive := exec.Command("env", "-u", "GIT_DIR", "-u", "GIT_WORK_TREE", "go", "test", "-p=2", "-count=1", "-timeout=2m", "-v", plant.pkg, "-run", "^TestGlobalProfileCompensationParentModes$/^created=false$/^changed=false$")
+				positive.Dir = root
+				output, err := positive.CombinedOutput()
+				if err != nil || !strings.Contains(string(output), "--- PASS: TestGlobalProfileCompensationParentModes/created=false/changed=false ") {
+					t.Fatalf("unchanged existing-parent restoration positive control failed: %v\n%s", err, output)
+				}
 			}
 			original := filepath.Join(root, filepath.FromSlash(plant.file))
 			payload, err := os.ReadFile(original)

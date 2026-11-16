@@ -36,6 +36,9 @@ func TestEnvConfigShowPermissionsAtProductionEntry(t *testing.T) {
 				if code, _, stderr := runFileConfigProfile(t, source.path, "profile", "install", pkg); code != exitOK {
 					t.Fatalf("install = %d: %s", code, stderr)
 				}
+				if profile == "acme" {
+					setEnvTestCurrent(t, source, profile)
+				}
 			}
 			code, stdout, stderr := runFileConfigProfile(t, source.path, "env", "config", "show")
 			if code != exitOK {

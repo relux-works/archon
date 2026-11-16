@@ -77,14 +77,14 @@ func TestProfileGitReinstallHonoursUseAndTakeover(t *testing.T) {
 		other := t.TempDir()
 		writeContextPackage(t, other, "other", "1.0.0", "managed other\n")
 		if gitCurrent {
-			if code, _, stderr := runProfile(t, source, "profile", "install", operand); code != exitOK {
+			if code, _, stderr := runProfile(t, source, "profile", "install", operand, "--use"); code != exitOK {
 				t.Fatalf("install groot = %d\nstderr:\n%s", code, stderr)
 			}
 			if code, _, stderr := runProfile(t, source, "profile", "install", other); code != exitOK {
 				t.Fatalf("install other = %d\nstderr:\n%s", code, stderr)
 			}
 		} else {
-			if code, _, stderr := runProfile(t, source, "profile", "install", other); code != exitOK {
+			if code, _, stderr := runProfile(t, source, "profile", "install", other, "--use"); code != exitOK {
 				t.Fatalf("install other = %d\nstderr:\n%s", code, stderr)
 			}
 			if code, _, stderr := runProfile(t, source, "profile", "install", operand); code != exitOK {
@@ -107,6 +107,15 @@ func TestProfileGitReinstallHonoursUseAndTakeover(t *testing.T) {
 		last := lines[len(lines)-1]
 		if !strings.HasPrefix(last, "updated profile groot (lock ") || !strings.HasSuffix(last, ")") {
 			t.Fatalf("operator line %q, want the reinstall reported as an update", last)
+		}
+	}
+	notActivatedLine := func(t *testing.T, stdout string) {
+		t.Helper()
+		lines := strings.Split(strings.TrimSuffix(stdout, "\n"), "\n")
+		last := lines[len(lines)-1]
+		if !strings.HasPrefix(last, "updated profile groot (lock ") ||
+			!strings.HasSuffix(last, "), not activated; fix and run 'curator profile use groot'") {
+			t.Fatalf("operator line %q, want updated registration and recovery guidance", last)
 		}
 	}
 
@@ -138,7 +147,7 @@ func TestProfileGitReinstallHonoursUseAndTakeover(t *testing.T) {
 		if code != exitFail {
 			t.Fatalf("install --use = %d, want %d\nstderr:\n%s", code, exitFail, stderr)
 		}
-		updatedLine(t, stdout)
+		notActivatedLine(t, stdout)
 		if !strings.Contains(stderr, "environment_surface_unmanaged_conflict") {
 			t.Fatalf("a --use reinstall that meets unmanaged state must name the conflict:\n%s", stderr)
 		}
@@ -224,15 +233,15 @@ func TestProfileGitReinstallHonoursUseAndTakeover(t *testing.T) {
 		}
 	})
 
-	t.Run("current/use without takeover stays current and writes nothing", func(t *testing.T) {
+	t.Run("current/use without takeover reports the activation failure", func(t *testing.T) {
 		source, fresh := setupBlockedReinstall(t, true)
 		code, stdout, stderr := runProfile(t, source, "profile", "install", operand, "--use")
-		if code != exitOK {
-			t.Fatalf("reinstall --use = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+		if code != exitFail {
+			t.Fatalf("reinstall --use = %d, want %d\nstdout:\n%s\nstderr:\n%s", code, exitFail, stdout, stderr)
 		}
-		updatedLine(t, stdout)
-		if strings.Contains(stdout, "switched") {
-			t.Fatalf("a reinstall of the current root must not re-switch:\n%s", stdout)
+		notActivatedLine(t, stdout)
+		if !strings.Contains(stderr, "environment_surface_unmanaged_conflict") || !strings.Contains(stderr, "profile_use_partial") {
+			t.Fatalf("explicit reactivation must report its conflict and partial failure:\n%s", stderr)
 		}
 		if got := currentOf(t, source); got != "groot" {
 			t.Fatalf("current=%q, want groot still current", got)
@@ -268,25 +277,26 @@ func TestProfileGitReinstallHonoursUseAndTakeover(t *testing.T) {
 		}
 	})
 
-	t.Run("current/use with takeover stays current and writes nothing", func(t *testing.T) {
+	t.Run("current/use with takeover re-materializes the current profile", func(t *testing.T) {
 		source, fresh := setupBlockedReinstall(t, true)
 		code, stdout, stderr := runProfile(t, source, "profile", "install", operand, "--use", "--takeover")
 		if code != exitOK {
 			t.Fatalf("reinstall --use --takeover = %d\nstdout:\n%s\nstderr:\n%s", code, stdout, stderr)
 		}
 		updatedLine(t, stdout)
-		if strings.Contains(stdout, "switched") {
-			t.Fatalf("a reinstall of the current root must not re-switch:\n%s", stdout)
+		if !strings.Contains(stdout, "claude_code: switched") {
+			t.Fatalf("explicit activation must report the materialized surface:\n%s", stdout)
 		}
 		if got := currentOf(t, source); got != "groot" {
 			t.Fatalf("current=%q, want groot still current", got)
 		}
-		payload, err := os.ReadFile(filepath.Join(fresh, "CLAUDE.md")) // #nosec G304 -- test home
-		if err != nil || string(payload) != "OPERATOR HAND-WRITTEN CONTEXT\n" {
-			t.Fatalf("unmanaged bytes = %q, want them untouched", payload)
+		backup, err := os.ReadFile(filepath.Join(fresh, ".agent-environment-backup", "1", "CLAUDE.md")) // #nosec G304 -- test home
+		if err != nil || string(backup) != "OPERATOR HAND-WRITTEN CONTEXT\n" {
+			t.Fatalf("backup = %q, err = %v; explicit use with takeover must preserve the unmanaged file", backup, err)
 		}
-		if _, err := os.Stat(filepath.Join(fresh, ".agent-environment-backup")); !os.IsNotExist(err) {
-			t.Fatalf("a reinstall of the current root must write no backup")
+		payload, err := os.ReadFile(filepath.Join(fresh, "CLAUDE.md")) // #nosec G304 -- test home
+		if err != nil || !strings.Contains(string(payload), "## Context: groot 1.0.0") {
+			t.Fatalf("CLAUDE.md was not materialized from the git root:\n%s", payload)
 		}
 	})
 }

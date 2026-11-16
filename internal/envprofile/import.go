@@ -100,13 +100,24 @@ type detectedSkill struct {
 
 // Import turns the section 9.5 inventory into an installed profile through
 // the ordinary path pipeline: detect, classify, gate on consent,
-// reassemble, and install with the always-strict audit. The import writes
-// nothing into any native home by itself; replacing native files remains
-// the section 9.5 takeover path with its notice and backup. A chosen name
+// reassemble, and install with the always-strict audit. Without Use it
+// writes nothing into native homes; activation follows the explicit section
+// 9.1 rules. Replacing unmanaged native files remains the section 9.5
+// takeover path with its notice and backup. A chosen name
 // that is already installed stops the import with
 // profile_import_name_taken before any write.
 func Import(home string, options ImportOptions) (Info, bool, bool, error) {
-	op, err := beginOperation(home)
+	if options.Use {
+		if err := requireAdapterRuntimes(home, "", ""); err != nil {
+			return Info{}, false, false, err
+		}
+	}
+	op, err := beginOperationValidated(home, func() error {
+		if !options.Use {
+			return nil
+		}
+		return requireAdapterRuntimes(home, "", "")
+	})
 	if err != nil {
 		return Info{}, false, false, err
 	}
@@ -183,7 +194,7 @@ func importLocked(op *operation, home string, options ImportOptions) (Info, bool
 	}
 	info, activated, updated, err := installLocked(op, home, installOptions)
 	if err != nil {
-		return Info{}, false, false, err
+		return info, false, updated, err
 	}
 	info.Warnings = append(warnings, info.Warnings...)
 	return info, activated, updated, nil

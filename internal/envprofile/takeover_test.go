@@ -17,8 +17,8 @@ import (
 // filepath.Join over platform-absolute temporary bases.
 
 // installIdleProfile installs a path profile through the production
-// Install. The first install activates into the pinned test homes; the
-// caller then redirects a native home at a fresh directory so the next
+// Install. The explicit install --use activates into the pinned test homes;
+// the caller then redirects a native home at a fresh directory so the next
 // switch meets pristine unmanaged state there.
 func installIdleProfile(t *testing.T, home, name string) {
 	t.Helper()
@@ -27,7 +27,7 @@ func installIdleProfile(t *testing.T, home, name string) {
 		`{"schema_version": 1, "name": "`+name+`", "version": "1.0.0",`+
 			`"context": {"modules": [{"path": "a.md"}]}}`+"\n",
 		map[string]string{"a.md": "managed\n"})
-	if _, _, _, err := Install(home, InstallOptions{Operand: source}); err != nil {
+	if _, _, _, err := Install(home, InstallOptions{Operand: source, Use: true}); err != nil {
 		t.Fatal(err)
 	}
 }
