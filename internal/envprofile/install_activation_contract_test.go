@@ -4,10 +4,11 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/relux-works/curator/internal/testruntimes"
 )
 
 type activationTreeEntry struct {
@@ -102,31 +103,15 @@ func activationTreeStateDifferences(before, after map[string]activationTreeEntry
 	return differences
 }
 
+// setActivationRuntimes puts the shared zero-exit runtime stand-ins ahead of
+// the package's TestMain PATH (activationRuntimeFallbackPath) for the rest of
+// the test, so ordinary test tools stay reachable.
 func setActivationRuntimes(t *testing.T, runtimes ...string) string {
 	t.Helper()
-	bin := t.TempDir()
-	for _, name := range runtimes {
-		filename, contents := name, "#!/bin/sh\nexit 0\n"
-		mode := os.FileMode(0o755)
-		if runtime.GOOS == "windows" {
-			filename += ".cmd"
-			contents = "@echo off\r\nexit /b 0\r\n"
-			mode = 0o644
-			t.Setenv("PATHEXT", ".COM;.EXE;.BAT;.CMD")
-		}
-		if err := os.WriteFile(filepath.Join(bin, filename), []byte(contents), mode); err != nil {
-			t.Fatalf("write runtime fixture %s: %v", name, err)
-		}
-	}
-	path := bin
-	if activationRuntimeFallbackPath != "" {
-		path += string(os.PathListSeparator) + activationRuntimeFallbackPath
-	}
-	t.Setenv("PATH", path)
-	return bin
+	return testruntimes.Pin(t, activationRuntimeFallbackPath, runtimes...)
 }
 
-func allActivationRuntimes() []string { return []string{"claude", "codex", "opencode", "pi"} }
+func allActivationRuntimes() []string { return testruntimes.All() }
 
 // This proves a no-use registration writes its source and lock while leaving
 // native homes and current markers byte-for-byte unchanged, with and without

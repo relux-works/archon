@@ -3,38 +3,21 @@ package main
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/relux-works/curator/internal/envprofile"
+	"github.com/relux-works/curator/internal/testruntimes"
 )
 
+// pinProfileAdapterRuntimes puts the shared zero-exit runtime stand-ins ahead
+// of the current PATH for the rest of the test.
 func pinProfileAdapterRuntimes(t *testing.T, runtimes ...string) string {
 	t.Helper()
-	bin := t.TempDir()
-	for _, name := range runtimes {
-		filename, contents := name, "#!/bin/sh\nexit 0\n"
-		mode := os.FileMode(0o755)
-		if runtime.GOOS == "windows" {
-			filename += ".cmd"
-			contents = "@echo off\r\nexit /b 0\r\n"
-			mode = 0o644
-			t.Setenv("PATHEXT", ".COM;.EXE;.BAT;.CMD")
-		}
-		if err := os.WriteFile(filepath.Join(bin, filename), []byte(contents), mode); err != nil {
-			t.Fatalf("write adapter runtime fixture %s: %v", name, err)
-		}
-	}
-	path := bin
-	if current := os.Getenv("PATH"); current != "" {
-		path += string(os.PathListSeparator) + current
-	}
-	t.Setenv("PATH", path)
-	return bin
+	return testruntimes.Pin(t, os.Getenv("PATH"), runtimes...)
 }
 
-func allProfileAdapterRuntimes() []string { return []string{"claude", "codex", "opencode", "pi"} }
+func allProfileAdapterRuntimes() []string { return testruntimes.All() }
 
 // This proves registration-only install warns and writes its record/lock
 // with a missing synthetic runtime, while explicit --use refuses before any

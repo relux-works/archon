@@ -286,10 +286,20 @@ func newVectorPathOverlay(t *testing.T, system bool) (string, string, string, Po
 	return home, root, overlay, policy
 }
 
+// installVectorPathOverlay installs the composed path root and activates it
+// explicitly (environments §9.2: only --use switches), the state the §4
+// boundary vectors describe — Status decides currency only over a profile
+// that is current in some scope, so a registration-only install would leave
+// a boundary-invalid overlay unreported. pinHomes supplies the runtimes the
+// activation preflight requires.
 func installVectorPathOverlay(t *testing.T, home, root string, policy Policy) {
 	t.Helper()
-	if _, _, _, err := Install(home, InstallOptions{Operand: root, Policy: policy}); err != nil {
-		t.Fatalf("Install trusted path overlay: %v", err)
+	_, activated, _, err := Install(home, InstallOptions{Operand: root, Policy: policy, Use: true})
+	if err != nil {
+		t.Fatalf("Install --use trusted path overlay: %v", err)
+	}
+	if !activated {
+		t.Fatal("Install --use did not activate the trusted path overlay profile")
 	}
 }
 
