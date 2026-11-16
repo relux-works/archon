@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"testing"
 )
@@ -180,6 +181,15 @@ func TestRootMetadataReadsStayBoundedAndDistinguishAbsence(t *testing.T) {
 	}
 
 	admittedPath := rootPath + ".admitted"
+	if runtime.GOOS == "windows" {
+		// Windows refuses to rename a directory while an os.Root holds it
+		// open, so the pathname cannot be replaced beneath the open root at
+		// all; the rooted reads above are the whole Windows claim.
+		if err := os.Rename(rootPath, admittedPath); err == nil {
+			t.Fatal("renamed a directory held open by os.Root on Windows")
+		}
+		return
+	}
 	if err := os.Rename(rootPath, admittedPath); err != nil {
 		t.Fatal(err)
 	}
