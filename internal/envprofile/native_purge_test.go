@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -565,6 +566,20 @@ func TestNativeHomeBindingPurgeRefusesMarkerSwappedAfterAdmission(t *testing.T) 
 		replacement, plantErr = os.Lstat(laterMarker)
 	}
 	err = purgeHomesWithBindings(manager, "sample", bindings)
+	if runtime.GOOS == "windows" {
+		// Windows denies replacing a file that purge holds open, so the swap
+		// cannot happen at all; the purge then removes the admitted marker.
+		if plantErr == nil || replacement != nil {
+			t.Fatalf("held marker was replaceable on Windows: applied=%v err=%v", replacement != nil, plantErr)
+		}
+		if err != nil {
+			t.Fatalf("purge after a denied swap = %v; want success", err)
+		}
+		if _, statErr := os.Lstat(laterMarker); !os.IsNotExist(statErr) {
+			t.Fatalf("admitted marker retained after purge: %v", statErr)
+		}
+		return
+	}
 	if plantErr != nil || replacement == nil {
 		t.Fatalf("marker swap fixture applied=%v, err=%v", replacement != nil, plantErr)
 	}
@@ -628,6 +643,17 @@ func TestNativeHomeBindingPurgeRefusesMarkerRecreatedAfterUnlink(t *testing.T) {
 		recreated, plantErr = os.Lstat(laterMarker)
 	}
 	err = purgeHomesWithBindings(manager, "sample", bindings)
+	if runtime.GOOS == "windows" {
+		// Windows denies deleting a file that purge holds open, so the
+		// marker cannot be unlinked and recreated; the purge then succeeds.
+		if plantErr == nil || recreated != nil {
+			t.Fatalf("held marker was deletable on Windows: applied=%v err=%v", recreated != nil, plantErr)
+		}
+		if err != nil {
+			t.Fatalf("purge after a denied unlink = %v; want success", err)
+		}
+		return
+	}
 	if plantErr != nil || recreated == nil {
 		t.Fatalf("unlink and recreate fixture applied=%v, err=%v", recreated != nil, plantErr)
 	}
