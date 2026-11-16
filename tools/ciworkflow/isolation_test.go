@@ -4,6 +4,7 @@ package ciworkflow
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -209,7 +210,7 @@ func TestLinuxCIWorkflowShellOverrideBehavior(t *testing.T) {
 	temp := t.TempDir()
 	values := initialize(t, "../../.github/ci/isolate-go-state.sh", temp)
 	// Use the toolchain binary directly: a host's goenv shim may rewrite GOPATH.
-	identity, err := exec.Command("go", "env", "GOROOT", "GOVERSION").Output()
+	identity, err := exec.Command(testtoolchain.Go(t), "env", "GOROOT", "GOVERSION").Output()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -322,7 +323,7 @@ func TestGoStateInitialization(t *testing.T) {
 	temp := t.TempDir()
 	first, second := initialize(t, script, temp), initialize(t, script, temp)
 	assertPrivate(t, first, second, temp)
-	cmd := exec.Command("go", "env", "GOCACHE", "GOMODCACHE", "GOPATH")
+	cmd := exec.Command(testtoolchain.Go(t), "env", "GOCACHE", "GOMODCACHE", "GOPATH")
 	cmd.Env = append(os.Environ(), "GOTOOLCHAIN=local", "GOENV=off")
 	for key, value := range first {
 		cmd.Env = append(cmd.Env, key+"="+value)

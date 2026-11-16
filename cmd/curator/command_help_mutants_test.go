@@ -51,9 +51,10 @@ func TestCommandHelpNarrowingMutants(t *testing.T) {
 			}
 			command := exec.Command(testtoolchain.Go(t), "test", "-count=1", "-timeout=3m", "-v", "-run", mutant.test, ".")
 			// GOFLAGS carries the overlay into the real CLI binary built by the
-			// behavioral suite too. These child tests do not fingerprint GOROOT;
-			// reuse the repository's helper protocol to avoid taking its lock twice.
+			// behavioral suite too. The selected child test inherits the parent's
+			// live GOROOT lock through the scoped marker below.
 			command.Env = append(os.Environ(), cliHelperProcess+"=1", "GOFLAGS="+os.Getenv("GOFLAGS")+" "+strconv.Quote("-overlay="+overlay))
+			testtoolchain.InheritHostGOROOTLock(t, command)
 			output, err := command.CombinedOutput()
 			exit, ok := err.(*exec.ExitError)
 			if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), mutant.failure) || strings.Contains(string(output), "build failed") {

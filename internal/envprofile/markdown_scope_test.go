@@ -2,6 +2,7 @@ package envprofile
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -80,7 +81,7 @@ func TestProfileInstallMarkdownCaseAliasesCLI(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		binary += ".exe"
 	}
-	build := exec.Command("go", "build", "-o", binary, "./cmd/curator")
+	build := exec.Command(testtoolchain.Go(t), "build", "-o", binary, "./cmd/curator")
 	build.Dir = root
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build exact-source CLI: %v\n%s", err, output)

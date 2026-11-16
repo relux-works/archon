@@ -97,6 +97,7 @@ func TestLandlockProbeNarrowingMutants(t *testing.T) {
 			}
 			command := exec.Command(testtoolchain.Go(t), "test", "-count=1", "-timeout=60s", "-run", mutant.run, ".") // #nosec G204 -- local toolchain and fixed behavioral tests
 			command.Env = append(os.Environ(), "GOFLAGS="+os.Getenv("GOFLAGS")+" "+strconv.Quote("-overlay="+overlayPath))
+			testtoolchain.InheritHostGOROOTLock(t, command)
 			output, err := command.CombinedOutput()
 			var exit *exec.ExitError
 			if !errors.As(err, &exit) || !strings.Contains(string(output), mutant.failure) || !strings.Contains(string(output), mutant.diagnostic) {

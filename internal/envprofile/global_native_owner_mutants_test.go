@@ -2,6 +2,7 @@ package envprofile
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -110,11 +111,12 @@ func TestGlobalNativeOwnershipNarrowingControls(t *testing.T) {
 			if err := os.WriteFile(overlayPath, overlay, 0600); err != nil {
 				t.Fatal(err)
 			}
-			command := exec.Command("env", "-u", "GIT_DIR", "-u", "GIT_WORK_TREE", "go", "test", "-p=2", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", plant.pkg, "-run", plant.run)
+			command := exec.Command("env", "-u", "GIT_DIR", "-u", "GIT_WORK_TREE", testtoolchain.Go(t), "test", "-p=2", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", plant.pkg, "-run", plant.run)
 			command.Dir = root
 			if plant.pkg == "./cmd/curator" {
 				command.Env = append(os.Environ(), "CURATOR_TEST_CLI_HELPER=1")
 			}
+			testtoolchain.InheritHostGOROOTLock(t, command)
 			output, err := command.CombinedOutput()
 			exit, ok := err.(*exec.ExitError)
 			if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), "--- FAIL: "+plant.failure+" ") || !strings.Contains(string(output), plant.message) || strings.Contains(string(output), "panic:") {

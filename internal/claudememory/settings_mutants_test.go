@@ -46,6 +46,7 @@ func TestNativeMemoryExclusionNarrowingMutant(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	command := exec.CommandContext(ctx, testtoolchain.Go(t), "test", "-overlay", overlay, "-count=1", "-timeout=1m", "-v", "-run", "^TestMerge(NativeMemory|RefusesMalformedSettings)$", ".")
+	testtoolchain.InheritHostGOROOTLock(t, command)
 	output, err := command.CombinedOutput()
 	var exit *exec.ExitError
 	if !errors.As(err, &exit) || exit.ExitCode() != 1 ||

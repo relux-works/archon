@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/relux-works/curator/internal/godriver"
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 const nativeBuildPauseMarker = ".curator-test-build-pause"
@@ -156,6 +157,7 @@ func TestNativeBuildPermitBarrier(t *testing.T) {
 // the real compiler publishes the skill; remove/add also succeeds normally.
 // Uncovered hosts assert their refusal separately and declare this carve-out.
 func TestGlobalNativeOwnerPausedBuild(t *testing.T) {
+	testtoolchain.LockHostGOROOT(t)
 	requireNativeControlInventoryPlatform(t)
 	fixture := setupNativeConcurrent(t, false)
 	compiled := t.TempDir()

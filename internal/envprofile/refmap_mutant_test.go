@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -41,10 +42,11 @@ func TestMissingPinRefmapNarrowingMutant(t *testing.T) {
 	if err := os.WriteFile(overlayPath, overlay, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command("go", "test", "-overlay", overlayPath, "-count=1", "-timeout=7m", "-json", "./internal/envprofile", "-run", "^TestInstallMissingPinPreservesConfiguredRefs$")
+	cmd := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlayPath, "-count=1", "-timeout=7m", "-json", "./internal/envprofile", "-run", "^TestInstallMissingPinPreservesConfiguredRefs$")
 	cmd.Dir = root
 	var output bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &output, &output
+	testtoolchain.InheritHostGOROOTLock(t, cmd)
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}

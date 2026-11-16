@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,10 +23,7 @@ func TestMCPWindowsNarrowingControls(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	goExecutable, err := exec.LookPath("go")
-	if err != nil {
-		t.Fatal(err)
-	}
+	goExecutable := testtoolchain.Go(t)
 	for _, tc := range []struct {
 		name, file, old, replacement, pkg, test, witness string
 	}{
@@ -102,6 +100,7 @@ func TestMCPWindowsNarrowingControls(t *testing.T) {
 					cmd.Env = append(cmd.Env, entry)
 				}
 			}
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			output, err := cmd.CombinedOutput()
 			var exit *exec.ExitError
 			if ctx.Err() != nil || !errors.As(err, &exit) || exit.ExitCode() != 1 || !strings.Contains(string(output), tc.witness) || !strings.Contains(string(output), "--- FAIL: ") {

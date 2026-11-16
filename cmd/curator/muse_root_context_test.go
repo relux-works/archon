@@ -468,10 +468,11 @@ func TestMuseRootContextNarrowingMutants(t *testing.T) {
 			}
 			parts := strings.Split(mutant.test, "/")
 			command := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlayPath, "-count=1", "-timeout=5m", "-v", "-run", "^"+parts[0]+"$/^"+parts[1]+"$", ".")
-			// Reuse the CLI helper protocol: the parent already holds the
-			// package GOROOT lock, and these behavioral tests do not mutate it.
+			// Reuse the CLI helper protocol; the selected child inherits the
+			// parent's live GOROOT lock and still isolates git in its process.
 			// TestMain still isolates git in the child process.
 			command.Env = append(os.Environ(), cliHelperProcess+"=1")
+			testtoolchain.InheritHostGOROOTLock(t, command)
 			output, err := command.CombinedOutput()
 			exit, ok := err.(*exec.ExitError)
 			if !ok || exit.ExitCode() == 0 || !strings.Contains(string(output), "--- FAIL: "+mutant.test) {

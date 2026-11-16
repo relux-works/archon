@@ -3,6 +3,7 @@ package projectlease
 import (
 	"context"
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,10 +23,7 @@ func TestInterruptedAcquireGCBecomesUnknown(t *testing.T) {
 		if runtime.GOOS == "windows" {
 			binary += ".exe"
 		}
-		goTool := os.Getenv("CURATOR_GO")
-		if goTool == "" {
-			goTool = "go"
-		}
+		goTool := testtoolchain.Go(t)
 		build := exec.Command(goTool, "build", "-o", binary, "../../cmd/curator")
 		if out, err := build.CombinedOutput(); err != nil {
 			t.Fatalf("build CLI: %v\n%s", err, out)

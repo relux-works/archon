@@ -89,10 +89,11 @@ func runMuseProducerOverlay(t *testing.T, file, before, after, pkg, test string)
 	}
 	command := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlayPath, "-count=1", "-timeout=5m", "-v", "-run", strings.Join(parts, "/"), pkg)
 	command.Dir = root
-	// Reuse the CLI helper protocol: the parent already holds the
-	// package GOROOT lock, and these behavioral tests do not mutate it.
+	// Reuse the CLI helper protocol; the selected child inherits the parent's
+	// live GOROOT lock and still isolates git in its own process.
 	// TestMain still isolates git in the child process.
 	command.Env = append(os.Environ(), cliHelperProcess+"=1")
+	testtoolchain.InheritHostGOROOTLock(t, command)
 	return command.CombinedOutput()
 }
 

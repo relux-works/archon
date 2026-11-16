@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -209,8 +210,9 @@ func TestMarkdownScopeInvalidatesRulesetSixAllowance(t *testing.T) {
 		if err := os.WriteFile(overlayPath, overlay, 0600); err != nil {
 			t.Fatal(err)
 		}
-		command := exec.Command("go", "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "-run", "^TestMarkdownScopeInvalidatesRulesetSixAllowance$", ".")
+		command := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "-run", "^TestMarkdownScopeInvalidatesRulesetSixAllowance$", ".")
 		command.Env = append(os.Environ(), seedEnv+"="+root)
+		testtoolchain.InheritHostGOROOTLock(t, command)
 		output, err := command.CombinedOutput()
 		if err != nil || !strings.Contains(string(output), "--- PASS: TestMarkdownScopeInvalidatesRulesetSixAllowance") {
 			t.Fatalf("ruleset-6 production seed failed: %v\n%s", err, output)

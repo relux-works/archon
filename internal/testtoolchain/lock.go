@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -31,14 +30,18 @@ type hostGOROOTOwner struct {
 }
 
 // HostGOROOTLock adds diagnostic metadata to the unchanged manager-home lock.
-// Metadata never authorizes access; only the operating-system lock does.
+// Ordinary acquisitions remain governed by the OS lock; an inherited child
+// marker also verifies this record against its live parent and OS-lock probe.
 type HostGOROOTLock struct {
-	lock  *managerlock.HomeLock
-	owner hostGOROOTOwner
-	path  string
-	logf  func(string, ...any)
-	once  sync.Once
-	err   error
+	lock     *managerlock.HomeLock
+	owner    hostGOROOTOwner
+	root     string
+	path     string
+	logf     func(string, ...any)
+	borrowed bool
+	onClose  func()
+	once     sync.Once
+	err      error
 }
 
 type hostGOROOTWaitError struct {
@@ -71,12 +74,19 @@ func AcquireHostGOROOT(ctx context.Context, owner string) (*HostGOROOTLock, erro
 }
 
 func acquireHostGOROOT(ctx context.Context, root, owner string, logf func(string, ...any)) (*HostGOROOTLock, error) {
-	started := time.Now()
-	logf("host GOROOT test lock waiting: owner=%q pid=%d", owner, os.Getpid())
 	manager, err := managerlock.New(root)
 	if err != nil {
 		return nil, err
 	}
+	root = manager.Home()
+	if lease := hostGOROOTLeaseFor(root, owner); lease != nil {
+		return &HostGOROOTLock{owner: lease.owner, root: root, borrowed: true}, nil
+	}
+	if inherited := inheritHostGOROOTLease(root, owner); inherited != nil {
+		return &HostGOROOTLock{owner: inherited.owner, root: root, borrowed: true}, nil
+	}
+	started := time.Now()
+	logf("host GOROOT test lock waiting: owner=%q pid=%d", owner, os.Getpid())
 	path := filepath.Join(root, "holder.json")
 	lock, err := manager.AcquireHomeOnly(ctx, false)
 	if err != nil {
@@ -100,7 +110,9 @@ func acquireHostGOROOT(ctx context.Context, root, owner string, logf func(string
 		}
 	}
 	logf("host GOROOT test lock acquired: owner=%q pid=%d waited=%s", owner, record.PID, time.Since(started).Round(time.Millisecond))
-	return &HostGOROOTLock{lock: lock, owner: record, path: path, logf: logf}, nil
+	hostLock := &HostGOROOTLock{lock: lock, owner: record, root: root, path: path, logf: logf}
+	registerHostGOROOTLease(root, &hostGOROOTLease{owner: record, lock: hostLock})
+	return hostLock, nil
 }
 
 func writeHostGOROOTOwner(path string, record hostGOROOTOwner) error {
@@ -144,11 +156,18 @@ func (lock *HostGOROOTLock) Close() error {
 	if lock == nil {
 		return nil
 	}
+	if lock.borrowed {
+		return nil
+	}
 	lock.once.Do(func() {
 		if err := os.Remove(lock.path); err != nil && !errors.Is(err, os.ErrNotExist) {
 			_, _ = fmt.Fprintln(os.Stderr, "warning: remove host GOROOT holder record failed; record may be stale")
 		}
 		held := time.Since(lock.owner.AcquiredAt)
+		if lock.onClose != nil {
+			lock.onClose()
+			lock.onClose = nil
+		}
 		lock.err = lock.lock.Close()
 		lock.logf("host GOROOT test lock released: owner=%q pid=%d held=%s", lock.owner.Name, lock.owner.PID, held.Round(time.Millisecond))
 	})
@@ -174,8 +193,4 @@ func LockHostGOROOT(t testing.TB) {
 			t.Errorf("release host GOROOT test lock: %v", closeErr)
 		}
 	})
-}
-
-func readHostGOROOTRecord(file io.Reader) ([]byte, error) {
-	return io.ReadAll(io.LimitReader(file, 4097))
 }

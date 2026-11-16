@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -163,7 +164,7 @@ func builtSwiftStub(t *testing.T) []byte {
 	t.Helper()
 	swiftStubOnce.Do(func() {
 		output := filepath.Join(os.TempDir(), "curator-swiftpm-stub-"+strconv.Itoa(os.Getpid()))
-		build := exec.Command("go", "build", "-o", output, "./testdata/swiftpm_stub")
+		build := exec.Command(testtoolchain.Go(t), "build", "-o", output, "./testdata/swiftpm_stub")
 		build.Env = os.Environ()
 		if combined, err := build.CombinedOutput(); err != nil {
 			swiftStubErr = fmt.Errorf("build swiftpm stub: %v\n%s", err, combined)

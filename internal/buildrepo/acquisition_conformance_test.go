@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -440,7 +441,7 @@ func newAcquisitionGitShim(t *testing.T) acquisitionGitShim {
 		name += ".exe"
 	}
 	executable := filepath.Join(t.TempDir(), name)
-	command := exec.Command("go", "build", "-o", executable, "./testdata/acquisitiongitshim")
+	command := exec.Command(testtoolchain.Go(t), "build", "-o", executable, "./testdata/acquisitiongitshim")
 	output, err := command.CombinedOutput()
 	if err != nil {
 		t.Fatalf("build acquisition Git shim: %v\n%s", err, output)

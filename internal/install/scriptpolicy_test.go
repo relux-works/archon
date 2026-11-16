@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"go/build"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,6 +20,7 @@ import (
 	"github.com/relux-works/curator/internal/scriptworker"
 	"github.com/relux-works/curator/internal/skillspec"
 	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // errInjectedProbeFailure fails one native-control probe through the
@@ -386,7 +386,7 @@ func enforcedBinaries(t *testing.T) (curator, stub string) {
 		if runtime.GOOS == "windows" {
 			suffix = ".exe"
 		}
-		goBinary := filepath.Join(build.Default.GOROOT, "bin", "go"+suffix)
+		goBinary := testtoolchain.Go(t)
 		curatorOut := filepath.Join(directory, "curator"+suffix)
 		buildCurator := exec.Command(goBinary, "build", "-o", curatorOut, "../../cmd/curator") // #nosec G204 -- fixed test-only build of the production binary under test
 		buildCurator.Env = os.Environ()

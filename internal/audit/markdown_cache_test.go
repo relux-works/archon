@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -67,8 +68,9 @@ func TestReviewPriorMarkdownAllowance(t *testing.T) {
 	if err := os.WriteFile(overlayPath, overlay, 0600); err != nil {
 		t.Fatal(err)
 	}
-	command := exec.Command("go", "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "-run", "^TestReviewPriorMarkdownAllowance$", ".")
+	command := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "-run", "^TestReviewPriorMarkdownAllowance$", ".")
 	command.Env = append(os.Environ(), seedEnv+"="+root)
+	testtoolchain.InheritHostGOROOTLock(t, command)
 	output, err := command.CombinedOutput()
 	if err != nil || !strings.Contains(string(output), "--- PASS: TestReviewPriorMarkdownAllowance") {
 		t.Fatalf("pre-Markdown Gate seed failed: %v\n%s", err, output)

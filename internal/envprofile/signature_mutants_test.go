@@ -129,6 +129,7 @@ func TestSignatureVerifierNarrowingMutants(t *testing.T) {
 			}
 			command := exec.Command(testtoolchain.Go(t), "test", "-p=1", "-parallel=2", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "-run", plant.run, "./internal/envprofile")
 			command.Dir = root
+			testtoolchain.InheritHostGOROOTLock(t, command)
 			output, err := command.CombinedOutput()
 			exit, ok := err.(*exec.ExitError)
 			if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), "--- FAIL: "+plant.fails+" ") || !strings.Contains(string(output), plant.message) || (plant.control != "" && !strings.Contains(string(output), "--- PASS: "+plant.control+" ")) {

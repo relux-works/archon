@@ -5,6 +5,7 @@ package godriver
 import (
 	"encoding/json"
 	"errors"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,10 +19,7 @@ import (
 // counts as detection. Linux also probes descriptor leaks and pre-fork refusals.
 // The Go witness rejects restored readiness sleeps.
 func TestBuildDescendantNarrowingControls(t *testing.T) {
-	goTool := os.Getenv("CURATOR_GO")
-	if goTool == "" {
-		goTool = "go"
-	}
+	goTool := testtoolchain.Go(t)
 	plants := []struct{ name, file, before, after, witness, message string }{
 		{"omit-group-kill", "controls_" + runtime.GOOS + ".go", "_ = unix.Kill(-pid, unix.SIGKILL)", "_ = pid", "TestBuildTerminatesTheCompleteWorkerDomain", "outlived the worker domain teardown: survival marker"},
 		{"restore-readiness-sleep", "testdata/stubgo/main.go", "_, readyErr := io.ReadFull(ready, acknowledgement[:])", "_, readyErr := 0, error(nil)\n time.Sleep(500*time.Millisecond)\n acknowledgement[0] = 1\n _ = io.ReadFull", "TestBuildWaitsForDelayedDescendantReadiness", "tool children did not publish their identities"},
@@ -69,6 +67,7 @@ func TestBuildDescendantNarrowingControls(t *testing.T) {
 					// a parent -overlay flag alone does not reach that build.
 					command.Env = append(command.Env, "GOFLAGS=-overlay="+overlay)
 				}
+				testtoolchain.InheritHostGOROOTLock(t, command)
 				return command.CombinedOutput()
 			}
 			output, err := run("")

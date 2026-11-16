@@ -44,6 +44,7 @@ func TestFixtureBuilderSkipNarrowingMutant(t *testing.T) {
 		t.Fatal(err)
 	}
 	command := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlay, "-count=1", "-timeout=1m", "-v", "-run", "^TestFixtureBuildersSkipWithoutGo$", ".")
+	testtoolchain.InheritHostGOROOTLock(t, command)
 	output, err := command.CombinedOutput()
 	var exit *exec.ExitError
 	if !errors.As(err, &exit) || exit.ExitCode() != 1 ||

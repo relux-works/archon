@@ -2,6 +2,7 @@ package projectcontext
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -93,13 +94,14 @@ func TestAdmissionNarrowingMutants(t *testing.T) {
 			if err := os.WriteFile(overlay, b, 0600); err != nil {
 				t.Fatal(err)
 			}
-			cmd := exec.Command("env", "-u", "GIT_DIR", "-u", "GIT_WORK_TREE", "go", "test", "-overlay", overlay, "-count=1", "-run", "^"+tc.test+"$", ".")
+			cmd := exec.Command("env", "-u", "GIT_DIR", "-u", "GIT_WORK_TREE", testtoolchain.Go(t), "test", "-overlay", overlay, "-count=1", "-run", "^"+tc.test+"$", ".")
 			cmd.Dir = cwd
 			for _, e := range os.Environ() {
 				if !strings.HasPrefix(e, "GIT_DIR=") && !strings.HasPrefix(e, "GIT_WORK_TREE=") {
 					cmd.Env = append(cmd.Env, e)
 				}
 			}
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			out, err := cmd.CombinedOutput()
 			if err == nil || !strings.Contains(string(out), "--- FAIL: "+tc.test) || !strings.Contains(string(out), tc.witness) || strings.Contains(string(out), "[build failed]") {
 				t.Fatalf("mutant did not hit intended witness: %v\n%s", err, out)

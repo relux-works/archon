@@ -4,6 +4,7 @@ package projectcontext
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -26,10 +27,7 @@ func TestWindowsPrivateRegistrationNarrowingMutants(t *testing.T) {
 		{"snapshot-files", "internal/projectcontext/store.go", "return privatedir.ProtectTree(stage)", "return nil", "projectcontext", "^TestWindowsPrivateRegistrationSnapshotStage$", "registration stage file lost private DACL"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			goTool := os.Getenv("CURATOR_GO")
-			if goTool == "" {
-				goTool = "go"
-			}
+			goTool := testtoolchain.Go(t)
 			positive := exec.Command(goTool, "test", "-count=1", "-timeout=2m", "-v", "./internal/"+tc.pkg, "-run", tc.run)
 			positive.Dir = root
 			for _, kv := range os.Environ() {
@@ -37,6 +35,7 @@ func TestWindowsPrivateRegistrationNarrowingMutants(t *testing.T) {
 					positive.Env = append(positive.Env, kv)
 				}
 			}
+			testtoolchain.InheritHostGOROOTLock(t, positive)
 			if out, err := positive.CombinedOutput(); err != nil || !strings.Contains(string(out), "--- PASS: TestWindows") || strings.Contains(string(out), "--- SKIP:") {
 				t.Fatalf("positive manager control: %v\n%s", err, out)
 			}
@@ -69,6 +68,7 @@ func TestWindowsPrivateRegistrationNarrowingMutants(t *testing.T) {
 				}
 			}
 			cmd.Dir = root
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			output, err := cmd.CombinedOutput()
 			exit, ok := err.(*exec.ExitError)
 			if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), "--- FAIL: TestWindows") || !strings.Contains(string(output), tc.assertion) {

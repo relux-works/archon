@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // Each plant removes the named admission or publication requirement. The
@@ -70,15 +72,11 @@ func TestMCPCredentialAuthorityNarrowingControls(t *testing.T) {
 			if err := os.WriteFile(overlay, body, 0600); err != nil {
 				t.Fatal(err)
 			}
-			binary := os.Getenv("CURATOR_GO")
-			if binary == "" {
-				binary = "go"
-			}
 			// The outer five-minute and child four-minute limits only bound hangs.
 			// Detection requires exit 1 and the named authority assertion below.
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 			defer cancel()
-			cmd := exec.CommandContext(ctx, binary, "test", "-overlay", overlay, "-count=1", "-timeout=4m", "-v", "-run", tc.run, "./internal/envprofile") // #nosec G204 -- fixed bounded test arguments and selected Go toolchain
+			cmd := exec.CommandContext(ctx, testtoolchain.Go(t), "test", "-overlay", overlay, "-count=1", "-timeout=4m", "-v", "-run", tc.run, "./internal/envprofile") // #nosec G204 -- fixed bounded test arguments and selected Go toolchain
 			cmd.Dir = root
 			for _, entry := range os.Environ() {
 				name, _, _ := strings.Cut(entry, "=")
@@ -86,6 +84,7 @@ func TestMCPCredentialAuthorityNarrowingControls(t *testing.T) {
 					cmd.Env = append(cmd.Env, entry)
 				}
 			}
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			output, err := cmd.CombinedOutput()
 			var exit *exec.ExitError
 			if ctx.Err() != nil || !errors.As(err, &exit) || exit.ExitCode() != 1 || !strings.Contains(string(output), "--- FAIL: ") || !strings.Contains(string(output), tc.witness) {

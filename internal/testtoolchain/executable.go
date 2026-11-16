@@ -11,11 +11,12 @@ import (
 	"testing"
 )
 
-// Go selects the explicitly configured Go executable or the test binary's
-// GOROOT. It never searches PATH; only tests requiring a real Go tool skip
-// when that selection is absent.
+// Go locks the host GOROOT on macOS before selecting the explicitly configured
+// Go executable or the test binary's GOROOT. It never searches PATH; only
+// tests requiring a real Go tool skip when that selection is absent.
 func Go(t testing.TB) string {
 	t.Helper()
+	LockHostGOROOT(t)
 	path, err := goExecutable(os.Getenv, build.Default.GOROOT)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {

@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // Claim: each bounded source plant breaks its intended adapter assertion, not
@@ -82,13 +84,14 @@ func TestClaudeNarrowingMutants(t *testing.T) {
 			if err = os.WriteFile(overlay, raw, 0600); err != nil {
 				t.Fatal(err)
 			}
-			cmd := exec.Command(compositionGo(), "test", "-overlay", overlay, "-count=1", "-run", "^"+tc.test+"$", ".")
+			cmd := exec.Command(compositionGo(t), "test", "-overlay", overlay, "-count=1", "-run", "^"+tc.test+"$", ".")
 			cmd.Dir = cwd
 			for _, e := range os.Environ() {
 				if !strings.HasPrefix(e, "GIT_DIR=") && !strings.HasPrefix(e, "GIT_WORK_TREE=") {
 					cmd.Env = append(cmd.Env, e)
 				}
 			}
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			out, err := cmd.CombinedOutput()
 			if err == nil || !strings.Contains(string(out), "--- FAIL: "+tc.test) || !strings.Contains(string(out), tc.witness) || strings.Contains(string(out), "[build failed]") {
 				t.Fatalf("mutant missed intended witness: %v\n%s", err, out)

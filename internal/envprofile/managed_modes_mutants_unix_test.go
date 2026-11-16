@@ -5,6 +5,7 @@ package envprofile
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -88,11 +89,12 @@ func TestManagedModesNarrowingMutants(t *testing.T) {
 			if err := os.WriteFile(overlayPath, overlay, 0o600); err != nil {
 				t.Fatal(err)
 			}
-			command := exec.Command("go", "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "-run", mutant.run, "./internal/envprofile")
+			command := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "-run", mutant.run, "./internal/envprofile")
 			command.Dir = root
 			var buffer bytes.Buffer
 			command.Stdout = &buffer
 			command.Stderr = &buffer
+			testtoolchain.InheritHostGOROOTLock(t, command)
 			if err := command.Start(); err != nil {
 				t.Fatalf("cannot-start: %v", err)
 			}

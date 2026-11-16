@@ -3,6 +3,7 @@ package registry
 import (
 	"encoding/json"
 	"errors"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -23,10 +24,7 @@ func TestSnapshotClockNarrowingControls(t *testing.T) {
 		t.Fatal(err)
 	}
 	source := strings.ReplaceAll(string(raw), "\r\n", "\n")
-	goTool := os.Getenv("CURATOR_GO")
-	if goTool == "" {
-		goTool = "go"
-	}
+	goTool := testtoolchain.Go(t)
 	for _, plant := range []struct{ name, before, after, run, message string }{
 		{"omit-elapsed-allowance", ".Add(time.Since(start))", ".Add(0*time.Since(start))", "TestSnapshotFutureBoundToleratesCheckerLatency", "a snapshot minted during its own fetch must be accepted"},
 		{"widen-future-bound-one-second", "now.Add(clockSkew).Add(time.Since(start))", "now.Add(clockSkew+time.Second).Add(time.Since(start))", "TestSnapshotFutureBoundIsExactAtEveryConfiguredSkew", "refused=false want true"},
@@ -44,6 +42,7 @@ func TestSnapshotClockNarrowingControls(t *testing.T) {
 						command.Env = append(command.Env, item)
 					}
 				}
+				testtoolchain.InheritHostGOROOTLock(t, command)
 				return command.CombinedOutput()
 			}
 			output, err := run("")

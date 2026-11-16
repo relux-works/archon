@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // Claim: these bounded source plants violate composition admission or identity,
@@ -83,8 +85,9 @@ func TestCompositionNarrowingMutants(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			if strings.HasPrefix(tc.name, "reacquire-held-") {
-				positive := exec.Command(compositionGo(), "test", "-count=1", "-timeout=2m", "-v", "-run", "^"+tc.test+"$", ".")
+				positive := exec.Command(compositionGo(t), "test", "-count=1", "-timeout=2m", "-v", "-run", "^"+tc.test+"$", ".")
 				positive.Dir = cwd
+				testtoolchain.InheritHostGOROOTLock(t, positive)
 				out, err := positive.CombinedOutput()
 				if err != nil || !strings.Contains(string(out), "--- PASS: "+tc.test) {
 					t.Fatalf("held authority positive failed: %v\n%s", err, out)
@@ -109,13 +112,14 @@ func TestCompositionNarrowingMutants(t *testing.T) {
 			if err := os.WriteFile(overlay, b, 0600); err != nil {
 				t.Fatal(err)
 			}
-			cmd := exec.Command(compositionGo(), "test", "-overlay", overlay, "-count=1", "-run", "^"+tc.test+"$", ".")
+			cmd := exec.Command(compositionGo(t), "test", "-overlay", overlay, "-count=1", "-run", "^"+tc.test+"$", ".")
 			cmd.Dir = cwd
 			for _, e := range os.Environ() {
 				if !strings.HasPrefix(e, "GIT_DIR=") && !strings.HasPrefix(e, "GIT_WORK_TREE=") {
 					cmd.Env = append(cmd.Env, e)
 				}
 			}
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			out, err := cmd.CombinedOutput()
 			if strings.HasPrefix(tc.name, "reacquire-held-") {
 				var exit *exec.ExitError
@@ -131,11 +135,9 @@ func TestCompositionNarrowingMutants(t *testing.T) {
 	}
 }
 
-func compositionGo() string {
-	if binary := os.Getenv("CURATOR_GO"); binary != "" {
-		return binary
-	}
-	return "go"
+func compositionGo(t *testing.T) string {
+	t.Helper()
+	return testtoolchain.Go(t)
 }
 
 // Claim: removing each entry's shared authority calls makes that entry's node
@@ -200,13 +202,14 @@ func TestCompositionCredentialNarrowingControls(t *testing.T) {
 				t.Fatal(err)
 			}
 			witness := "TestCompositionCredentialAuthorityBeforeState/" + tc.entry + "/node=true"
-			cmd := exec.Command(compositionGo(), "test", "-p=2", "-overlay", overlay, "-count=1", "-timeout=2m", "-v", "-run", "^TestCompositionCredentialAuthorityBeforeState$/^"+tc.entry+"$/^node=true$", ".")
+			cmd := exec.Command(compositionGo(t), "test", "-p=2", "-overlay", overlay, "-count=1", "-timeout=2m", "-v", "-run", "^TestCompositionCredentialAuthorityBeforeState$/^"+tc.entry+"$/^node=true$", ".")
 			cmd.Dir = cwd
 			for _, e := range os.Environ() {
 				if !strings.HasPrefix(e, "GIT_DIR=") && !strings.HasPrefix(e, "GIT_WORK_TREE=") {
 					cmd.Env = append(cmd.Env, e)
 				}
 			}
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			out, err := cmd.CombinedOutput()
 			var exit *exec.ExitError
 			if !errors.As(err, &exit) || exit.ExitCode() != 1 || !strings.Contains(string(out), "--- FAIL: "+witness) || !strings.Contains(string(out), "composition authority admission missing before state") || strings.Contains(string(out), "[build failed]") {
@@ -265,13 +268,14 @@ func TestCompositionCredentialBoundaryNarrowingControls(t *testing.T) {
 			if err := os.WriteFile(overlay, mapping, 0600); err != nil {
 				t.Fatal(err)
 			}
-			cmd := exec.Command(compositionGo(), "test", "-p=2", "-overlay", overlay, "-count=1", "-timeout=2m", "-v", "-run", "^"+tc.test+"$/^node=true$", ".")
+			cmd := exec.Command(compositionGo(t), "test", "-p=2", "-overlay", overlay, "-count=1", "-timeout=2m", "-v", "-run", "^"+tc.test+"$/^node=true$", ".")
 			cmd.Dir = cwd
 			for _, e := range os.Environ() {
 				if !strings.HasPrefix(e, "GIT_DIR=") && !strings.HasPrefix(e, "GIT_WORK_TREE=") {
 					cmd.Env = append(cmd.Env, e)
 				}
 			}
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			out, err := cmd.CombinedOutput()
 			var exit *exec.ExitError
 			if !errors.As(err, &exit) || exit.ExitCode() != 1 || !strings.Contains(string(out), "--- FAIL: "+tc.test+"/node=true") || !strings.Contains(string(out), tc.witness) || strings.Contains(string(out), "[build failed]") {

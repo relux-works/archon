@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -31,7 +32,10 @@ func TestWindowsPrivateManagerNarrowingMutants(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			goTool := os.Getenv("CURATOR_GO")
 			if goTool == "" {
-				goTool = "go"
+				goTool = filepath.Join(runtime.GOROOT(), "bin", "go.exe")
+			}
+			if !filepath.IsAbs(goTool) {
+				t.Fatalf("selected Go executable must be absolute: %q", goTool)
 			}
 			positive := exec.Command(goTool, "test", "-count=1", "-timeout=2m", "-v", "./internal/"+tc.pkg, "-run", tc.run)
 			positive.Dir = root

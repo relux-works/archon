@@ -236,6 +236,7 @@ func TestNativeSkillsTakeoverRegistryNarrowingMutant(t *testing.T) {
 	}
 	command := exec.Command(testtoolchain.Go(t), "test", "-count=1", "-timeout=3m", "-v", "-run", "^TestNativeSkillsTakeover(EveryRegisteredCommand|ArgumentDiscardRegression)$/^list$", ".")
 	command.Env = append(os.Environ(), cliHelperProcess+"=1", "GOFLAGS="+os.Getenv("GOFLAGS")+" "+strconv.Quote("-overlay="+overlay))
+	testtoolchain.InheritHostGOROOTLock(t, command)
 	output, err := command.CombinedOutput()
 	exit, ok := err.(*exec.ExitError)
 	if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), "unrelated takeover admitted: exit 0, want 2") ||
@@ -283,6 +284,7 @@ func TestNativeSkillsTakeoverHelpNarrowingMutant(t *testing.T) {
 			}
 			command := exec.Command(testtoolchain.Go(t), "test", "-count=1", "-timeout=3m", "-v", "-run", "^TestReviewNativeTakeoverHelpBoundary$", ".")
 			command.Env = append(os.Environ(), cliHelperProcess+"=1", "GOFLAGS="+os.Getenv("GOFLAGS")+" "+strconv.Quote("-overlay="+overlay))
+			testtoolchain.InheritHostGOROOTLock(t, command)
 			output, err := command.CombinedOutput()
 			exit, ok := err.(*exec.ExitError)
 			if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), "takeover without an activating repair admitted: exit 0, want 2") ||

@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // Claim: each opt-in source plant reaches its named forbidden behavior and the
@@ -88,17 +90,14 @@ func TestCodexNarrowingMutants(t *testing.T) {
 			if err = os.WriteFile(overlay, raw, 0600); err != nil {
 				t.Fatal(err)
 			}
-			goBinary := os.Getenv("CURATOR_GO")
-			if goBinary == "" {
-				t.Fatal("CURATOR_GO required for bounded mutation lane")
-			}
-			cmd := exec.Command(goBinary, "test", "-overlay", overlay, "-count=1", "-run", "^"+strings.Split(tc.test, "/")[0]+"$"+strings.TrimPrefix(tc.test, strings.Split(tc.test, "/")[0]), tc.pkg)
+			cmd := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlay, "-count=1", "-run", "^"+strings.Split(tc.test, "/")[0]+"$"+strings.TrimPrefix(tc.test, strings.Split(tc.test, "/")[0]), tc.pkg)
 			cmd.Dir = cwd
 			for _, v := range os.Environ() {
 				if !strings.HasPrefix(v, "GIT_DIR=") && !strings.HasPrefix(v, "GIT_WORK_TREE=") {
 					cmd.Env = append(cmd.Env, v)
 				}
 			}
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			out, err := cmd.CombinedOutput()
 			text := string(out)
 			if err == nil || !strings.Contains(text, "--- FAIL: "+strings.Split(tc.test, "/")[0]) || !strings.Contains(text, tc.witness) || strings.Contains(text, "[build failed]") || strings.Contains(text, "panic:") {

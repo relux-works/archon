@@ -4,6 +4,7 @@ package transaction
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,10 +20,7 @@ func TestWindowsPrivatePublicationNarrowingMutants(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	goTool := os.Getenv("CURATOR_GO")
-	if goTool == "" {
-		goTool = "go"
-	}
+	goTool := testtoolchain.Go(t)
 	positive := exec.Command(goTool, "test", "-count=1", "-timeout=2m", "-v", "./internal/transaction", "-run", "^TestWindowsTransactionPrivatePublication$")
 	positive.Dir = root
 	for _, kv := range os.Environ() {
@@ -30,6 +28,7 @@ func TestWindowsPrivatePublicationNarrowingMutants(t *testing.T) {
 			positive.Env = append(positive.Env, kv)
 		}
 	}
+	testtoolchain.InheritHostGOROOTLock(t, positive)
 	if out, err := positive.CombinedOutput(); err != nil || !strings.Contains(string(out), "--- PASS: TestWindowsTransactionPrivatePublication") {
 		t.Fatalf("positive publication control: %v\n%s", err, out)
 	}
@@ -62,10 +61,7 @@ func TestWindowsPrivatePublicationNarrowingMutants(t *testing.T) {
 			if err := os.WriteFile(overlayPath, overlay, 0600); err != nil {
 				t.Fatal(err)
 			}
-			goTool := os.Getenv("CURATOR_GO")
-			if goTool == "" {
-				goTool = "go"
-			}
+			goTool := testtoolchain.Go(t)
 			cmd := exec.Command(goTool, "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "./internal/transaction", "-run", tc.run)
 			for _, kv := range os.Environ() {
 				if !strings.HasPrefix(kv, "GIT_DIR=") && !strings.HasPrefix(kv, "GIT_WORK_TREE=") {
@@ -73,6 +69,7 @@ func TestWindowsPrivatePublicationNarrowingMutants(t *testing.T) {
 				}
 			}
 			cmd.Dir = root
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			output, err := cmd.CombinedOutput()
 			exit, ok := err.(*exec.ExitError)
 			if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), "--- FAIL: TestWindowsTransactionPrivatePublication") || !strings.Contains(string(output), tc.assertion) {

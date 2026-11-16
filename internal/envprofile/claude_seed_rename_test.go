@@ -5,6 +5,7 @@ package envprofile
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,7 +30,7 @@ func TestClaudeSeedNativeRenameBoundary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	goroot, err := exec.Command("go", "env", "GOROOT").Output()
+	goroot, err := exec.Command(testtoolchain.Go(t), "env", "GOROOT").Output()
 	if err != nil {
 		t.Fatalf("locate toolchain for native-boundary instrumentation: %v", err)
 	}
@@ -79,11 +80,12 @@ func TestClaudeSeedNativeRenameBoundary(t *testing.T) {
 			if err := os.WriteFile(overlay, mapping, 0600); err != nil {
 				t.Fatal(err)
 			}
-			command := exec.Command("go", "test", "-overlay", overlay, "-count=1", "-timeout=3m", "-v", "-run", "^TestClaudeSeedNativeRenameBoundaryChild$", "./internal/envprofile")
+			command := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlay, "-count=1", "-timeout=3m", "-v", "-run", "^TestClaudeSeedNativeRenameBoundaryChild$", "./internal/envprofile")
 			command.Dir = root
 			command.Env = append(os.Environ(), "CURATOR_TEST_CLAUDE_GAP_CHILD=1")
 			var buffer bytes.Buffer
 			command.Stdout, command.Stderr = &buffer, &buffer
+			testtoolchain.InheritHostGOROOTLock(t, command)
 			if err := command.Start(); err != nil {
 				t.Fatal(err)
 			}

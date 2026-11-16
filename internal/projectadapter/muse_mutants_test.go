@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // Claim: each bounded source plant hits the intended regression assertion.
@@ -71,16 +73,13 @@ func TestMuseNarrowingMutants(t *testing.T) {
 			if err = os.WriteFile(overlay, b, 0600); err != nil {
 				t.Fatal(err)
 			}
-			binary := os.Getenv("CURATOR_GO")
-			if binary == "" {
-				binary = "go"
-			}
-			cmd := exec.Command(binary, "test", "-count=1", "-overlay", overlay, "-run", "^"+tc.test+"$", tc.pkg)
+			cmd := exec.Command(testtoolchain.Go(t), "test", "-count=1", "-overlay", overlay, "-run", "^"+tc.test+"$", tc.pkg)
 			for _, value := range os.Environ() {
 				if !strings.HasPrefix(value, "GIT_DIR=") && !strings.HasPrefix(value, "GIT_WORK_TREE=") {
 					cmd.Env = append(cmd.Env, value)
 				}
 			}
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			out, err := cmd.CombinedOutput()
 			if err == nil || !strings.Contains(string(out), "--- FAIL:") || !strings.Contains(string(out), tc.witness) || strings.Contains(string(out), "[build failed]") {
 				t.Fatalf("mutant missed intended assertion: %v\n%s", err, out)

@@ -5,6 +5,7 @@ package envprofile
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -140,8 +141,9 @@ func TestSkillProjectionExchangeNarrowingMutant(t *testing.T) {
 	if err := os.WriteFile(overlayPath, overlay, 0600); err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command("env", "-u", "GIT_DIR", "-u", "GIT_WORK_TREE", "go", "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "./internal/envprofile", "-run", "^TestSkillProjectionRepairNoGap$")
+	cmd := exec.Command("env", "-u", "GIT_DIR", "-u", "GIT_WORK_TREE", testtoolchain.Go(t), "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "./internal/envprofile", "-run", "^TestSkillProjectionRepairNoGap$")
 	cmd.Dir = root
+	testtoolchain.InheritHostGOROOTLock(t, cmd)
 	output, err := cmd.CombinedOutput()
 	exit, ok := err.(*exec.ExitError)
 	if !ok || exit.ExitCode() != 1 || strings.Count(string(output), "--- FAIL: TestSkillProjectionRepairNoGap/") != 3 || !strings.Contains(string(output), "after_backup: no-gap assertion: shared projection unavailable:") || !strings.Contains(string(output), "no such file or directory") {

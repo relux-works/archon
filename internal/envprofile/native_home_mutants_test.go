@@ -37,6 +37,7 @@ func TestNativeHomeManagedCallerNarrowingMutant(t *testing.T) {
 		}
 		command := exec.Command(testtoolchain.Go(t), args...)
 		command.Dir = root
+		testtoolchain.InheritHostGOROOTLock(t, command)
 		return command.CombinedOutput()
 	}
 	if output, err := run(""); err != nil ||

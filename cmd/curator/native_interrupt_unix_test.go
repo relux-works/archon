@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // Real install entrypoints must propagate Ctrl-C/termination into Build. The
@@ -18,6 +20,7 @@ import (
 // while stopped and must publish no compiled skill. Separate driver witnesses
 // cover manager SIGKILL and running compiler/tool descendants.
 func TestNativeInstallSignalCancellation(t *testing.T) {
+	testtoolchain.LockHostGOROOT(t)
 	requireNativeControlInventoryPlatform(t)
 	for _, signal := range []syscall.Signal{syscall.SIGINT, syscall.SIGTERM} {
 		t.Run(strconv.Itoa(int(signal)), func(t *testing.T) {

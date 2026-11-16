@@ -4,6 +4,7 @@ package skillintegrity
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -99,8 +100,9 @@ func TestWindowsSkillIdentityControl(t *testing.T) {
 	if err := os.WriteFile(path, overlay, 0600); err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command("go", "test", "-p=1", "-count=1", "-timeout=3m", "-overlay", path, "-v", "-run", "^TestWindowsSkillIdentityRetainedBeforeReplacement$", "./internal/skillintegrity")
+	cmd := exec.Command(testtoolchain.Go(t), "test", "-p=1", "-count=1", "-timeout=3m", "-overlay", path, "-v", "-run", "^TestWindowsSkillIdentityRetainedBeforeReplacement$", "./internal/skillintegrity")
 	cmd.Dir = root
+	testtoolchain.InheritHostGOROOTLock(t, cmd)
 	output, err := cmd.CombinedOutput()
 	exit, ok := err.(*exec.ExitError)
 	if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), "--- FAIL: TestWindowsSkillIdentityRetainedBeforeReplacement ") || !strings.Contains(string(output), "replacement borrowed earlier identity") {

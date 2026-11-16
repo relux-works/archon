@@ -19,6 +19,7 @@ import (
 	"github.com/relux-works/curator/internal/godriver"
 	"github.com/relux-works/curator/internal/install"
 	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"github.com/relux-works/curator/internal/transaction"
 )
 
@@ -456,6 +457,7 @@ func requireCompiledNativeOwner(t *testing.T, fixture nativeGlobalFixture) {
 // hosts return the specified control diagnostic and preserve native/profile
 // state without publishing a canonical entry. No host is silently skipped.
 func TestGlobalNativeOwnerBuildInventory(t *testing.T) {
+	testtoolchain.LockHostGOROOT(t)
 	fixture := newNativeGlobalFixture(t)
 	profile := t.TempDir()
 	writeContextPackage(t, profile, "empty-profile", "1.0.0", "profile context\n")

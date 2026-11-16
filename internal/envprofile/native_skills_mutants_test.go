@@ -2,6 +2,7 @@ package envprofile
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -61,13 +62,14 @@ func TestNativeSkillsNarrowingMutants(t *testing.T) {
 				pkg = "./cmd/curator"
 			}
 			run := "^" + strings.ReplaceAll(m.run, "/", "$/^") + "$"
-			cmd := exec.Command("go", "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "-run", run, pkg)
+			cmd := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "-run", run, pkg)
 			cmd.Dir = root
 			if m.pkg == "curator" {
 				// These flag-only cases do not fingerprint GOROOT. Use the CLI's
 				// existing helper lane so a full CLI package run cannot block them.
 				cmd.Env = append(os.Environ(), "CURATOR_TEST_CLI_HELPER=1")
 			}
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			output, err := cmd.CombinedOutput()
 			exit, ok := err.(*exec.ExitError)
 			if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), "--- FAIL: "+m.fails+" ") || !strings.Contains(string(output), m.message) {

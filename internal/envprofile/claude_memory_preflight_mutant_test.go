@@ -37,6 +37,7 @@ func TestClaudeNativeMemoryPreflightNarrowingMutant(t *testing.T) {
 		}
 		cmd := exec.Command(testtoolchain.Go(t), args...)
 		cmd.Dir = root
+		testtoolchain.InheritHostGOROOTLock(t, cmd)
 		return cmd.CombinedOutput()
 	}
 	if output, err := run(""); err != nil {

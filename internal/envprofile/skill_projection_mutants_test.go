@@ -2,6 +2,7 @@ package envprofile
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -57,8 +58,9 @@ func TestSkillProjectionNarrowingMutants(t *testing.T) {
 			if err := os.WriteFile(overlayPath, overlay, 0600); err != nil {
 				t.Fatal(err)
 			}
-			command := exec.Command("env", "-u", "GIT_DIR", "-u", "GIT_WORK_TREE", "go", "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "./internal/envprofile", "-run", tc.run)
+			command := exec.Command("env", "-u", "GIT_DIR", "-u", "GIT_WORK_TREE", testtoolchain.Go(t), "test", "-overlay", overlayPath, "-count=1", "-timeout=2m", "-v", "./internal/envprofile", "-run", tc.run)
 			command.Dir = root
+			testtoolchain.InheritHostGOROOTLock(t, command)
 			output, err := command.CombinedOutput()
 			exit, ok := err.(*exec.ExitError)
 			if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), "--- FAIL: "+tc.fail) || !strings.Contains(string(output), tc.message) {

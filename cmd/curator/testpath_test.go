@@ -118,6 +118,7 @@ func TestCLIPathIsolationNarrowingMutant(t *testing.T) {
 	}
 	command := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlay, "-count=1", "-timeout=3m", "-v", "-run", "^TestCLIPathIsolation$", ".")
 	command.Env = append(os.Environ(), cliPathChild+"=1")
+	testtoolchain.InheritHostGOROOTLock(t, command)
 	output, err := command.CombinedOutput()
 	var exit *exec.ExitError
 	if !errors.As(err, &exit) || exit.ExitCode() != 1 ||

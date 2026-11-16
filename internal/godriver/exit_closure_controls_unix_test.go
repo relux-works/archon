@@ -4,6 +4,7 @@ package godriver
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,7 +34,7 @@ func TestWorkerExitNarrowingControls(t *testing.T) {
 				if overlay != "" {
 					args = append([]string{"test", "-overlay", overlay}, args[1:]...)
 				}
-				c := exec.CommandContext(t.Context(), "go", args...)
+				c := exec.CommandContext(t.Context(), testtoolchain.Go(t), args...)
 				b, err := c.CombinedOutput()
 				if overlay == "" {
 					if err != nil || !strings.Contains(string(b), "--- PASS:") {

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -41,7 +42,7 @@ func TestWindowsSourceReplayMetadataBoundary(t *testing.T) {
 		t.Fatal(err)
 	}
 	wrapper := filepath.Join(bin, "git.exe")
-	cmd := exec.Command("go", "build", "-o", wrapper, "./testdata/replaygit")
+	cmd := exec.Command(testtoolchain.Go(t), "build", "-o", wrapper, "./testdata/replaygit")
 	if output, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("build real-Git transport: %v: %s", err, output)
 	}

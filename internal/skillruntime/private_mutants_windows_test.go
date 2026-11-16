@@ -4,6 +4,7 @@ package skillruntime
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,10 +21,7 @@ func TestWindowsProfileRoutingPrivateWriterMutants(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	goTool := os.Getenv("CURATOR_GO")
-	if goTool == "" {
-		goTool = "go"
-	}
+	goTool := testtoolchain.Go(t)
 	run := func(overlay string) ([]byte, error) {
 		args := []string{"test", "-count=1", "-timeout=5m", "-v", "./internal/skillruntime", "-run", "^TestBindRequiresCompleteTransition$/^complete$"}
 		if overlay != "" {
@@ -36,6 +34,7 @@ func TestWindowsProfileRoutingPrivateWriterMutants(t *testing.T) {
 				cmd.Env = append(cmd.Env, kv)
 			}
 		}
+		testtoolchain.InheritHostGOROOTLock(t, cmd)
 		return cmd.CombinedOutput()
 	}
 	positive, err := run("")

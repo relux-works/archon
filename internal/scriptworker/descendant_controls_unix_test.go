@@ -5,6 +5,7 @@ package scriptworker
 import (
 	"encoding/json"
 	"errors"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,10 +17,7 @@ import (
 // survival assertion. A setup failure, hang, skip or unrelated error never
 // counts as detection.
 func TestScriptDescendantNarrowingControl(t *testing.T) {
-	goTool := os.Getenv("CURATOR_GO")
-	if goTool == "" {
-		goTool = "go"
-	}
+	goTool := testtoolchain.Go(t)
 	for _, plant := range []struct{ name, file, before, after, witness, message string }{
 		{"omit-group-kill", "teardown_unix.go", "_ = syscall.Kill(-pid, syscall.SIGKILL)", "_ = pid", "TestRunSessionTerminatesDescendants", "outlived the worker domain teardown: survival marker"},
 	} {
@@ -50,6 +48,7 @@ func TestScriptDescendantNarrowingControl(t *testing.T) {
 						command.Env = append(command.Env, item)
 					}
 				}
+				testtoolchain.InheritHostGOROOTLock(t, command)
 				return command.CombinedOutput()
 			}
 			output, err := run("")

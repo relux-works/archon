@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"go/build"
 	"io"
 	"os"
 	"os/exec"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/relux-works/curator/internal/buildsource"
 	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/curator/internal/testtoolchain"
 )
 
 // identityProbeMode is a test-only second hidden mode. It exists so a test can
@@ -141,7 +141,7 @@ func stubGoBinary(t *testing.T) string {
 		if runtime.GOOS == "windows" {
 			output += ".exe"
 		}
-		command := exec.Command(filepath.Join(build.Default.GOROOT, "bin", platformGoName), "build", "-o", output, "./testdata/stubgo") // #nosec G204 -- fixed test-only build of the local test double
+		command := exec.Command(testtoolchain.Go(t), "build", "-o", output, "./testdata/stubgo") // #nosec G204 -- fixed test-only build of the local test double
 		command.Env = os.Environ()
 		if combined, err := command.CombinedOutput(); err != nil {
 			stubOnce.err = err

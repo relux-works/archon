@@ -2,6 +2,7 @@ package projectlease
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,10 +19,7 @@ func TestLeaseNarrowingMutants(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	goTool := os.Getenv("CURATOR_GO")
-	if goTool == "" {
-		goTool = "go"
-	}
+	goTool := testtoolchain.Go(t)
 	cases := []struct{ name, file, before, after, pkg, run, message string }{
 		{"capture-selects-before-lock", "internal/envprofile/materialize_capture.go", "op, err := beginCaptureOperation(req.Resolve.Home, req.Resolve.transactionOptions...)", "_, _, _ = req.ReloadMachine()\n op, err := beginCaptureOperation(req.Resolve.Home, req.Resolve.transactionOptions...)", "envprofile", "TestMaterializeCaptureWaitReselectsAndTimeout", "selected policy before acquiring lock"},
 		{"private-staging-holds-home", "internal/install/global.go", "staged, stageErr := stageBuilds(opts.context(), plan, deps)", "stagingHome, stagingHomeErr := commit.Locks.AcquireHome(opts.context())\n if stagingHomeErr != nil { result.failf(\"%v\", stagingHomeErr); return result, nil }; defer stagingHome.Close()\n staged, stageErr := stageBuilds(opts.context(), plan, deps)", "install", "TestGlobalProfilePrivateStaging/success", "private staging held the home lock: context canceled"},
@@ -125,6 +123,7 @@ func TestLeaseNarrowingMutants(t *testing.T) {
 					// keeps its lock from consuming either control's watchdog.
 					cmd.Env = append(cmd.Env, "CURATOR_TEST_CLI_HELPER=1")
 				}
+				testtoolchain.InheritHostGOROOTLock(t, cmd)
 				return cmd.CombinedOutput()
 			}
 			key := tc.pkg + "/" + tc.run

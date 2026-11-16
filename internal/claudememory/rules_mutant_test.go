@@ -31,7 +31,9 @@ func TestNativeRulesExclusionNarrowingMutant(t *testing.T) {
 		if overlay != "" {
 			args = append([]string{"test", "-overlay", overlay}, args[1:]...)
 		}
-		return exec.Command(testtoolchain.Go(t), args...).CombinedOutput()
+		command := exec.Command(testtoolchain.Go(t), args...)
+		testtoolchain.InheritHostGOROOTLock(t, command)
+		return command.CombinedOutput()
 	}
 	if output, err := run(""); err != nil {
 		t.Fatalf("unmodified rules controls: %v\n%s", err, output)

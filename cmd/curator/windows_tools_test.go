@@ -93,6 +93,7 @@ func TestWindowsGitBashSelectionNarrowingMutant(t *testing.T) {
 			command := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlay, "-count=1", "-timeout=3m", "-v", "-run", "^TestWindowsGitBashSelection$", ".")
 			// The child runs only path-selection fixtures; the parent owns the GOROOT lock.
 			command.Env = append(os.Environ(), cliPathChild+"=1")
+			testtoolchain.InheritHostGOROOTLock(t, command)
 			output, err := command.CombinedOutput()
 			var exit *exec.ExitError
 			if !errors.As(err, &exit) || exit.ExitCode() != 1 || !strings.Contains(string(output), "--- FAIL: TestWindowsGitBashSelection") || !strings.Contains(string(output), tc.failure) || strings.Contains(string(output), "build failed") {

@@ -2,6 +2,7 @@ package envprofile
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -64,8 +65,9 @@ func TestStartupVerificationControls(t *testing.T) {
 			if err := os.WriteFile(overlayPath, overlay, 0600); err != nil {
 				t.Fatal(err)
 			}
-			cmd := exec.Command("go", "test", "-p=1", "-parallel=1", "-overlay", overlayPath, "-count=1", "-timeout=3m", "-v", "-run", "^"+plant.run+"$", "./internal/envprofile")
+			cmd := exec.Command(testtoolchain.Go(t), "test", "-p=1", "-parallel=1", "-overlay", overlayPath, "-count=1", "-timeout=3m", "-v", "-run", "^"+plant.run+"$", "./internal/envprofile")
 			cmd.Dir = root
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			output, err := cmd.CombinedOutput()
 			exit, ok := err.(*exec.ExitError)
 			if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), "--- FAIL: "+plant.failure+" ") || !strings.Contains(string(output), plant.message) {

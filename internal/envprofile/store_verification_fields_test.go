@@ -2,6 +2,7 @@ package envprofile
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -111,8 +112,9 @@ func TestStoreVerificationLandedSchemaControl(t *testing.T) {
 	if err := os.WriteFile(path, overlay, 0600); err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command("go", "test", "-p=1", "-parallel=1", "-overlay", path, "-count=1", "-timeout=3m", "-v", "-run", "^TestStoreVerificationLandedFields$/^policy$/^missing$", "./internal/envprofile")
+	cmd := exec.Command(testtoolchain.Go(t), "test", "-p=1", "-parallel=1", "-overlay", path, "-count=1", "-timeout=3m", "-v", "-run", "^TestStoreVerificationLandedFields$/^policy$/^missing$", "./internal/envprofile")
 	cmd.Dir = root
+	testtoolchain.InheritHostGOROOTLock(t, cmd)
 	output, err := cmd.CombinedOutput()
 	exit, ok := err.(*exec.ExitError)
 	if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), "--- FAIL: TestStoreVerificationLandedFields/policy/missing ") || !strings.Contains(string(output), "reader accepted landed-field plant: missing") {

@@ -4,6 +4,7 @@ package pnpmsource
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -50,9 +51,10 @@ func TestPNPMTemporaryTreeCleanupControls(t *testing.T) {
 			if err := os.WriteFile(overlay, data, 0o600); err != nil {
 				t.Fatal(err)
 			}
-			cmd := exec.Command("go", "test", "-overlay", overlay, "-count=1", "-v", "./internal/pnpmsource", "-run", "^TestPNPMTemporaryTreeRemovable$")
+			cmd := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlay, "-count=1", "-v", "./internal/pnpmsource", "-run", "^TestPNPMTemporaryTreeRemovable$")
 			cmd.Dir = root
 			cmd.Env = append(os.Environ(), "TMPDIR="+childTmp, "TMP="+childTmp, "TEMP="+childTmp)
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			out, runErr := cmd.CombinedOutput()
 			exit, ok := runErr.(*exec.ExitError)
 			if !ok || exit.ExitCode() != 1 || !strings.Contains(string(out), "--- FAIL: TestPNPMTemporaryTreeRemovable") || !strings.Contains(string(out), "non-writable entry after body cleanup") {

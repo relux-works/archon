@@ -5,6 +5,7 @@ package envsnapshot
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -90,9 +91,10 @@ func TestNarrowingControls(t *testing.T) {
 			}); err != nil {
 				t.Fatal(err)
 			}
-			cmd := exec.Command("go", "test", "-count=1", "-json", "-run", "^"+m.test+"$", scratch)
+			cmd := exec.Command(testtoolchain.Go(t), "test", "-count=1", "-json", "-run", "^"+m.test+"$", scratch)
 			cmd.Dir = root
 			// The child runs only the killer and cannot recurse into this control suite.
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			output, runErr := cmd.CombinedOutput()
 			killed := false
 			for _, line := range bytes.Split(output, []byte{10}) {

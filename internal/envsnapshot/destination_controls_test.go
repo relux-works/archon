@@ -5,6 +5,7 @@ package envsnapshot
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -99,8 +100,9 @@ func TestDestinationNarrowingControls(t *testing.T) {
 			}); err != nil {
 				t.Fatal(err)
 			}
-			cmd := exec.Command("go", "test", "-count=1", "-json", "-run", "^"+p.test+"$", scratch)
+			cmd := exec.Command(testtoolchain.Go(t), "test", "-count=1", "-json", "-run", "^"+p.test+"$", scratch)
 			cmd.Dir = root
+			testtoolchain.InheritHostGOROOTLock(t, cmd)
 			output, runErr := cmd.CombinedOutput()
 			exitErr, expectedExit := runErr.(*exec.ExitError)
 			killed := false

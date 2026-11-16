@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	_ "embed"
 	"fmt"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -49,7 +50,7 @@ func draftEndpointGitShim(t *testing.T, endpoint, bare string, fail bool) ([]str
 	if err := os.WriteFile(sourcePath, []byte(source), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if code, stdout, stderr := testcli.Run(t, "", nil, "", "go", "build", "-o", shimPath, sourcePath); code != 0 {
+	if code, stdout, stderr := testcli.Run(t, "", nil, "", testtoolchain.Go(t), "build", "-o", shimPath, sourcePath); code != 0 {
 		t.Fatalf("build Git test shim: exit %d\n%s%s", code, stdout, stderr)
 	}
 	if err := os.Chmod(shimPath, 0o700); err != nil {

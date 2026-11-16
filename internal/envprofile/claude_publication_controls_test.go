@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -45,7 +46,7 @@ func claudePublicationOverlay(t *testing.T, file, before, after, run string, chi
 	if err := os.WriteFile(overlay, payload, 0600); err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command("go", "test", "-overlay", overlay, "-count=1", "-timeout=4m", "-v", "-run", run, "./internal/envprofile")
+	cmd := exec.Command(testtoolchain.Go(t), "test", "-overlay", overlay, "-count=1", "-timeout=4m", "-v", "-run", run, "./internal/envprofile")
 	cmd.Dir = root
 	cmd.Env = os.Environ()
 	if child {
@@ -54,6 +55,7 @@ func claudePublicationOverlay(t *testing.T, file, before, after, run string, chi
 	var output bytes.Buffer
 	cmd.Stdout = &output
 	cmd.Stderr = &output
+	testtoolchain.InheritHostGOROOTLock(t, cmd)
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("cannot-start: %v", err)
 	}

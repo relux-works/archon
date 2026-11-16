@@ -2,6 +2,7 @@ package envprofile
 
 import (
 	"encoding/json"
+	"github.com/relux-works/curator/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -48,8 +49,9 @@ func runObservationControl(t *testing.T, file, before, after, test, witness stri
 	if err := os.WriteFile(path, overlay, 0600); err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command("go", "test", "-p=1", "-count=1", "-timeout=3m", "-overlay", path, "-v", "-run", "^"+test+"$", "./internal/envprofile")
+	cmd := exec.Command(testtoolchain.Go(t), "test", "-p=1", "-count=1", "-timeout=3m", "-overlay", path, "-v", "-run", "^"+test+"$", "./internal/envprofile")
 	cmd.Dir = root
+	testtoolchain.InheritHostGOROOTLock(t, cmd)
 	output, err := cmd.CombinedOutput()
 	exit, ok := err.(*exec.ExitError)
 	if !ok || exit.ExitCode() != 1 || !strings.Contains(string(output), "--- FAIL: "+test+" ") || !strings.Contains(string(output), witness) {
