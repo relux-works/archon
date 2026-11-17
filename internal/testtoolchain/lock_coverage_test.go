@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -368,4 +369,117 @@ func TestHostGOROOTMarkerNegativeChild(t *testing.T) {
 		t.Fatalf("invalid marker did not preserve the named holder refusal: %v", err)
 	}
 	fmt.Println("HOST_GOROOT_MARKER_REJECTED")
+}
+
+// A lease registered under a resolved lock root is found through another spelling of that same root, and not through a different root or for an unrelated test.
+func TestHostGOROOTLeaseForResolvesRootAlias(t *testing.T) {
+	realRoot := filepath.Join(t.TempDir(), "lock-root")
+	if err := os.MkdirAll(realRoot, 0700); err != nil {
+		t.Fatal(err)
+	}
+	var aliasRoot string
+	if runtime.GOOS == "windows" {
+		aliasRoot = strings.ToUpper(realRoot)
+		if aliasRoot == realRoot {
+			aliasRoot = strings.ToLower(realRoot)
+		}
+		realInfo, realErr := os.Stat(realRoot)
+		aliasInfo, aliasErr := os.Stat(aliasRoot)
+		if realErr != nil || aliasErr != nil || !os.SameFile(realInfo, aliasInfo) {
+			// A case-sensitive directory makes the recased spelling a
+			// different root by design; the alias proof then stays on
+			// the acquiring spelling and Unix covers the alias case.
+			aliasRoot = realRoot
+		}
+	} else {
+		aliasRoot = filepath.Join(t.TempDir(), "lock-root-alias")
+		if err := os.Symlink(realRoot, aliasRoot); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	lock, err := acquireHostGOROOT(ctx, realRoot, t.Name(), t.Logf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := lock.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	if hostGOROOTLeaseFor(realRoot, t.Name()) == nil {
+		t.Fatal("lease was not found through the root used to acquire it")
+	}
+	if hostGOROOTLeaseFor(aliasRoot, t.Name()) == nil {
+		t.Fatal("lease was not found through an alias of its lock root")
+	}
+	if hostGOROOTLeaseFor(t.TempDir(), t.Name()) != nil {
+		t.Fatal("lease was found through a different lock root")
+	}
+	if hostGOROOTLeaseFor(aliasRoot, t.Name()+"x") != nil {
+		t.Fatal("lease admitted a lexically-prefixed unrelated test")
+	}
+}
+
+// A cleanup release line does not replace a skipped test's recorded reason, while a passing control still reports the release.
+func TestHostGOROOTLockReleaseDoesNotReplaceSkipReason(t *testing.T) {
+	const skipReason = "release control skip reason"
+	attributed := regexp.MustCompile(`[^\s]+\.go:[0-9]+: (.*)$`)
+	runChild := func(mode string) (string, []string) {
+		t.Helper()
+		root := t.TempDir()
+		command := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestHostGOROOTLockSkipReasonChild$", "-test.v")
+		command.Env = append(withoutHostGOROOTMarker(os.Environ()), "CURATOR_TEST_GOROOT_SKIP_ROOT="+root, "CURATOR_TEST_GOROOT_SKIP_MODE="+mode)
+		output, err := command.CombinedOutput()
+		if err != nil {
+			t.Fatalf("skip-reason child mode %q failed: %v\n%s", mode, err, output)
+		}
+		var reasons []string
+		for _, line := range strings.Split(strings.ReplaceAll(string(output), "\r\n", "\n"), "\n") {
+			if strings.HasPrefix(line, "--- SKIP:") || strings.HasPrefix(line, "--- PASS:") {
+				break
+			}
+			if match := attributed.FindStringSubmatch(line); match != nil {
+				reasons = append(reasons, match[1])
+			}
+		}
+		return string(output), reasons
+	}
+	skippedOutput, skippedReasons := runChild("skip")
+	if len(skippedReasons) == 0 || skippedReasons[len(skippedReasons)-1] != skipReason {
+		t.Fatalf("last attributed line before the skip result = %q, want the skip reason; output:\n%s", skippedReasons, skippedOutput)
+	}
+	if !strings.Contains(skippedOutput, "host GOROOT test lock released:") {
+		t.Fatalf("release diagnostic is missing from the skipped child output:\n%s", skippedOutput)
+	}
+	for _, line := range strings.Split(skippedOutput, "\n") {
+		if strings.Contains(line, "host GOROOT test lock released:") && attributed.MatchString(line) {
+			t.Fatalf("release diagnostic is file-attributed and can replace a skip reason: %q", line)
+		}
+	}
+	passedOutput, _ := runChild("pass")
+	if !strings.Contains(passedOutput, "--- PASS: TestHostGOROOTLockSkipReasonChild") || !strings.Contains(passedOutput, "host GOROOT test lock released:") {
+		t.Fatalf("passing control did not pass with its release diagnostic:\n%s", passedOutput)
+	}
+}
+
+// The skip-reason child holds the lock under a cleanup, then skips or passes as directed by its parent.
+func TestHostGOROOTLockSkipReasonChild(t *testing.T) {
+	root := os.Getenv("CURATOR_TEST_GOROOT_SKIP_ROOT")
+	if root == "" {
+		return
+	}
+	lock, err := acquireHostGOROOT(context.Background(), root, t.Name(), t.Logf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = lock.Close() })
+	switch os.Getenv("CURATOR_TEST_GOROOT_SKIP_MODE") {
+	case "skip":
+		t.Skip("release control skip reason")
+	case "pass":
+	default:
+		t.Fatalf("unknown skip-reason child mode %q", os.Getenv("CURATOR_TEST_GOROOT_SKIP_MODE"))
+	}
 }

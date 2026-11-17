@@ -291,6 +291,27 @@ assert 'a skip with an unrecognised reason fails'   1 run_gate "$S" env CI_GATE_
   ev skip internal/registry TestSomethingElse; } >"$S"
 assert 'a host-capability skip is recorded and allowed' 0 run_gate "$S" env CI_GATE_GOOS=windows
 
+# Claim: an unattributed cleanup diagnostic after a skip keeps the skip reason, while an attributed cleanup line replacing it is rejected.
+evplain() { printf '{"Time":"2026-07-29T00:00:00Z","Action":"output","Package":"github.com/relux-works/curator/%s","Test":"%s","Output":"%s\\n"}\n' "$1" "$2" "$3"; }
+{ ev pass internal/buildcache TestWindowsProtectedStateMatrix
+  ev pass internal/shell TestPowerShellHookRunsOnEveryPrompt
+  ev pass internal/godriver TestProbeRejectsAnUncoveredPlatformBeforeTheWorker
+  evout internal/registry TestSomethingElse 'symlink unavailable: operation not permitted'
+  evplain internal/registry TestSomethingElse 'host GOROOT test lock released: owner=TestSomethingElse pid=1 held=0s'
+  ev skip internal/registry TestSomethingElse; } >"$S"
+assert 'an unattributed cleanup diagnostic does not replace the skip reason' 0 run_gate "$S" env CI_GATE_GOOS=darwin
+assert_contains 'the skip after the unattributed cleanup records the real reason' \
+  'symlink unavailable: operation not permitted' "$WORK/gate-ev/skips-observed.tsv"
+{ ev pass internal/buildcache TestWindowsProtectedStateMatrix
+  ev pass internal/shell TestPowerShellHookRunsOnEveryPrompt
+  ev pass internal/godriver TestProbeRejectsAnUncoveredPlatformBeforeTheWorker
+  evout internal/registry TestSomethingElse 'symlink unavailable: operation not permitted'
+  evout internal/registry TestSomethingElse 'host GOROOT test lock released: owner=TestSomethingElse pid=1 held=0s'
+  ev skip internal/registry TestSomethingElse; } >"$S"
+assert 'an attributed cleanup line replacing the skip reason fails' 1 run_gate "$S" env CI_GATE_GOOS=darwin
+assert_contains 'the attributed cleanup replacement remains unclassified' \
+  'UNCLASSIFIED' "$WORK/gate-ev/skips-observed.tsv"
+
 # Claim: the PATH helper uses registered re-exec wording; explicit Go absence
 # and missing ssh-keygen have narrow host-capability declarations on every OS.
 # Positive skips must be recorded in their intended class. Nearby undeclared

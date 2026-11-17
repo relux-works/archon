@@ -29,6 +29,26 @@ func TestHostGOROOTRunPatternMatchesSelectedParentScope(t *testing.T) {
 	}
 }
 
+// Live self and holder processes are alive witnesses; released holders and invalid PIDs are not.
+func TestHostGOROOTProcessAliveWitness(t *testing.T) {
+	if !hostGOROOTProcessAlive(os.Getpid()) {
+		t.Fatal("current process was not reported alive")
+	}
+	for _, pid := range []int{0, -1, 1 << 30} {
+		if hostGOROOTProcessAlive(pid) {
+			t.Fatalf("invalid PID %d was reported alive", pid)
+		}
+	}
+	pid, release := startHostGOROOTHolder(t, t.TempDir())
+	if !hostGOROOTProcessAlive(pid) {
+		t.Fatal("live holder process was not reported alive")
+	}
+	release()
+	if hostGOROOTProcessAlive(pid) {
+		t.Fatal("released holder process was still reported alive")
+	}
+}
+
 // Reuse accepts only an exact, live holder that still owns the OS lock; this fixture uses a private temporary lock root.
 func TestHostGOROOTInheritedLeaseStillHeldChecksAllWitnesses(t *testing.T) {
 	root := t.TempDir()

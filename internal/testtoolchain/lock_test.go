@@ -84,16 +84,28 @@ func TestHostGOROOTLockContention(t *testing.T) {
 		if owner == nil || owner.Name != t.Name() || owner.PID != os.Getpid() {
 			t.Fatalf("new acquisition did not replace holder identity: %+v", owner)
 		}
-		if err := lock.Close(); err != nil {
-			t.Fatal(err)
-		}
+		released := captureHostWarnings(t, func() {
+			if err := lock.Close(); err != nil {
+				t.Fatal(err)
+			}
+		})
 		if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
 			t.Fatalf("holder metadata survived release: %v", err)
 		}
-		for _, part := range []string{"lock waiting:", "lock acquired:", "waited=", "lock released:", "held="} {
+		for _, part := range []string{"lock waiting:", "lock acquired:", "waited="} {
 			if !strings.Contains(logs.String(), part) {
 				t.Fatalf("lifecycle telemetry lacks %q: %s", part, &logs)
 			}
+		}
+		// The release diagnostic stays available, but never through the
+		// attributed test log a cleanup would leave after a skip.
+		for _, part := range []string{"lock released:", "held="} {
+			if !strings.Contains(released, part) {
+				t.Fatalf("release telemetry lacks %q: %s", part, released)
+			}
+		}
+		if strings.Contains(logs.String(), "lock released:") {
+			t.Fatalf("release telemetry was attributed to the test log: %s", &logs)
 		}
 		// Closing the old wrapper twice cannot erase a successor's metadata.
 		next, err := acquireHostGOROOT(ctx, root, "successor", logf)

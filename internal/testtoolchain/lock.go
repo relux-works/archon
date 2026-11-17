@@ -37,7 +37,6 @@ type HostGOROOTLock struct {
 	owner    hostGOROOTOwner
 	root     string
 	path     string
-	logf     func(string, ...any)
 	borrowed bool
 	onClose  func()
 	once     sync.Once
@@ -63,13 +62,20 @@ func (err *hostGOROOTWaitError) Error() string {
 	return fmt.Sprintf("%v; waiter=%q waited=%s; %s", err.cause, err.waiter, err.waited.Round(time.Millisecond), detail)
 }
 
+// hostGOROOTLockRoot resolves the shared lock root from the TMPDIR in effect
+// at call time. It is deliberately not cached: a test that changes TMPDIR
+// must retain and release its lease under the root that change selects.
+func hostGOROOTLockRoot() string {
+	return filepath.Join(os.TempDir(), "curator-host-goroot-test-lock-v1")
+}
+
 // AcquireHostGOROOT acquires the cross-process macOS host-toolchain lock for a
 // named test process. The caller retains its previous timeout and lock scope.
 func AcquireHostGOROOT(ctx context.Context, owner string) (*HostGOROOTLock, error) {
 	if runtime.GOOS != "darwin" {
 		return nil, nil
 	}
-	return acquireHostGOROOT(ctx, filepath.Join(os.TempDir(), "curator-host-goroot-test-lock-v1"), owner,
+	return acquireHostGOROOT(ctx, hostGOROOTLockRoot(), owner,
 		func(format string, args ...any) { _, _ = fmt.Fprintf(os.Stderr, format+"\n", args...) })
 }
 
@@ -89,6 +95,13 @@ func acquireHostGOROOT(ctx context.Context, root, owner string, logf func(string
 	logf("host GOROOT test lock waiting: owner=%q pid=%d", owner, os.Getpid())
 	path := filepath.Join(root, "holder.json")
 	lock, err := manager.AcquireHomeOnly(ctx, false)
+	if err == nil {
+		// Acquiring may have created the home and resolved its final
+		// spelling. Publish the holder record and the lease under that
+		// spelling, never a provisional one chosen before creation.
+		root = manager.Home()
+		path = filepath.Join(root, "holder.json")
+	}
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 			// An owner may release or change while this snapshot is read. Missing
@@ -110,7 +123,7 @@ func acquireHostGOROOT(ctx context.Context, root, owner string, logf func(string
 		}
 	}
 	logf("host GOROOT test lock acquired: owner=%q pid=%d waited=%s", owner, record.PID, time.Since(started).Round(time.Millisecond))
-	hostLock := &HostGOROOTLock{lock: lock, owner: record, root: root, path: path, logf: logf}
+	hostLock := &HostGOROOTLock{lock: lock, owner: record, root: root, path: path}
 	registerHostGOROOTLease(root, &hostGOROOTLease{owner: record, lock: hostLock})
 	return hostLock, nil
 }
@@ -169,7 +182,11 @@ func (lock *HostGOROOTLock) Close() error {
 			lock.onClose = nil
 		}
 		lock.err = lock.lock.Close()
-		lock.logf("host GOROOT test lock released: owner=%q pid=%d held=%s", lock.owner.Name, lock.owner.PID, held.Round(time.Millisecond))
+		// The release runs from a test cleanup, after any skip the test
+		// recorded. A testing log line carries a file:line attribution and
+		// would be read as that test's skip reason, replacing the real one,
+		// so the release diagnostic goes to stderr without attribution.
+		_, _ = fmt.Fprintf(os.Stderr, "host GOROOT test lock released: owner=%q pid=%d held=%s\n", lock.owner.Name, lock.owner.PID, held.Round(time.Millisecond))
 	})
 	return lock.err
 }
@@ -184,7 +201,7 @@ func LockHostGOROOT(t testing.TB) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), hostGOROOTLockTimeout)
 	t.Cleanup(cancel)
-	lock, err := acquireHostGOROOT(ctx, filepath.Join(os.TempDir(), "curator-host-goroot-test-lock-v1"), t.Name(), t.Logf)
+	lock, err := acquireHostGOROOT(ctx, hostGOROOTLockRoot(), t.Name(), t.Logf)
 	if err != nil {
 		t.Fatalf("acquire host GOROOT test lock: %v", err)
 	}

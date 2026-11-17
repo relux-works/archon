@@ -41,7 +41,7 @@ type hostGOROOTLockMarkerValue struct {
 // the owner record, parent PID, and still-held operating-system lock.
 func InheritHostGOROOTLock(t testing.TB, command *exec.Cmd) {
 	t.Helper()
-	_ = inheritHostGOROOTLockAt(t, command, filepath.Join(os.TempDir(), "curator-host-goroot-test-lock-v1"))
+	_ = inheritHostGOROOTLockAt(t, command, hostGOROOTLockRoot())
 }
 
 func inheritHostGOROOTLockAt(t testing.TB, command *exec.Cmd, root string) bool {
@@ -80,7 +80,21 @@ func inheritHostGOROOTLockAt(t testing.TB, command *exec.Cmd, root string) bool 
 	return lease != nil
 }
 
+// canonicalHostGOROOTRoot resolves a lock root to the same spelling the
+// manager lock uses for its home, so aliases of one root (for example the
+// /var and /private/var spellings of a macOS temporary directory, a symlink,
+// or a case variant on Windows) address one lease. An unresolvable root keeps
+// its given spelling and simply finds no lease.
+func canonicalHostGOROOTRoot(root string) string {
+	manager, err := managerlock.New(root)
+	if err != nil {
+		return root
+	}
+	return manager.Home()
+}
+
 func hostGOROOTLeaseFor(root, owner string) *hostGOROOTLease {
+	root = canonicalHostGOROOTRoot(root)
 	hostGOROOTLeases.Lock()
 	lease := hostGOROOTLeases.byRoot[root]
 	if lease == nil || !hostGOROOTLeaseAdmits(lease, owner) {
@@ -105,6 +119,7 @@ func hostGOROOTLeaseFor(root, owner string) *hostGOROOTLease {
 }
 
 func hostGOROOTInheritedLeaseStillHeld(root string, owner hostGOROOTOwner) bool {
+	root = canonicalHostGOROOTRoot(root)
 	if !hostGOROOTProcessAlive(owner.PID) || !hostGOROOTOwnerEqual(readHostGOROOTOwner(filepath.Join(root, "holder.json")), owner) {
 		return false
 	}
@@ -126,6 +141,7 @@ func hostGOROOTInheritedLeaseStillHeld(root string, owner hostGOROOTOwner) bool 
 }
 
 func releaseInheritedHostGOROOTLease(root string, owner hostGOROOTOwner) {
+	root = canonicalHostGOROOTRoot(root)
 	hostGOROOTLeases.Lock()
 	defer hostGOROOTLeases.Unlock()
 	lease := hostGOROOTLeases.byRoot[root]
@@ -153,6 +169,7 @@ func sameTestOrSubtest(parent, child string) bool {
 }
 
 func registerHostGOROOTLease(root string, lease *hostGOROOTLease) {
+	root = canonicalHostGOROOTRoot(root)
 	hostGOROOTLeases.Lock()
 	hostGOROOTLeases.byRoot[root] = lease
 	hostGOROOTLeases.Unlock()

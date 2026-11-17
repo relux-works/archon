@@ -146,3 +146,29 @@ func TestGoWrapperLockDropNarrowingControl(t *testing.T) {
 		t.Fatalf("lock-drop mutant did not fail at the intended assertion: err=%v\n%s", err, output)
 	}
 }
+
+// Go retains a lease under the lock root selected by the TMPDIR in effect at call time, not a root resolved by an earlier call or a different spelling of it.
+func TestGoRetainsLeaseUnderTMPDIRInEffect(t *testing.T) {
+	controlRoot := filepath.Join(os.TempDir(), "curator-host-goroot-test-lock-v1")
+	if path := Go(t); path == "" {
+		t.Fatal("control Go call returned no path")
+	}
+	if hostGOROOTLeaseFor(controlRoot, t.Name()) == nil {
+		t.Fatal("Go did not retain the current test's lease under the lock root in effect before the TMPDIR change")
+	}
+	base := t.TempDir()
+	t.Setenv("TMPDIR", base)
+	changedRoot := filepath.Join(base, "curator-host-goroot-test-lock-v1")
+	if hostGOROOTLeaseFor(changedRoot, t.Name()) != nil {
+		t.Fatal("a lease under the changed lock root existed before Go was called under it")
+	}
+	if path := Go(t); path == "" {
+		t.Fatal("Go call after the TMPDIR change returned no path")
+	}
+	if hostGOROOTLeaseFor(changedRoot, t.Name()) == nil {
+		t.Fatal("Go did not retain the current test's lease under the lock root selected after the TMPDIR change")
+	}
+	if hostGOROOTLeaseFor(changedRoot, t.Name()+"x") != nil {
+		t.Fatal("the retained lease admitted a lexically-prefixed unrelated test")
+	}
+}
