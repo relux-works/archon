@@ -126,7 +126,7 @@ func (c cli) cmdComposeAdd(cfg *config.Config, profile string, args []string) in
 	}
 	overlays[profile] = list
 	if schema, _ := object["schema_version"].(float64); schema == float64(config.SchemaVersion) {
-		object["schema_version"] = float64(config.SchemaVersion2)
+		config.PromoteSchemaPreservingPosture(object, config.SchemaVersion2)
 	}
 	return c.composePublish(cfg, profile, object, "added overlay "+source+" to profile "+profile)
 }

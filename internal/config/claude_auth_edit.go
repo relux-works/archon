@@ -277,7 +277,7 @@ func PlanClaudeAuth(path string, selection LauncherClaudeAuth) (*ClaudeAuthEditP
 	extensions["claude_auth"] = selected
 	after["extensions"] = extensions
 	if version, _ := integerValue(after["schema_version"]); version < SchemaVersion7 {
-		after["schema_version"] = float64(SchemaVersion7)
+		PromoteSchemaPreservingPosture(after, SchemaVersion7)
 	}
 	// Defense in depth: for valid supported sources this constructor
 	// changes only schema/auth, so no valid input currently reaches the refusal.

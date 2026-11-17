@@ -140,16 +140,11 @@ func (c cli) cmdEnvConfigSet(cfg *config.Config, args []string) int {
 	}
 	setKnob(env, segments, value)
 	if segments[0] == "credential_store" {
-		// Schema 1 defaults to permissive. Preserve that posture when a
-		// selector edit promotes its envelope, without changing other knobs.
-		if schema, _ := object["schema_version"].(float64); schema == float64(config.SchemaVersion) {
-			object["security_posture"] = config.SecurityPosturePermissive
-		}
 		if schema, _ := object["schema_version"].(float64); schema != float64(config.SchemaVersion7) {
-			object["schema_version"] = float64(config.SchemaVersion5)
+			config.PromoteSchemaPreservingPosture(object, config.SchemaVersion5)
 		}
 	} else if schema, _ := object["schema_version"].(float64); schema == float64(config.SchemaVersion) {
-		object["schema_version"] = float64(config.SchemaVersion2)
+		config.PromoteSchemaPreservingPosture(object, config.SchemaVersion2)
 	}
 	updated, err := config.WriteRaw(cfg.Path, object)
 	if err != nil {

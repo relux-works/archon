@@ -93,10 +93,7 @@ func setStartupVerification(ctx context.Context, path string, level int, beforeP
 	}
 	// Schema1's implicit permissive posture must not silently become the
 	// modern carrier's hardened default merely because the level is edited.
-	if version, _ := integerValue(object["schema_version"]); version == SchemaVersion {
-		object["security_posture"] = cfg.SecurityPosture
-	}
-	object["schema_version"] = StartupVerificationSchemaVersion
+	PromoteSchemaPreservingPosture(object, StartupVerificationSchemaVersion)
 	object["startup_verification"] = map[string]any{"level": level}
 	if _, err := loadObject(path, object, nil); err != nil {
 		return err

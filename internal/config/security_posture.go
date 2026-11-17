@@ -52,6 +52,27 @@ type SecurityPostureRevisions struct {
 	CodexSeed          string `json:"codex_seed"`
 }
 
+// PromoteSchemaPreservingPosture sets schema_version to target in a raw
+// machine configuration object without changing its effective security
+// posture. Schema 1 is frozen permissive while schema 2 and later default
+// to hardened when security_posture is absent, so a schema-1 object that
+// carries no security_posture gains an explicit permissive one. An object
+// that already states a posture keeps that value untouched, and an object
+// already at schema 2 or later is not touched in this respect. Every
+// command that promotes schema_version in the machine file goes through
+// this helper; adopting hardened stays an explicit operator act.
+func PromoteSchemaPreservingPosture(object map[string]any, target int) {
+	if object == nil {
+		return
+	}
+	if version, ok := integerValue(object["schema_version"]); ok && version == SchemaVersion {
+		if _, present := object["security_posture"]; !present {
+			object["security_posture"] = SecurityPosturePermissive
+		}
+	}
+	object["schema_version"] = float64(target)
+}
+
 func defaultSecurityPosture(schema int) string {
 	if schema == SchemaVersion {
 		return SecurityPosturePermissive
