@@ -141,10 +141,10 @@ func (c cli) cmdEnvConfigSet(cfg *config.Config, args []string) int {
 	setKnob(env, segments, value)
 	if segments[0] == "credential_store" {
 		if schema, _ := object["schema_version"].(float64); schema != float64(config.SchemaVersion7) {
-			config.PromoteSchemaPreservingPosture(object, config.SchemaVersion5)
+			config.PromoteSchemaPreservingPosture(object, config.SchemaVersion5, cfg.EffectiveSecurityPosture())
 		}
 	} else if schema, _ := object["schema_version"].(float64); schema == float64(config.SchemaVersion) {
-		config.PromoteSchemaPreservingPosture(object, config.SchemaVersion2)
+		config.PromoteSchemaPreservingPosture(object, config.SchemaVersion2, cfg.EffectiveSecurityPosture())
 	}
 	updated, err := config.WriteRaw(cfg.Path, object)
 	if err != nil {

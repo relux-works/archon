@@ -252,7 +252,8 @@ func PlanClaudeAuth(path string, selection LauncherClaudeAuth) (*ClaudeAuthEditP
 	if !ok || (version != 2 && version != SchemaVersion7 && version != StartupVerificationSchemaVersion) {
 		return nil, ErrClaudeAuthEditRefused
 	}
-	if _, err := loadObject(path, before, nil); err != nil {
+	loaded, err := loadObject(path, before, nil)
+	if err != nil {
 		return nil, ErrClaudeAuthEditRefused
 	}
 	selectedBytes, err := json.Marshal(selection)
@@ -277,7 +278,7 @@ func PlanClaudeAuth(path string, selection LauncherClaudeAuth) (*ClaudeAuthEditP
 	extensions["claude_auth"] = selected
 	after["extensions"] = extensions
 	if version, _ := integerValue(after["schema_version"]); version < SchemaVersion7 {
-		PromoteSchemaPreservingPosture(after, SchemaVersion7)
+		PromoteSchemaPreservingPosture(after, SchemaVersion7, loaded.EffectiveSecurityPosture())
 	}
 	// Defense in depth: for valid supported sources this constructor
 	// changes only schema/auth, so no valid input currently reaches the refusal.

@@ -56,18 +56,31 @@ type SecurityPostureRevisions struct {
 // machine configuration object without changing its effective security
 // posture. Schema 1 is frozen permissive while schema 2 and later default
 // to hardened when security_posture is absent, so a schema-1 object that
-// carries no security_posture gains an explicit permissive one. An object
-// that already states a posture keeps that value untouched, and an object
-// already at schema 2 or later is not touched in this respect. Every
-// command that promotes schema_version in the machine file goes through
-// this helper; adopting hardened stays an explicit operator act.
-func PromoteSchemaPreservingPosture(object map[string]any, target int) {
+// carries no security_posture gains an explicit one carrying the loaded
+// effective posture the caller observed: permissive for a plain schema-1
+// file, hardened where a system file's unlocked environments defaults or
+// startup_verification already make the loaded configuration hardened.
+// Deciding from the raw schema alone would weaken that second machine to
+// permissive as a side effect of an unrelated edit. An object that already
+// states a posture keeps that value untouched, and an object already at
+// schema 2 or later is not touched in this respect. Every command that
+// promotes schema_version in the machine file goes through this helper;
+// adopting hardened stays an explicit operator act. Note that a system
+// file locking hardened is ignored while the file stays at schema 1 but
+// applies once any command promotes it: that is intended, because the
+// system administrator's explicit lock is itself the explicit act, so a
+// promoted file under such a lock effectively runs hardened and the
+// explicit value written here is overridden with a warning on load.
+func PromoteSchemaPreservingPosture(object map[string]any, target int, effectivePosture string) {
 	if object == nil {
 		return
 	}
 	if version, ok := integerValue(object["schema_version"]); ok && version == SchemaVersion {
 		if _, present := object["security_posture"]; !present {
-			object["security_posture"] = SecurityPosturePermissive
+			if effectivePosture != SecurityPostureHardened {
+				effectivePosture = SecurityPosturePermissive
+			}
+			object["security_posture"] = effectivePosture
 		}
 	}
 	object["schema_version"] = float64(target)

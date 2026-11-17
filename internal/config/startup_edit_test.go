@@ -153,3 +153,48 @@ func TestStartupEditMigrationPreservesPolicy(t *testing.T) {
 		t.Fatal("auth edit lost startup policy")
 	}
 }
+
+// Claim: under a system environments default the loaded schema-1 machine is already hardened, and a startup edit keeps that posture and environment defaults while writing hardened explicitly.
+func TestStartupEditMigrationPreservesPolicyUnderSystemEnvDefault(t *testing.T) {
+	dir := t.TempDir()
+	policy := filepath.Join(dir, "system.json")
+	if err := os.WriteFile(policy, []byte(`{"schema_version":2,"locked":[],"environments":{"overlays_allowed":true}}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CURATOR_SYSTEM_CONFIG", policy)
+	path := filepath.Join(dir, "machine.json")
+	if err := os.WriteFile(path, []byte(`{"schema_version":1,"skills_root":"fixture","projects":{}}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	before, err := Load(path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.Schema != SchemaVersion2 || before.SecurityPosture != SecurityPostureHardened {
+		t.Fatalf("loaded premise = schema %d posture %q, want schema 2 hardened under the system environments default", before.Schema, before.SecurityPosture)
+	}
+	if err := SetStartupVerification(context.Background(), path, 2); err != nil {
+		t.Fatal(err)
+	}
+	after, err := Load(path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.SecurityPosture != after.SecurityPosture || !reflect.DeepEqual(before.Env, after.Env) {
+		t.Fatalf("startup migration under a system file changed posture/env: before %q/%+v after %q/%+v", before.SecurityPosture, before.Env, after.SecurityPosture, after.Env)
+	}
+	if after.StartupVerification.Level != 2 {
+		t.Fatalf("startup level after edit = %d, want 2", after.StartupVerification.Level)
+	}
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var object map[string]any
+	if err := json.Unmarshal(payload, &object); err != nil {
+		t.Fatal(err)
+	}
+	if object["security_posture"] != SecurityPostureHardened {
+		t.Fatalf("security_posture on disk = %v, want %q\n%s", object["security_posture"], SecurityPostureHardened, payload)
+	}
+}

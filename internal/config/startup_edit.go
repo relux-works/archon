@@ -91,9 +91,10 @@ func setStartupVerification(ctx context.Context, path string, level int, beforeP
 	if err != nil {
 		return startupverification.Invalid("system policy cannot be observed")
 	}
-	// Schema1's implicit permissive posture must not silently become the
-	// modern carrier's hardened default merely because the level is edited.
-	PromoteSchemaPreservingPosture(object, StartupVerificationSchemaVersion)
+	// The loaded effective posture must survive the carrier promotion:
+	// permissive for a plain schema-1 file, hardened where a system file
+	// already makes the loaded configuration hardened.
+	PromoteSchemaPreservingPosture(object, StartupVerificationSchemaVersion, cfg.EffectiveSecurityPosture())
 	object["startup_verification"] = map[string]any{"level": level}
 	if _, err := loadObject(path, object, nil); err != nil {
 		return err
