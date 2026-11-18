@@ -241,36 +241,47 @@ func TestProfileCapabilityPartialAllowlistDoesNotReuseCachedAllowance(t *testing
 }
 
 // TestProfileCapabilitiesDoNotReplaceNativeManifest proves profile caps refuse
-// when any native declaration exists, while the unchanged native path remains valid.
+// for every supported native manifest, including an empty profile declaration,
+// while the unchanged native path remains valid.
 func TestProfileCapabilitiesDoNotReplaceNativeManifest(t *testing.T) {
-	home := gitFixtureHome(t)
-	pinHomes(t)
-	ids := newGitIdentities(t)
-	skill := gitRepo(t, map[string]string{
-		"SKILL.md":         "---\nname: guide\ndescription: Native precedence fixture\n---\nRead https://api.example.net/guide and https://docs.example.net/guide\n",
-		"agent-skill.json": `{"schema_version":3,"capabilities":{"network":["api.example.net","docs.example.net"]}}`,
-	}, "v1.0.0")
-	operand := ids.serve(skill, "https://source.example.org/skills/guide")
+	for _, native := range []struct {
+		name, path, declaration string
+	}{
+		{name: "canonical", path: "agent-skill.json", declaration: `{"schema_version":3,"capabilities":{}}`},
+		{name: "legacy", path: "csk-skill.json", declaration: `{"schema_version":3,"capabilities":{}}`},
+		{name: "runtime fallback", path: "agents/runtime.json", declaration: `{"commands":{}}`},
+	} {
+		t.Run(native.name, func(t *testing.T) {
+			home := gitFixtureHome(t)
+			pinHomes(t)
+			ids := newGitIdentities(t)
+			skill := gitRepo(t, map[string]string{
+				"SKILL.md":  "---\nname: guide\ndescription: Native precedence fixture\n---\nLocal content.\n",
+				native.path: native.declaration,
+			}, "v1.0.0")
+			operand := ids.serve(skill, "https://source.example.org/skills/guide")
 
-	for _, raw := range []string{`{"network":["api.example.net","docs.example.net"]}`, `{}`} {
-		profile := t.TempDir()
-		withCaps := strings.Replace(profileSkillRequest(raw), "%s", `"`+operand+`"`, 1)
-		writeSkillProfile(t, profile, "native-profile", withCaps, 4)
-		if _, _, _, err := Install(home, InstallOptions{Operand: profile}); err == nil || !strings.Contains(err.Error(), "profile_skill_capability_native_manifest") {
-			t.Fatalf("profile declaration %s replaced native manifest: %v", raw, err)
-		}
-		for _, path := range []string{sourcePath(home, "native-profile"), lockPath(home, "native-profile")} {
-			if _, err := os.Stat(path); !os.IsNotExist(err) {
-				t.Fatalf("native precedence refusal published %s: %v", filepath.Base(path), err)
+			for _, raw := range []string{`{"network":["api.example.net"]}`, `{}`} {
+				profile := t.TempDir()
+				withCaps := strings.Replace(profileSkillRequest(raw), "%s", `"`+operand+`"`, 1)
+				writeSkillProfile(t, profile, "native-profile", withCaps, 4)
+				if _, _, _, err := Install(home, InstallOptions{Operand: profile}); err == nil || !strings.Contains(err.Error(), "profile_skill_capability_native_manifest") {
+					t.Fatalf("profile declaration %s replaced %s: %v", raw, native.path, err)
+				}
+				for _, path := range []string{sourcePath(home, "native-profile"), lockPath(home, "native-profile")} {
+					if _, err := os.Stat(path); !os.IsNotExist(err) {
+						t.Fatalf("native precedence refusal published %s: %v", filepath.Base(path), err)
+					}
+				}
 			}
-		}
-	}
 
-	profileWithout := t.TempDir()
-	withoutCaps := strings.Replace(profileSkillRequest(""), "%s", `"`+operand+`"`, 1)
-	writeSkillProfile(t, profileWithout, "native-profile", withoutCaps, 3)
-	if _, _, _, err := Install(home, InstallOptions{Operand: profileWithout}); err != nil {
-		t.Fatalf("native manifest without profile declaration stopped working: %v", err)
+			profileWithout := t.TempDir()
+			withoutCaps := strings.Replace(profileSkillRequest(""), "%s", `"`+operand+`"`, 1)
+			writeSkillProfile(t, profileWithout, "native-profile", withoutCaps, 3)
+			if _, _, _, err := Install(home, InstallOptions{Operand: profileWithout}); err != nil {
+				t.Fatalf("%s without profile declaration stopped working: %v", native.path, err)
+			}
+		})
 	}
 }
 
