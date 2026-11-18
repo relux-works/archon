@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -157,42 +156,84 @@ func TestVerifyGoLauncherIdentityRequiresTheToolchainThatBuiltTheInventoryTool(t
 	}
 }
 
-func TestRaceMacInventoryCountsArePinnedOnlyForTheRaceInvocation(t *testing.T) {
+func TestRaceMacInventoryUsesNamedPartitionInvariants(t *testing.T) {
 	profile, err := newInventoryCommandProfile(curatorPackagePath, inventoryTimeout, []string{"-race"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	names := curatormutations.Names()
-	for i := 0; i < expectedMacRacePullTests; i++ {
-		names = append(names, fmt.Sprintf("TestPRFixture%03d", i))
+	mutationNames := curatormutations.Names()
+	ordinaryNames := []string{"TestOrdinaryOne", "TestOrdinaryTwo"}
+	inventory := inventoryWithPartition(ordinaryNames, mutationNames)
+	if err := validateMacRaceInventory("darwin", profile, inventory); err != nil {
+		t.Fatalf("complete Darwin race inventory rejected: %v", err)
 	}
-	inventory, err := curatormutations.Split(names)
+	if err := validateInventoryPartition(inventory); err != nil {
+		t.Fatalf("complete inventory partition rejected: %v", err)
+	}
+
+	addedOrdinary := append(append([]string(nil), inventory.All...), "TestAddedOrdinary")
+	withAddedOrdinary, err := curatormutations.Split(addedOrdinary)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := validateExpectedMacRaceCounts("darwin", profile, inventory); err != nil {
-		t.Fatal(err)
+	if err := validateMacRaceInventory("darwin", profile, withAddedOrdinary); err != nil {
+		t.Fatalf("an added ordinary test was rejected: %v", err)
 	}
-	if err := validateExpectedMacRaceCounts("linux", profile, inventory); err != nil {
-		t.Fatalf("non-macOS invocation received the macOS count policy: %v", err)
+
+	lostOrdinary := inventory
+	lostOrdinary.Pull = append([]string(nil), inventory.Pull[:1]...)
+	if err := validateMacRaceInventory("darwin", profile, lostOrdinary); err == nil {
+		t.Fatal("an ordinary test missing from PR ∪ M was admitted")
+	}
+
+	duplicateAcross := inventory
+	duplicateAcross.Mutations = append(append([]string(nil), inventory.Mutations...), inventory.Pull[0])
+	if err := validateMacRaceInventory("darwin", profile, duplicateAcross); err == nil {
+		t.Fatal("a test duplicated across PR and M was admitted")
+	}
+
+	eighthMutation := inventory
+	eighthMutation.All = append(append([]string(nil), inventory.All...), "TestUnexpectedAdditionalMutation")
+	eighthMutation.Mutations = append(append([]string(nil), inventory.Mutations...), "TestUnexpectedAdditionalMutation")
+	if err := validateInventoryPartition(eighthMutation); err != nil {
+		t.Fatalf("the eighth-name fixture is not a conserved partition: %v", err)
+	}
+	if err := validateMacRaceInventory("darwin", profile, eighthMutation); err == nil {
+		t.Fatal("an eighth mutation name was admitted")
+	}
+
+	missingMutation := inventoryWithPartition(ordinaryNames, mutationNames[:len(mutationNames)-1])
+	if err := validateInventoryPartition(missingMutation); err != nil {
+		t.Fatalf("the missing-name fixture is not a conserved partition: %v", err)
+	}
+	if err := validateMacRaceInventory("darwin", profile, missingMutation); err == nil {
+		t.Fatal("a missing canonical mutation name was admitted")
+	}
+
+	renamedMutationNames := append([]string(nil), mutationNames...)
+	renamedMutationNames[0] = "TestRenamedMutation"
+	renamedMutation := inventoryWithPartition(ordinaryNames, renamedMutationNames)
+	if err := validateInventoryPartition(renamedMutation); err != nil {
+		t.Fatalf("the renamed-name fixture is not a conserved partition: %v", err)
+	}
+	if err := validateMacRaceInventory("darwin", profile, renamedMutation); err == nil {
+		t.Fatal("a renamed mutation name was admitted")
+	}
+
+	if err := validateMacRaceInventory("linux", profile, missingMutation); err != nil {
+		t.Fatalf("non-macOS invocation received the Mac mutation inventory policy: %v", err)
 	}
 	if _, err := newInventoryCommandProfile(curatorPackagePath, inventoryTimeout, []string{"-race", "-tags=curator_test_platform"}); err == nil {
 		t.Fatal("caller-controlled race flags were admitted")
 	}
+}
 
-	deleteName := inventory.Pull[len(inventory.Pull)-1]
-	for i, name := range names {
-		if name == deleteName {
-			names = append(names[:i], names[i+1:]...)
-			break
-		}
-	}
-	changed, err := curatormutations.Split(names)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := validateExpectedMacRaceCounts("darwin", profile, changed); err == nil {
-		t.Fatal("a lost Race macOS PR test was admitted")
+func inventoryWithPartition(ordinary, mutations []string) curatormutations.Inventory {
+	all := append(append([]string(nil), ordinary...), mutations...)
+	return curatormutations.Inventory{
+		All:       all,
+		Pull:      append([]string(nil), ordinary...),
+		Mutations: append([]string(nil), mutations...),
 	}
 }
 

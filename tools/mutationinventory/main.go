@@ -35,9 +35,6 @@ type inventoryReport struct {
 	Mutations        []string `json:"mutations"`
 }
 
-const expectedMacRacePullTests = 524
-const expectedMacRaceMutationTests = 7
-
 const curatorPackagePath = "./cmd/curator"
 const curatorPackageImportPath = "github.com/relux-works/curator/cmd/curator"
 const inventoryTimeout = "60m"
@@ -182,8 +179,8 @@ func writeInventory(profile inventoryCommandProfile, evidence string, requireAll
 	if err := verifyMutationSelection(inventory.Mutations, selectedMutations); err != nil {
 		return err
 	}
-	if len(inventory.All) != len(inventory.Pull)+len(inventory.Mutations) {
-		return fmt.Errorf("inventory conservation failed: all=%d pull=%d mutation=%d", len(inventory.All), len(inventory.Pull), len(inventory.Mutations))
+	if err := validateInventoryPartition(inventory); err != nil {
+		return err
 	}
 	if requireAll {
 		if err := curatormutations.RequireComplete(inventory); err != nil {
@@ -209,7 +206,7 @@ func writeInventory(profile inventoryCommandProfile, evidence string, requireAll
 	if platform[1] == "" {
 		platform[1] = runtime.GOARCH
 	}
-	if err := validateExpectedMacRaceCounts(platform[0], profile, inventory); err != nil {
+	if err := validateMacRaceInventory(platform[0], profile, inventory); err != nil {
 		return err
 	}
 	effectiveGoFlags, err := commandOutput(exec.Command("go", "env", "GOFLAGS"))
@@ -290,12 +287,56 @@ func verifyMutationSelection(expected, selected []string) error {
 	return nil
 }
 
-func validateExpectedMacRaceCounts(goos string, profile inventoryCommandProfile, inventory curatormutations.Inventory) error {
+func validateInventoryPartition(inventory curatormutations.Inventory) error {
+	all := make(map[string]struct{}, len(inventory.All))
+	for _, name := range inventory.All {
+		if name == "" {
+			return fmt.Errorf("unfiltered inventory contains an empty test name")
+		}
+		if _, exists := all[name]; exists {
+			return fmt.Errorf("unfiltered inventory contains duplicate test %q", name)
+		}
+		all[name] = struct{}{}
+	}
+
+	partition := make(map[string]string, len(inventory.Pull)+len(inventory.Mutations))
+	for _, group := range []struct {
+		name  string
+		tests []string
+	}{{name: "PR", tests: inventory.Pull}, {name: "M", tests: inventory.Mutations}} {
+		for _, name := range group.tests {
+			if name == "" {
+				return fmt.Errorf("%s inventory contains an empty test name", group.name)
+			}
+			if previous, exists := partition[name]; exists {
+				if previous != group.name {
+					return fmt.Errorf("test %q appears in both %s and %s inventories", name, previous, group.name)
+				}
+				return fmt.Errorf("%s inventory contains duplicate test %q", group.name, name)
+			}
+			if _, exists := all[name]; !exists {
+				return fmt.Errorf("%s inventory contains test %q absent from unfiltered inventory", group.name, name)
+			}
+			partition[name] = group.name
+		}
+	}
+	for name := range all {
+		if _, exists := partition[name]; !exists {
+			return fmt.Errorf("unfiltered test %q is missing from PR and M inventories", name)
+		}
+	}
+	return nil
+}
+
+func validateMacRaceInventory(goos string, profile inventoryCommandProfile, inventory curatormutations.Inventory) error {
 	if goos != "darwin" || !profile.race {
 		return nil
 	}
-	if len(inventory.Pull) != expectedMacRacePullTests || len(inventory.Mutations) != expectedMacRaceMutationTests {
-		return fmt.Errorf("race macOS inventory counts for %s are PR=%d/M=%d, want PR=%d/M=%d", profile.packagePath, len(inventory.Pull), len(inventory.Mutations), expectedMacRacePullTests, expectedMacRaceMutationTests)
+	if err := validateInventoryPartition(inventory); err != nil {
+		return fmt.Errorf("race macOS inventory partition for %s: %w", profile.packagePath, err)
+	}
+	if err := curatormutations.RequireComplete(inventory); err != nil {
+		return fmt.Errorf("race macOS mutation inventory for %s: %w", profile.packagePath, err)
 	}
 	return nil
 }
