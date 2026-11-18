@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -138,6 +139,65 @@ func TestEveryCITestGateInvocationOptsOutOfMutationSuite(t *testing.T) {
 	}
 	if count != 5 {
 		t.Fatalf("found %d test-gate steps, want five", count)
+	}
+}
+
+func TestTestGateStoreCompatFlagsExpansionIsNounsetSafe(t *testing.T) {
+	const safeExpansion = `"${STORE_COMPAT_FLAGS[*]+"${STORE_COMPAT_FLAGS[*]}"}"`
+
+	data, err := os.ReadFile("../../.github/ci/test-gate.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var flagLines []string
+	for _, line := range strings.Split(string(data), "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "#") || !strings.Contains(trimmed, "-extra-go-test-flags") {
+			continue
+		}
+		flagLines = append(flagLines, trimmed)
+	}
+	wantFlagLine := "-extra-go-test-flags " + safeExpansion + " -evidence \"$EVIDENCE/mutation-inventory/$stage\")"
+	if len(flagLines) != 1 || flagLines[0] != wantFlagLine {
+		t.Fatalf("active test-gate store flags argument lines = %q, want exactly %q", flagLines, wantFlagLine)
+	}
+
+	bash, err := exec.LookPath("bash")
+	if err != nil {
+		t.Skipf("bash is unavailable for the expansion behavior check: %v", err)
+	}
+
+	for _, tc := range []struct {
+		name       string
+		assignment string
+		want       string
+	}{
+		{
+			name:       "empty compatibility flags retain the required empty argument",
+			assignment: "STORE_COMPAT_FLAGS=()",
+			want:       "count=4\nflag=<>\n",
+		},
+		{
+			name:       "populated compatibility flags remain one argument",
+			assignment: "STORE_COMPAT_FLAGS=(-race -count=1)",
+			want:       "count=4\nflag=<-race -count=1>\n",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			script := "set -u\n" + tc.assignment + "\nargs=(-extra-go-test-flags " + safeExpansion + " -evidence evidence)\nprintf 'count=%d\\nflag=<%s>\\n' \"${#args[@]}\" \"${args[1]}\"\n"
+			got, err := exec.Command(bash, "-c", script).CombinedOutput()
+			if err != nil {
+				t.Fatalf("nounset-safe expansion failed: %v\n%s", err, got)
+			}
+			if string(got) != tc.want {
+				t.Fatalf("argument shape = %q, want %q", got, tc.want)
+			}
+		})
+	}
+
+	legacy := exec.Command(bash, "-c", `set -u; STORE_COMPAT_FLAGS=(); args=("${STORE_COMPAT_FLAGS[*]}")`)
+	if got, err := legacy.CombinedOutput(); err == nil {
+		t.Fatalf("legacy empty-array expansion unexpectedly succeeded: %s", got)
 	}
 }
 
