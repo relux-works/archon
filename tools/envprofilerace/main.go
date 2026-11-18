@@ -3,6 +3,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -25,6 +26,38 @@ const ownershipControls = "TestGlobalNativeOwnershipNarrowingControls"
 const pkg = "github.com/relux-works/curator/internal/envprofile"
 const timeout = "60m"
 const marginSeconds = 1800
+
+type goTestIdentity struct {
+	Version     string
+	GOARCH      string
+	GOFLAGSHash string
+}
+
+func currentGoTestIdentity() (goTestIdentity, error) {
+	version, err := commandOutput("go", "version")
+	if err != nil {
+		return goTestIdentity{}, err
+	}
+	arch, err := commandOutput("go", "env", "GOARCH")
+	if err != nil {
+		return goTestIdentity{}, err
+	}
+	goFlags, err := commandOutput("go", "env", "GOFLAGS")
+	if err != nil {
+		return goTestIdentity{}, err
+	}
+	flagsHash := fmt.Sprintf("%x", sha256.Sum256([]byte(goFlags)))
+	return goTestIdentity{Version: version, GOARCH: arch, GOFLAGSHash: flagsHash}, nil
+}
+
+func commandOutput(name string, args ...string) (string, error) {
+	cmd := exec.Command(name, args...)
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("%s %s: %w", name, strings.Join(args, " "), err)
+	}
+	return strings.TrimSpace(string(out)), nil
+}
 
 type manifest struct {
 	Commit   string
@@ -86,12 +119,16 @@ func inventory() ([]string, error) {
 }
 
 func nativeInventory(path string, race bool) ([]string, error) {
+	return nativeInventoryPattern(path, race, ".")
+}
+
+func nativeInventoryPattern(path string, race bool, selector string) ([]string, error) {
 	args := []string{"test"}
 	if race {
 		args = append(args, "-race")
 	}
 	// #nosec G204 -- Callers supply fixed package constants; no shell is invoked.
-	cmd := exec.Command("go", append(args, "-list", ".", path)...)
+	cmd := exec.Command("go", append(args, "-list", selector, path)...)
 	cmd.Stderr = os.Stderr
 	out, err := cmd.Output()
 	if err != nil {

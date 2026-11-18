@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/relux-works/curator/internal/curatormutations"
 )
 
 func windowsFixtureInventory() map[string][]string {
@@ -18,6 +20,8 @@ func windowsFixtureInventory() map[string][]string {
 		}
 		all[p] = append(all[p], "TestShared", "ExampleFuture", "FuzzFuture")
 	}
+	lastPackage := ordinaryPackages[len(ordinaryPackages)-1]
+	all[lastPackage] = append(all[lastPackage], curatormutations.Names()...)
 	return all
 }
 
@@ -29,7 +33,16 @@ func testOrdinaryPartitionCoverage(t *testing.T, c testLane) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	mutations, err := mutationTestsByPackage(tests)
+	if err != nil {
+		t.Fatal(err)
+	}
+	skipSelector := regexp.MustCompile(curatormutations.Selector())
 	for p, names := range tests {
+		mutationSet := map[string]bool{}
+		for _, name := range mutations[p] {
+			mutationSet[name] = true
+		}
 		for _, name := range names {
 			count := 0
 			for i := 0; i < c.shards; i++ {
@@ -45,7 +58,11 @@ func testOrdinaryPartitionCoverage(t *testing.T, c testLane) {
 					count++
 				}
 			}
-			if count != 1 {
+			if mutationSet[name] {
+				if count != 0 || !skipSelector.MatchString(name) {
+					t.Fatalf("mutation test entered ordinary PR shards: %s %s count=%d", p, name, count)
+				}
+			} else if count != 1 {
 				t.Fatalf("%s %s selected %d times", p, name, count)
 			}
 		}
@@ -58,6 +75,28 @@ func testOrdinaryPartitionCoverage(t *testing.T, c testLane) {
 	tests[ordinaryPackages[0]] = append(tests[ordinaryPackages[0]], "TestShared")
 	if _, err := c.partition(tests); err == nil || !strings.Contains(err.Error(), "duplicate test") {
 		t.Fatalf("duplicate test admitted: %v", err)
+	}
+}
+
+func TestOrdinaryLaneRejectsMissingMutationSkip(t *testing.T) {
+	c, err := ordinaryConfig("unix-test", "darwin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	args, err := c.goTestArgs("^TestOrdinary$")
+	if err != nil {
+		t.Fatal(err)
+	}
+	invocation := append(append([]string(nil), args...), ordinaryPackages...)
+	if err := curatormutations.ValidateSkipArgs(invocation); err != nil {
+		t.Fatalf("ordinary shard invocation lacks canonical skip: %v", err)
+	}
+	// Remove only the skip flag/value pair; the run selector and package
+	// invocation stay unchanged. The ordinary-lane contract must then refuse it.
+	withoutSkip := append([]string(nil), invocation[:len(args)-2]...)
+	withoutSkip = append(withoutSkip, invocation[len(args):]...)
+	if err := curatormutations.ValidateSkipArgs(withoutSkip); err == nil {
+		t.Fatal("ordinary shard invocation without its mutation selector was admitted")
 	}
 }
 
@@ -75,10 +114,18 @@ func windowsFixtureStream(parts map[string][][]string, shard int) []byte {
 // Complete positive evidence is admitted; each bounded plant must fail for
 // its intended inventory, execution, source or margin violation, without outputs.
 func testOrdinaryMergeControls(t *testing.T, c testLane) {
-	for _, plant := range []string{"valid", "missing-shard", "duplicate-shard", "source", "platform", "lane", "inventory", "selector", "exit", "lost-test", "duplicate-test", "missing-package", "unexpected-package", "failed-package", "slow", "future-test"} {
+	identity, err := currentGoTestIdentity()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, plant := range []string{"valid", "missing-shard", "duplicate-shard", "source", "platform", "lane", "go-version", "go-arch", "go-flags", "inventory", "mutation-inventory", "selector", "skip-selector", "exit", "lost-test", "duplicate-test", "missing-package", "unexpected-package", "failed-package", "slow", "future-test"} {
 		t.Run(plant, func(t *testing.T) {
 			tests := windowsFixtureInventory()
 			parts, err := c.partition(tests)
+			if err != nil {
+				t.Fatal(err)
+			}
+			mutations, err := mutationTestsByPackage(tests)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -88,7 +135,12 @@ func testOrdinaryMergeControls(t *testing.T, c testLane) {
 				if err := os.Mkdir(path, 0755); err != nil {
 					t.Fatal(err)
 				}
-				m := testManifest{Commit: "head", GOOS: c.goos, Lane: c.lane, Shard: i, Inventories: tests, Selector: c.selector(parts, i)}
+				m := testManifest{
+					Commit: "head", GOOS: c.goos, Lane: c.lane, Shard: i,
+					GoVersion: identity.Version, GOARCH: identity.GOARCH, GOFLAGSHash: identity.GOFLAGSHash,
+					Inventories: tests, MutationTests: mutations, Selector: c.selector(parts, i),
+					SkipSelector: curatormutations.Selector(),
+				}
 				data, err := json.Marshal(m)
 				if err != nil {
 					t.Fatal(err)
@@ -109,7 +161,7 @@ func testOrdinaryMergeControls(t *testing.T, c testLane) {
 				t.Fatal(err)
 			}
 			stream := string(windowsFixtureStream(parts, 0))
-			want := "source/platform/lane/inventory/selector/exit mismatch"
+			want := "source/platform/toolchain/inventory/selector/skip/exit mismatch"
 			switch plant {
 			case "missing-shard":
 				if err := os.Remove(path); err != nil {
@@ -127,10 +179,20 @@ func testOrdinaryMergeControls(t *testing.T, c testLane) {
 				m.GOOS = "unsupported"
 			case "lane":
 				m.Lane = "race"
+			case "go-version":
+				m.GoVersion = "other toolchain"
+			case "go-arch":
+				m.GOARCH = "unsupported"
+			case "go-flags":
+				m.GOFLAGSHash = "changed"
 			case "inventory":
 				delete(m.Inventories, ordinaryPackages[0])
+			case "mutation-inventory":
+				delete(m.MutationTests, ordinaryPackages[len(ordinaryPackages)-1])
 			case "selector":
 				m.Selector = "^TestShared$"
+			case "skip-selector":
+				m.SkipSelector = "^TestWrong$"
 			case "exit":
 				m.ExitCode = 1
 			case "future-test":
