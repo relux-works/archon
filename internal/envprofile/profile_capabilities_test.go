@@ -97,6 +97,53 @@ func TestProfileWithoutCapabilitiesKeepsLegacyInstall(t *testing.T) {
 	}
 }
 
+// TestMalformedProfileCapabilitiesDoNotPublishPartialState proves malformed
+// declarations fail before publishing either the installed source or its lock.
+func TestMalformedProfileCapabilitiesDoNotPublishPartialState(t *testing.T) {
+	for _, raw := range []string{`{"unknown":[]}`, `{"network":"all"}`} {
+		t.Run(raw, func(t *testing.T) {
+			home := gitFixtureHome(t)
+			pinHomes(t)
+			ids := newGitIdentities(t)
+			skill := gitRepo(t, map[string]string{
+				"SKILL.md": "---\nname: guide\ndescription: Malformed profile capability fixture\n---\nRead this guide.\n",
+			}, "v1.0.0")
+			operand := ids.serve(skill, "https://source.example.org/skills/guide")
+
+			prior := t.TempDir()
+			priorRequest := strings.Replace(profileSkillRequest(""), "%s", `"`+operand+`"`, 1)
+			writeSkillProfile(t, prior, "malformed-profile", priorRequest, 3)
+			if _, _, _, err := Install(home, InstallOptions{Operand: prior}); err != nil {
+				t.Fatalf("valid prior profile failed to install: %v", err)
+			}
+			priorSource, err := os.ReadFile(sourcePath(home, "malformed-profile"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			priorLock, err := os.ReadFile(lockPath(home, "malformed-profile"))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			malformed := t.TempDir()
+			malformedRequest := strings.Replace(profileSkillRequest(raw), "%s", `"`+operand+`"`, 1)
+			writeSkillProfile(t, malformed, "malformed-profile", malformedRequest, 4)
+			if _, _, _, err := Install(home, InstallOptions{Operand: malformed}); err == nil || !strings.Contains(err.Error(), "profile_skill_capability_invalid") {
+				t.Fatalf("malformed declaration was not refused with its diagnostic: %v", err)
+			}
+			for path, before := range map[string][]byte{
+				sourcePath(home, "malformed-profile"): priorSource,
+				lockPath(home, "malformed-profile"):   priorLock,
+			} {
+				after, err := os.ReadFile(path)
+				if err != nil || string(after) != string(before) {
+					t.Fatalf("malformed declaration changed prior %s: %v", filepath.Base(path), err)
+				}
+			}
+		})
+	}
+}
+
 // TestManifestlessProfileWithoutCapabilitiesStillRejectsNetwork proves the
 // schema-3 no-field path retains the existing strict uncovered-host refusal.
 func TestManifestlessProfileWithoutCapabilitiesStillRejectsNetwork(t *testing.T) {
