@@ -100,7 +100,7 @@ func TestProfileWithoutCapabilitiesKeepsLegacyInstall(t *testing.T) {
 // TestMalformedProfileCapabilitiesDoNotPublishPartialState proves malformed
 // declarations fail before publishing either the installed source or its lock.
 func TestMalformedProfileCapabilitiesDoNotPublishPartialState(t *testing.T) {
-	for _, raw := range []string{`{"unknown":[]}`, `{"network":"all"}`} {
+	for _, raw := range []string{`{"unknown":[]}`, `{"network":"all"}`, `{"network":["api.example.net","api.example.net"]}`} {
 		t.Run(raw, func(t *testing.T) {
 			home := gitFixtureHome(t)
 			pinHomes(t)
@@ -252,15 +252,17 @@ func TestProfileCapabilitiesDoNotReplaceNativeManifest(t *testing.T) {
 	}, "v1.0.0")
 	operand := ids.serve(skill, "https://source.example.org/skills/guide")
 
-	profile := t.TempDir()
-	withCaps := strings.Replace(profileSkillRequest(`{"network":["api.example.net","docs.example.net"]}`), "%s", `"`+operand+`"`, 1)
-	writeSkillProfile(t, profile, "native-profile", withCaps, 4)
-	if _, _, _, err := Install(home, InstallOptions{Operand: profile}); err == nil || !strings.Contains(err.Error(), "profile_skill_capability_native_manifest") {
-		t.Fatalf("profile declaration replaced native manifest: %v", err)
-	}
-	for _, path := range []string{sourcePath(home, "native-profile"), lockPath(home, "native-profile")} {
-		if _, err := os.Stat(path); !os.IsNotExist(err) {
-			t.Fatalf("native precedence refusal published %s: %v", filepath.Base(path), err)
+	for _, raw := range []string{`{"network":["api.example.net","docs.example.net"]}`, `{}`} {
+		profile := t.TempDir()
+		withCaps := strings.Replace(profileSkillRequest(raw), "%s", `"`+operand+`"`, 1)
+		writeSkillProfile(t, profile, "native-profile", withCaps, 4)
+		if _, _, _, err := Install(home, InstallOptions{Operand: profile}); err == nil || !strings.Contains(err.Error(), "profile_skill_capability_native_manifest") {
+			t.Fatalf("profile declaration %s replaced native manifest: %v", raw, err)
+		}
+		for _, path := range []string{sourcePath(home, "native-profile"), lockPath(home, "native-profile")} {
+			if _, err := os.Stat(path); !os.IsNotExist(err) {
+				t.Fatalf("native precedence refusal published %s: %v", filepath.Base(path), err)
+			}
 		}
 	}
 

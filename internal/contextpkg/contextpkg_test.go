@@ -147,7 +147,7 @@ func TestProfileSkillCapabilitiesSchemaScope(t *testing.T) {
 // TestProfileSkillCapabilitiesMalformedHaveSpecificCode proves invalid v4
 // capability objects fail closed before resolution or publication.
 func TestProfileSkillCapabilitiesMalformedHaveSpecificCode(t *testing.T) {
-	for _, raw := range []string{`null`, `[]`, `{"unknown":[]}`, `{"network":"all"}`, `{"prompt_scope":null}`} {
+	for _, raw := range []string{`null`, `[]`, `{"unknown":[]}`, `{"network":"all"}`, `{"network":["api.example.net","api.example.net"]}`, `{"prompt_scope":null}`} {
 		payload := []byte(`{"schema_version":4,"name":"profile","version":"1.0.0","requires":{"skills":{"guide":{"git":"https://source.example.org/guide","range":"*","capabilities":` + raw + `}}}}`)
 		if _, err := ParseManifest(payload); err == nil || !strings.Contains(err.Error(), DiagSkillCapabilityInvalid) {
 			t.Errorf("invalid capability %s: got %v", raw, err)
