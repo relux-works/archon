@@ -34,15 +34,15 @@ type goTestIdentity struct {
 }
 
 func currentGoTestIdentity() (goTestIdentity, error) {
-	version, err := commandOutput("go", "version")
+	version, err := commandOutput(exec.Command("go", "version"))
 	if err != nil {
 		return goTestIdentity{}, err
 	}
-	arch, err := commandOutput("go", "env", "GOARCH")
+	arch, err := commandOutput(exec.Command("go", "env", "GOARCH"))
 	if err != nil {
 		return goTestIdentity{}, err
 	}
-	goFlags, err := commandOutput("go", "env", "GOFLAGS")
+	goFlags, err := commandOutput(exec.Command("go", "env", "GOFLAGS"))
 	if err != nil {
 		return goTestIdentity{}, err
 	}
@@ -50,11 +50,10 @@ func currentGoTestIdentity() (goTestIdentity, error) {
 	return goTestIdentity{Version: version, GOARCH: arch, GOFLAGSHash: flagsHash}, nil
 }
 
-func commandOutput(name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...)
+func commandOutput(cmd *exec.Cmd) (string, error) {
 	out, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("%s %s: %w", name, strings.Join(args, " "), err)
+		return "", fmt.Errorf("%s: %w", strings.Join(cmd.Args, " "), err)
 	}
 	return strings.TrimSpace(string(out)), nil
 }

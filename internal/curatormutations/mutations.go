@@ -101,8 +101,15 @@ func SkipArgs() []string {
 // separate as required by the CI contract.
 func ValidateSkipArgs(args []string) error {
 	count := 0
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
+	waitingForSelector := false
+	for _, arg := range args {
+		if waitingForSelector {
+			if arg != Selector() {
+				return fmt.Errorf("-skip must be followed by the canonical mutation selector")
+			}
+			waitingForSelector = false
+			continue
+		}
 		if strings.HasPrefix(arg, "-skip=") {
 			return fmt.Errorf("mutation selector must use a separate -skip argument")
 		}
@@ -110,10 +117,10 @@ func ValidateSkipArgs(args []string) error {
 			continue
 		}
 		count++
-		if i+1 >= len(args) || args[i+1] != Selector() {
-			return fmt.Errorf("-skip must be followed by the canonical mutation selector")
-		}
-		i++
+		waitingForSelector = true
+	}
+	if waitingForSelector {
+		return fmt.Errorf("-skip must be followed by the canonical mutation selector")
 	}
 	if count != 1 {
 		return fmt.Errorf("want exactly one canonical -skip pair, got %d", count)

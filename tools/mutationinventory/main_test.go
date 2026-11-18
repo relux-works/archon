@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -20,7 +21,147 @@ func TestParseInventoryKeepsRunnableGoTestNames(t *testing.T) {
 	}
 }
 
+func TestInventoryCommandProfileAllowsOnlySupportedCIPresets(t *testing.T) {
+	tests := []struct {
+		name        string
+		packagePath string
+		timeout     string
+		flags       []string
+		wantPackage string
+		wantTimeout string
+		wantFlags   []string
+	}{
+		{
+			name:        "repository path with default timeout",
+			packagePath: curatorPackagePath,
+			timeout:     inventoryTimeout,
+			wantPackage: curatorPackagePath,
+			wantTimeout: inventoryTimeout,
+		},
+		{
+			name:        "module path with default timeout",
+			packagePath: curatorPackageImportPath,
+			timeout:     inventoryTimeout,
+			wantPackage: curatorPackageImportPath,
+			wantTimeout: inventoryTimeout,
+		},
+		{
+			name:        "Windows timeout",
+			packagePath: curatorPackagePath,
+			timeout:     windowsInventoryTimeout,
+			wantPackage: curatorPackagePath,
+			wantTimeout: windowsInventoryTimeout,
+		},
+		{
+			name:        "module path with Windows timeout",
+			packagePath: curatorPackageImportPath,
+			timeout:     windowsInventoryTimeout,
+			wantPackage: curatorPackageImportPath,
+			wantTimeout: windowsInventoryTimeout,
+		},
+		{
+			name:        "race lane",
+			packagePath: curatorPackagePath,
+			timeout:     inventoryTimeout,
+			flags:       []string{"-race"},
+			wantPackage: curatorPackagePath,
+			wantTimeout: inventoryTimeout,
+			wantFlags:   []string{"-race"},
+		},
+		{
+			name:        "module path race lane",
+			packagePath: curatorPackageImportPath,
+			timeout:     inventoryTimeout,
+			flags:       []string{"-race"},
+			wantPackage: curatorPackageImportPath,
+			wantTimeout: inventoryTimeout,
+			wantFlags:   []string{"-race"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			profile, err := newInventoryCommandProfile(test.packagePath, test.timeout, test.flags)
+			if err != nil {
+				t.Fatalf("supported CI invocation rejected: %v", err)
+			}
+			if profile.packagePath != test.wantPackage || profile.timeout != test.wantTimeout || !reflect.DeepEqual(profile.goTestFlags(), test.wantFlags) {
+				t.Fatalf("profile = %#v, want package=%q timeout=%q flags=%v", profile, test.wantPackage, test.wantTimeout, test.wantFlags)
+			}
+			for _, selection := range []struct {
+				value        inventorySelection
+				wantSelector string
+			}{
+				{value: unfilteredInventory, wantSelector: "."},
+				{value: mutationInventory, wantSelector: curatormutations.Selector()},
+			} {
+				cmd, err := inventoryCommand(profile, selection.value)
+				if err != nil {
+					t.Fatalf("supported inventory command rejected: %v", err)
+				}
+				wantArgs := []string{"go", "test", "-list", selection.wantSelector, "-timeout", test.wantTimeout}
+				wantArgs = append(wantArgs, test.wantFlags...)
+				wantArgs = append(wantArgs, test.wantPackage)
+				if !reflect.DeepEqual(cmd.Args, wantArgs) {
+					t.Fatalf("inventory command args = %q, want %q", cmd.Args, wantArgs)
+				}
+			}
+		})
+	}
+}
+
+func TestInventoryCommandProfileRejectsCallerControlledValues(t *testing.T) {
+	tests := []struct {
+		name        string
+		packagePath string
+		timeout     string
+		flags       []string
+	}{
+		{name: "unknown package", packagePath: "../../outside", timeout: inventoryTimeout},
+		{name: "unknown timeout", packagePath: curatorPackagePath, timeout: "10s"},
+		{name: "arbitrary flag", packagePath: curatorPackagePath, timeout: inventoryTimeout, flags: []string{"-coverprofile=/tmp/out"}},
+		{name: "combined race flags", packagePath: curatorPackagePath, timeout: inventoryTimeout, flags: []string{"-race", "-count=1"}},
+		{name: "race with Windows timeout", packagePath: curatorPackagePath, timeout: windowsInventoryTimeout, flags: []string{"-race"}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if _, err := newInventoryCommandProfile(test.packagePath, test.timeout, test.flags); err == nil {
+				t.Fatalf("caller-controlled inventory values were admitted: package=%q timeout=%q flags=%v", test.packagePath, test.timeout, test.flags)
+			}
+		})
+	}
+	profile, err := newInventoryCommandProfile(curatorPackagePath, inventoryTimeout, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := inventoryCommand(profile, inventorySelection(99)); err == nil {
+		t.Fatal("unknown inventory selector was admitted")
+	}
+}
+
+func TestVerifyGoLauncherIdentityRequiresTheToolchainThatBuiltTheInventoryTool(t *testing.T) {
+	if err := verifyGoLauncherIdentity("go version go1.25.5 darwin/arm64", "go1.25.5"); err != nil {
+		t.Fatalf("matching launcher rejected: %v", err)
+	}
+	for _, tc := range []struct {
+		name    string
+		version string
+	}{
+		{name: "different toolchain version", version: "go version go1.25.4 darwin/arm64"},
+		{name: "unrecognized launcher output", version: "some other toolchain"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := verifyGoLauncherIdentity(tc.version, "go1.25.5"); err == nil {
+				t.Fatal("different Go launcher identity was admitted")
+			}
+		})
+	}
+}
+
 func TestRaceMacInventoryCountsArePinnedOnlyForTheRaceInvocation(t *testing.T) {
+	profile, err := newInventoryCommandProfile(curatorPackagePath, inventoryTimeout, []string{"-race"})
+	if err != nil {
+		t.Fatal(err)
+	}
 	names := curatormutations.Names()
 	for i := 0; i < expectedMacRacePullTests; i++ {
 		names = append(names, fmt.Sprintf("TestPRFixture%03d", i))
@@ -29,14 +170,14 @@ func TestRaceMacInventoryCountsArePinnedOnlyForTheRaceInvocation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := validateExpectedMacRaceCounts("darwin", "./cmd/curator", []string{"-race"}, inventory); err != nil {
+	if err := validateExpectedMacRaceCounts("darwin", profile, inventory); err != nil {
 		t.Fatal(err)
 	}
-	if err := validateExpectedMacRaceCounts("linux", "./cmd/curator", []string{"-race"}, inventory); err != nil {
+	if err := validateExpectedMacRaceCounts("linux", profile, inventory); err != nil {
 		t.Fatalf("non-macOS invocation received the macOS count policy: %v", err)
 	}
-	if err := validateExpectedMacRaceCounts("darwin", "./cmd/curator", []string{"-race", "-tags=curator_test_platform"}, inventory); err != nil {
-		t.Fatalf("different invocation received the exact Race Mac count policy: %v", err)
+	if _, err := newInventoryCommandProfile(curatorPackagePath, inventoryTimeout, []string{"-race", "-tags=curator_test_platform"}); err == nil {
+		t.Fatal("caller-controlled race flags were admitted")
 	}
 
 	deleteName := inventory.Pull[len(inventory.Pull)-1]
@@ -50,7 +191,7 @@ func TestRaceMacInventoryCountsArePinnedOnlyForTheRaceInvocation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := validateExpectedMacRaceCounts("darwin", "./cmd/curator", []string{"-race"}, changed); err == nil {
+	if err := validateExpectedMacRaceCounts("darwin", profile, changed); err == nil {
 		t.Fatal("a lost Race macOS PR test was admitted")
 	}
 }

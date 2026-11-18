@@ -166,7 +166,7 @@ inventory_curator_stage() {
 		return 0
 	fi
 	log="$EVIDENCE/mutation-inventory-$stage.log"
-	args=(run ./tools/mutationinventory -mode inventory -go "$GO" -package "$package" \
+	args=(run ./tools/mutationinventory -mode inventory -package "$package" \
 		-timeout "$GO_TEST_TIMEOUT" -go-test-flags "${GO_TEST_FLAGS:-}" \
 		-extra-go-test-flags "${STORE_COMPAT_FLAGS[*]+"${STORE_COMPAT_FLAGS[*]}"}" -evidence "$EVIDENCE/mutation-inventory/$stage")
 	if [ "$root_mode" = served ]; then

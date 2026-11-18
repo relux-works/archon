@@ -91,6 +91,9 @@ func TestSkipInvocationAndMissingSelectorNegativeControl(t *testing.T) {
 	if err := ValidateSkipArgs([]string{"-skip=" + Selector()}); err == nil {
 		t.Fatal("combined -skip argument was admitted")
 	}
+	if err := ValidateSkipArgs([]string{"-skip"}); err == nil {
+		t.Fatal("missing -skip value was admitted")
+	}
 }
 
 func contains(values []string, want string) bool {

@@ -38,6 +38,72 @@ type inventoryReport struct {
 const expectedMacRacePullTests = 531
 const expectedMacRaceMutationTests = 7
 
+const curatorPackagePath = "./cmd/curator"
+const curatorPackageImportPath = "github.com/relux-works/curator/cmd/curator"
+const inventoryTimeout = "60m"
+const windowsInventoryTimeout = "120m"
+
+type inventoryCommandProfile struct {
+	packagePath string
+	timeout     string
+	race        bool
+}
+
+type inventorySelection uint8
+
+const (
+	unfilteredInventory inventorySelection = iota
+	mutationInventory
+)
+
+func newInventoryCommandProfile(packagePath, timeout string, flags []string) (inventoryCommandProfile, error) {
+	profile := inventoryCommandProfile{}
+	switch packagePath {
+	case curatorPackagePath:
+		profile.packagePath = curatorPackagePath
+	case curatorPackageImportPath:
+		profile.packagePath = curatorPackageImportPath
+	default:
+		return inventoryCommandProfile{}, fmt.Errorf("unsupported inventory package %q", packagePath)
+	}
+
+	switch timeout {
+	case inventoryTimeout:
+		profile.timeout = inventoryTimeout
+	case windowsInventoryTimeout:
+		profile.timeout = windowsInventoryTimeout
+	default:
+		return inventoryCommandProfile{}, fmt.Errorf("unsupported inventory timeout %q", timeout)
+	}
+
+	switch {
+	case len(flags) == 0:
+	case len(flags) == 1 && flags[0] == "-race" && profile.timeout == inventoryTimeout:
+		profile.race = true
+	default:
+		return inventoryCommandProfile{}, fmt.Errorf("unsupported inventory Go test flags %q", flags)
+	}
+	return profile, nil
+}
+
+func (profile inventoryCommandProfile) goTestFlags() []string {
+	if profile.race {
+		return []string{"-race"}
+	}
+	return nil
+}
+
+func (profile inventoryCommandProfile) selector(selection inventorySelection) (string, error) {
+	switch selection {
+	case unfilteredInventory:
+		return ".", nil
+	case mutationInventory:
+		return curatormutations.Selector(), nil
+	default:
+		return "", fmt.Errorf("unsupported inventory selection %d", selection)
+	}
+}
+
 func main() {
 	if err := run(os.Args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, "mutationinventory:", err)
@@ -48,7 +114,6 @@ func main() {
 func run(args []string) error {
 	fs := flag.NewFlagSet("mutationinventory", flag.ContinueOnError)
 	mode := fs.String("mode", "", "selector, inventory, or verify-invocation")
-	goBin := fs.String("go", "go", "Go launcher")
 	packagePath := fs.String("package", "./cmd/curator", "package to inventory")
 	timeout := fs.String("timeout", "60m", "go test package timeout")
 	goTestFlags := fs.String("go-test-flags", "", "additional go test flags, separated by spaces")
@@ -80,25 +145,37 @@ func run(args []string) error {
 			return errors.New("inventory mode requires package, timeout, and evidence")
 		}
 		flags := append(strings.Fields(*extraGoTestFlags), strings.Fields(*goTestFlags)...)
-		return writeInventory(*goBin, *packagePath, *timeout, flags, *evidence, *requireAll)
+		profile, err := newInventoryCommandProfile(*packagePath, *timeout, flags)
+		if err != nil {
+			return err
+		}
+		return writeInventory(profile, *evidence, *requireAll)
 	default:
 		return fmt.Errorf("unknown mode %q", *mode)
 	}
 }
 
-func writeInventory(goBin, packagePath, timeout string, flags []string, evidence string, requireAll bool) error {
-	all, err := listInventory(goBin, packagePath, timeout, flags, ".")
+func writeInventory(profile inventoryCommandProfile, evidence string, requireAll bool) error {
+	goVersion, err := commandOutput(exec.Command("go", "version"))
+	if err != nil {
+		return err
+	}
+	if err := verifyGoLauncherIdentity(goVersion, runtime.Version()); err != nil {
+		return err
+	}
+
+	all, err := listInventory(profile, unfilteredInventory)
 	if err != nil {
 		return fmt.Errorf("unfiltered inventory: %w", err)
 	}
 	if len(all) == 0 {
-		return fmt.Errorf("empty unfiltered test inventory for %s", packagePath)
+		return fmt.Errorf("empty unfiltered test inventory for %s", profile.packagePath)
 	}
 	inventory, err := curatormutations.Split(all)
 	if err != nil {
 		return err
 	}
-	selectedMutations, err := listInventory(goBin, packagePath, timeout, flags, curatormutations.Selector())
+	selectedMutations, err := listInventory(profile, mutationInventory)
 	if err != nil {
 		return fmt.Errorf("mutation -run inventory: %w", err)
 	}
@@ -114,15 +191,11 @@ func writeInventory(goBin, packagePath, timeout string, flags []string, evidence
 		}
 	}
 
-	goVersion, err := commandOutput(goBin, "version")
+	commit, err := commandOutput(exec.Command("git", "rev-parse", "HEAD"))
 	if err != nil {
 		return err
 	}
-	commit, err := commandOutput("git", "rev-parse", "HEAD")
-	if err != nil {
-		return err
-	}
-	goEnv, err := commandOutput(goBin, "env", "GOOS", "GOARCH")
+	goEnv, err := commandOutput(exec.Command("go", "env", "GOOS", "GOARCH"))
 	if err != nil {
 		return err
 	}
@@ -136,10 +209,10 @@ func writeInventory(goBin, packagePath, timeout string, flags []string, evidence
 	if platform[1] == "" {
 		platform[1] = runtime.GOARCH
 	}
-	if err := validateExpectedMacRaceCounts(platform[0], packagePath, flags, inventory); err != nil {
+	if err := validateExpectedMacRaceCounts(platform[0], profile, inventory); err != nil {
 		return err
 	}
-	effectiveGoFlags, err := commandOutput(goBin, "env", "GOFLAGS")
+	effectiveGoFlags, err := commandOutput(exec.Command("go", "env", "GOFLAGS"))
 	if err != nil {
 		return err
 	}
@@ -149,9 +222,9 @@ func writeInventory(goBin, packagePath, timeout string, flags []string, evidence
 		GOARCH:           platform[1],
 		GoVersion:        strings.TrimSpace(goVersion),
 		GOFLAGSHash:      fmt.Sprintf("%x", sha256.Sum256([]byte(effectiveGoFlags))),
-		Package:          packagePath,
-		Timeout:          timeout,
-		GoTestFlags:      flags,
+		Package:          profile.packagePath,
+		Timeout:          profile.timeout,
+		GoTestFlags:      profile.goTestFlags(),
 		MutationSelector: curatormutations.Selector(),
 		Unfiltered:       inventory.All,
 		PullRequest:      inventory.Pull,
@@ -168,22 +241,42 @@ func writeInventory(goBin, packagePath, timeout string, flags []string, evidence
 	if err := os.WriteFile(path, append(data, '\n'), 0644); err != nil {
 		return err
 	}
-	fmt.Printf("inventory %s: unfiltered=%d PR=%d M=%d evidence=%s\n", packagePath, len(inventory.All), len(inventory.Pull), len(inventory.Mutations), path)
+	fmt.Printf("inventory %s: unfiltered=%d PR=%d M=%d evidence=%s\n", profile.packagePath, len(inventory.All), len(inventory.Pull), len(inventory.Mutations), path)
 	return nil
 }
 
-func listInventory(goBin, packagePath, timeout string, flags []string, selector string) ([]string, error) {
-	args := []string{"test", "-list", selector, "-timeout", timeout}
-	args = append(args, flags...)
-	args = append(args, packagePath)
-	cmd := exec.Command(goBin, args...)
+func listInventory(profile inventoryCommandProfile, selection inventorySelection) ([]string, error) {
+	cmd, err := inventoryCommand(profile, selection)
+	if err != nil {
+		return nil, err
+	}
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("command %q failed: %w", append([]string{goBin}, args...), err)
+		return nil, fmt.Errorf("command %q failed: %w", cmd.Args, err)
 	}
 	return parseInventory(stdout.String()), nil
+}
+
+func inventoryCommand(profile inventoryCommandProfile, selection inventorySelection) (*exec.Cmd, error) {
+	selector, err := profile.selector(selection)
+	if err != nil {
+		return nil, err
+	}
+	args := []string{"test", "-list", selector, "-timeout", profile.timeout}
+	args = append(args, profile.goTestFlags()...)
+	args = append(args, profile.packagePath)
+	//nolint:gosec // The profile is built only from the supported CI compatibility table; selectors, flags, timeout, and package are tool-owned constants.
+	return exec.Command("go", args...), nil
+}
+
+func verifyGoLauncherIdentity(versionOutput, toolVersion string) error {
+	fields := strings.Fields(versionOutput)
+	if len(fields) < 3 || fields[0] != "go" || fields[1] != "version" || fields[2] != toolVersion {
+		return fmt.Errorf("go launcher version does not match inventory tool: launcher=%q tool=%q", versionOutput, toolVersion)
+	}
+	return nil
 }
 
 func verifyMutationSelection(expected, selected []string) error {
@@ -197,13 +290,12 @@ func verifyMutationSelection(expected, selected []string) error {
 	return nil
 }
 
-func validateExpectedMacRaceCounts(goos, packagePath string, flags []string, inventory curatormutations.Inventory) error {
-	curatorPackage := packagePath == "./cmd/curator" || strings.HasSuffix(packagePath, "/cmd/curator")
-	if goos != "darwin" || !curatorPackage || len(flags) != 1 || flags[0] != "-race" {
+func validateExpectedMacRaceCounts(goos string, profile inventoryCommandProfile, inventory curatormutations.Inventory) error {
+	if goos != "darwin" || !profile.race {
 		return nil
 	}
 	if len(inventory.Pull) != expectedMacRacePullTests || len(inventory.Mutations) != expectedMacRaceMutationTests {
-		return fmt.Errorf("Race macOS inventory counts are PR=%d/M=%d, want PR=%d/M=%d", len(inventory.Pull), len(inventory.Mutations), expectedMacRacePullTests, expectedMacRaceMutationTests)
+		return fmt.Errorf("race macOS inventory counts for %s are PR=%d/M=%d, want PR=%d/M=%d", profile.packagePath, len(inventory.Pull), len(inventory.Mutations), expectedMacRacePullTests, expectedMacRaceMutationTests)
 	}
 	return nil
 }
@@ -219,11 +311,10 @@ func parseInventory(output string) []string {
 	return names
 }
 
-func commandOutput(name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...)
+func commandOutput(cmd *exec.Cmd) (string, error) {
 	out, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("%s %s: %w", name, strings.Join(args, " "), err)
+		return "", fmt.Errorf("%s: %w", strings.Join(cmd.Args, " "), err)
 	}
 	return strings.TrimSpace(string(out)), nil
 }
