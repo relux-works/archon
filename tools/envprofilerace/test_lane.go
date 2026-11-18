@@ -44,6 +44,13 @@ var ordinaryPackages = []string{
 	"github.com/relux-works/curator/cmd/curator",
 }
 
+func splitOrdinaryPackageTests(packagePath string, names []string) (curatormutations.Inventory, error) {
+	if packagePath == ordinaryPackages[len(ordinaryPackages)-1] {
+		return curatormutations.Split(names)
+	}
+	return curatormutations.SplitOtherPackage(names)
+}
+
 type testManifest struct {
 	Commit, GOOS, Lane             string
 	GoVersion, GOARCH, GOFLAGSHash string
@@ -64,7 +71,7 @@ func (c testLane) partition(tests map[string][]string) (map[string][][]string, e
 	result := map[string][][]string{}
 	for _, p := range ordinaryPackages {
 		shards := make([][]string, c.shards)
-		inventory, err := curatormutations.Split(tests[p])
+		inventory, err := splitOrdinaryPackageTests(p, tests[p])
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", p, err)
 		}
@@ -107,7 +114,7 @@ func (c testLane) partition(tests map[string][]string) (map[string][][]string, e
 func mutationTestsByPackage(tests map[string][]string) (map[string][]string, error) {
 	mutations := make(map[string][]string, len(ordinaryPackages))
 	for _, p := range ordinaryPackages {
-		inventory, err := curatormutations.Split(tests[p])
+		inventory, err := splitOrdinaryPackageTests(p, tests[p])
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", p, err)
 		}

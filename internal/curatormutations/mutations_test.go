@@ -69,6 +69,25 @@ func TestSplitConservesInventoryAndRejectsUnclassifiedMutants(t *testing.T) {
 	}
 }
 
+func TestSplitOtherPackageKeepsDescriptiveMutantTestsOrdinary(t *testing.T) {
+	modeTest := "TestClaudeNativeMemoryModeNarrowingMutants"
+	preflightTest := "TestClaudeNativeMemoryPreflightNarrowingMutant"
+	all := append(Names(), modeTest, preflightTest)
+	inventory, err := SplitOtherPackage(all)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(inventory.All) != 9 || len(inventory.Pull) != 2 || len(inventory.Mutations) != 7 {
+		t.Fatalf("other-package partition = all:%d pull:%d mutations:%d, want 9/2/7", len(inventory.All), len(inventory.Pull), len(inventory.Mutations))
+	}
+	if !contains(inventory.Pull, modeTest) || !contains(inventory.Pull, preflightTest) {
+		t.Fatalf("descriptive mutant tests were not kept in the ordinary set: %v", inventory.Pull)
+	}
+	if err := RequireComplete(inventory); err != nil {
+		t.Fatalf("canonical names were not preserved for placement validation: %v", err)
+	}
+}
+
 func TestSkipInvocationAndMissingSelectorNegativeControl(t *testing.T) {
 	args := append([]string{"test", "-json", "-run", "^TestOrdinary$"}, SkipArgs()...)
 	if err := ValidateInvocation(args); err != nil {

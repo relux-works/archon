@@ -35,7 +35,7 @@ type inventoryReport struct {
 	Mutations        []string `json:"mutations"`
 }
 
-const expectedMacRacePullTests = 531
+const expectedMacRacePullTests = 524
 const expectedMacRaceMutationTests = 7
 
 const curatorPackagePath = "./cmd/curator"

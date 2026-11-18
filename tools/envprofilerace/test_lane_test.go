@@ -25,6 +25,49 @@ func windowsFixtureInventory() map[string][]string {
 	return all
 }
 
+func TestOrdinaryLaneKeepsOtherPackageNarrowingNamesInPR(t *testing.T) {
+	c, err := ordinaryConfig("unix-test", "linux")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := windowsFixtureInventory()
+	modeTest := "TestClaudeNativeMemoryModeNarrowingMutants"
+	preflightTest := "TestClaudeNativeMemoryPreflightNarrowingMutant"
+	otherPackage := ordinaryPackages[0]
+	tests[otherPackage] = append(tests[otherPackage], modeTest, preflightTest)
+
+	parts, err := c.partition(tests)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mutations, err := mutationTestsByPackage(tests)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(mutations[otherPackage]) != 0 {
+		t.Fatalf("noncanonical package tests entered the mutation suite: %v", mutations[otherPackage])
+	}
+	for _, name := range []string{modeTest, preflightTest} {
+		selected := 0
+		for _, shard := range parts[otherPackage] {
+			for _, got := range shard {
+				if got == name {
+					selected++
+				}
+			}
+		}
+		if selected != 1 {
+			t.Errorf("ordinary test %s selected %d times, want once", name, selected)
+		}
+	}
+
+	misplaced := windowsFixtureInventory()
+	misplaced[otherPackage] = append(misplaced[otherPackage], curatormutations.Names()[0])
+	if _, err := c.partition(misplaced); err == nil || !strings.Contains(err.Error(), "mutation tests appeared outside cmd/curator") {
+		t.Fatalf("canonical mutation test outside its package admitted: %v", err)
+	}
+}
+
 // One common selector must select every native test once in its own package,
 // including future tests and names shared by packages, with no cross-selection.
 func testOrdinaryPartitionCoverage(t *testing.T, c testLane) {

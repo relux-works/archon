@@ -44,8 +44,21 @@ type Inventory struct {
 }
 
 // Split rejects duplicate names and any newly added mutant-style test that is
-// not explicitly admitted to the canonical post-landing set.
+// not explicitly admitted to the canonical post-landing set. Use it for the
+// package that owns the canonical mutation suite.
 func Split(names []string) (Inventory, error) {
+	return split(names, true)
+}
+
+// SplitOtherPackage partitions another package's tests without treating its
+// descriptive "NarrowingMutant" names as members of the cmd/curator suite.
+// Canonical mutation names remain in Mutations so callers can reject their
+// appearance outside the owning package.
+func SplitOtherPackage(names []string) (Inventory, error) {
+	return split(names, false)
+}
+
+func split(names []string, rejectUnclassifiedMutants bool) (Inventory, error) {
 	known := make(map[string]bool, len(mutationTests))
 	for _, name := range mutationTests {
 		known[name] = true
@@ -62,7 +75,7 @@ func Split(names []string) (Inventory, error) {
 			result.Mutations = append(result.Mutations, name)
 			continue
 		}
-		if strings.Contains(name, "NarrowingMutant") {
+		if rejectUnclassifiedMutants && strings.Contains(name, "NarrowingMutant") {
 			return Inventory{}, fmt.Errorf("unclassified narrowing mutant test %q", name)
 		}
 		result.Pull = append(result.Pull, name)
