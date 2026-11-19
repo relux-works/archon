@@ -718,6 +718,15 @@ jobs:
       CI_STORE_COMPATIBILITY: ${{ github.workspace }}/.temp/store-v1-compatibility
       CI_STORE_V2_CANONICAL: "1"
     steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Initialize private Go state
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash .github/ci/isolate-go-state.sh
+
       - name: Require PR mutation gate success
         if: always()
         shell: bash
@@ -727,15 +736,6 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             test "$CURATOR_MUTATION_RESULT" = success
           fi
-
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Initialize private Go state
-        if: runner.os == 'Linux'
-        shell: bash
-        run: bash .github/ci/isolate-go-state.sh
 
       - name: Checkout authoritative protocol suite
         uses: actions/checkout@v4
