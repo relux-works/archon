@@ -400,6 +400,58 @@ func TestNormalizeLineEndingsAcceptsLFAndCRLF(t *testing.T) {
 	}
 }
 
+func mainPushOnlyTrigger(workflow map[string]any) bool {
+	triggers, ok := workflow["on"].(map[string]any)
+	if !ok || len(triggers) != 1 {
+		return false
+	}
+	push, ok := triggers["push"].(map[string]any)
+	if !ok || len(push) != 1 {
+		return false
+	}
+	branches, ok := push["branches"].([]any)
+	return ok && len(branches) == 1 && branches[0] == "main"
+}
+
+func TestMainPushOnlyTriggerRejectsOtherEventsAndBranches(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		workflow map[string]any
+		want     bool
+	}{
+		{
+			name: "main push only",
+			workflow: map[string]any{"on": map[string]any{
+				"push": map[string]any{"branches": []any{"main"}},
+			}},
+			want: true,
+		},
+		{
+			name: "other branch",
+			workflow: map[string]any{"on": map[string]any{
+				"push": map[string]any{"branches": []any{"release"}},
+			}},
+		},
+		{
+			name: "additional event",
+			workflow: map[string]any{"on": map[string]any{
+				"push":         map[string]any{"branches": []any{"main"}},
+				"pull_request": map[string]any{},
+			}},
+		},
+		{
+			name:     "trigger text is not a mapping",
+			workflow: map[string]any{"on": "push to main"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := mainPushOnlyTrigger(tc.workflow); got != tc.want {
+				t.Fatalf("main-push-only trigger = %t, want %t", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestPostLandingWorkflowIsMainPushOnlyAndRunsTheCanonicalSet(t *testing.T) {
 	data, err := os.ReadFile("../../.github/workflows/post-landing-mutation-tests.yml")
 	if err != nil {
@@ -410,13 +462,8 @@ func TestPostLandingWorkflowIsMainPushOnlyAndRunsTheCanonicalSet(t *testing.T) {
 	if err := yaml.Unmarshal(data, &parsed); err != nil || len(parsed) == 0 {
 		t.Fatalf("post-landing workflow is not valid YAML: %v", err)
 	}
-	if !strings.Contains(workflow, "on:\n  push:\n    branches: [main]") {
-		t.Fatal("post-landing workflow is not restricted to pushes on main")
-	}
-	for _, forbidden := range []string{"pull_request:", "workflow_dispatch:", "schedule:"} {
-		if strings.Contains(workflow, forbidden) {
-			t.Errorf("post-landing workflow includes a forbidden trigger %q", forbidden)
-		}
+	if !mainPushOnlyTrigger(parsed) {
+		t.Fatal("post-landing workflow must trigger only on pushes to main")
 	}
 	for _, required := range []string{
 		"runs-on: macos-latest",
