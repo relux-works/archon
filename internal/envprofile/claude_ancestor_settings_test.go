@@ -367,6 +367,7 @@ func TestClaudeAncestorSettingsGlobalCompensation(t *testing.T) {
 			statePath := filepath.Join(req.Home, claudeMemoryStateRel(req))
 			parent := filepath.Dir(statePath)
 			wantConflict := "global profile compensation postimage changed"
+			var wantParentMode os.FileMode
 			switch change {
 			case "settings", "ownership":
 				path := settingsPath
@@ -377,8 +378,20 @@ func TestClaudeAncestorSettingsGlobalCompensation(t *testing.T) {
 					t.Fatal(err)
 				}
 			case "parent-mode":
+				beforeMode, err := os.Stat(parent)
+				if err != nil {
+					t.Fatal(err)
+				}
 				if err := os.Chmod(parent, 0500); err != nil {
 					t.Fatal(err)
+				}
+				narrowedMode, err := os.Stat(parent)
+				if err != nil {
+					t.Fatal(err)
+				}
+				wantParentMode = narrowedMode.Mode().Perm()
+				if wantParentMode == beforeMode.Mode().Perm() || wantParentMode&0222 != 0 {
+					t.Fatalf("parent-mode fixture did not create a distinct non-writable mode: before=%v after=%v", beforeMode.Mode(), narrowedMode.Mode())
 				}
 				t.Cleanup(func() { _ = os.Chmod(parent, 0700) })
 				wantConflict = "compensation parent postimage changed"
@@ -422,8 +435,11 @@ func TestClaudeAncestorSettingsGlobalCompensation(t *testing.T) {
 			}
 			if change == "parent-mode" {
 				info, err := os.Stat(parent)
-				if err != nil || info.Mode().Perm() != 0500 {
-					t.Fatalf("compensation refusal overwrote the operator parent mode: %v %v", info, err)
+				if err != nil {
+					t.Fatalf("compensation refusal removed the operator parent mode: %v", err)
+				}
+				if got := info.Mode().Perm(); got != wantParentMode || got&0222 != 0 {
+					t.Fatalf("compensation refusal overwrote the operator parent mode: got %v, want %v", got, wantParentMode)
 				}
 			}
 		})
