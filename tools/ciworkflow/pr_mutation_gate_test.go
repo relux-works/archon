@@ -60,7 +60,7 @@ func checkPRMutationGate(data []byte) error {
 			setupGo = i
 		}
 	}
-	if checkout < 0 || initialize < 0 || gate < 0 || setupGo < 0 || !(checkout < initialize && initialize < gate && gate < setupGo) {
+	if checkout < 0 || initialize < 0 || gate < 0 || setupGo < 0 || checkout >= initialize || initialize >= gate || gate >= setupGo {
 		return fmt.Errorf("PR mutation result gate must follow checkout and private Go initialization, and precede Go consumers")
 	}
 	wantRun := `if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
