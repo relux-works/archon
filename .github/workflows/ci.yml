@@ -192,6 +192,59 @@ jobs:
             go test -count=1 -timeout=10m -v ./cmd/curator \
               -run '^Test(ProductionGitTool(RejectsProjectPATH|IgnoresInheritedSSHWrapper)|ProductionBinaryDispatchesSSHWrapper)$'
 
+  curator-mutation-pr:
+    name: Curator mutation controls (${{ matrix.os }})
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            timeout: 60m
+          - os: macos-latest
+            timeout: 60m
+          - os: windows-latest
+            timeout: 120m
+    env:
+      GOTOOLCHAIN: local
+      GOENV: "off"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify Go toolchain identity
+        shell: bash
+        run: bash .github/ci/toolchain-identity.sh
+      - name: Inventory complete pre-merge mutation suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash .github/ci/isolated-test.sh go run ./tools/mutationinventory \
+            -mode inventory -package ./cmd/curator -timeout ${{ matrix.timeout }} \
+            -require-all -evidence .temp/ci-evidence/pr-mutation
+      - name: Run all seven pre-merge mutation tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          selector="$(go run ./tools/mutationinventory -mode selector)"
+          bash .github/ci/isolated-test.sh go test -count=1 \
+            -timeout=${{ matrix.timeout }} -v -run "$selector" ./cmd/curator
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr-mutation-evidence-${{ matrix.os }}
+          path: .temp/ci-evidence/pr-mutation/
+          if-no-files-found: warn
+
   default-build-transport:
     name: Default build transport (hosted Linux)
     runs-on: ubuntu-latest
@@ -649,7 +702,7 @@ jobs:
 
   test:
     if: ${{ !cancelled() }}
-    needs: [windows-test-shards, unix-test-shards, store-v1-compatibility]
+    needs: [windows-test-shards, unix-test-shards, store-v1-compatibility, curator-mutation-pr]
     name: Test (${{ matrix.os }})
     # Linux entries run on the repository's self-hosted Linux runners when the
     # LINUX_SELF_HOSTED repository variable is true, for pushes, dispatches and
@@ -665,6 +718,16 @@ jobs:
       CI_STORE_COMPATIBILITY: ${{ github.workspace }}/.temp/store-v1-compatibility
       CI_STORE_V2_CANONICAL: "1"
     steps:
+      - name: Require PR mutation gate success
+        if: always()
+        shell: bash
+        env:
+          CURATOR_MUTATION_RESULT: ${{ needs.curator-mutation-pr.result }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            test "$CURATOR_MUTATION_RESULT" = success
+          fi
+
       - uses: actions/checkout@v4
         with:
           submodules: true

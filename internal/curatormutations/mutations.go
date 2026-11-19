@@ -1,5 +1,5 @@
-// Package curatormutations defines the tests withheld from pull-request CI and
-// run by the post-landing mutation workflow.
+// Package curatormutations defines the canonical mutation tests run by the
+// pull-request and post-landing mutation workflows.
 package curatormutations
 
 import (
@@ -36,7 +36,7 @@ func Selector() string {
 }
 
 // Inventory partitions one package's unfiltered test names into the tests
-// admitted to pull requests and the exact post-landing mutation set.
+// admitted to ordinary test lanes and the exact canonical mutation set.
 type Inventory struct {
 	All       []string
 	Pull      []string
@@ -44,7 +44,7 @@ type Inventory struct {
 }
 
 // Split rejects duplicate names and any newly added mutant-style test that is
-// not explicitly admitted to the canonical post-landing set. Use it for the
+// not explicitly admitted to the canonical mutation set. Use it for the
 // package that owns the canonical mutation suite.
 func Split(names []string) (Inventory, error) {
 	return split(names, true)
@@ -87,7 +87,7 @@ func split(names []string, rejectUnclassifiedMutants bool) (Inventory, error) {
 }
 
 // RequireComplete checks that the current platform exposes all seven
-// canonical mutation tests. The main post-landing macOS lane uses this guard.
+// canonical mutation tests. The pre-merge and post-landing mutation lanes use this guard.
 func RequireComplete(inventory Inventory) error {
 	if len(inventory.Mutations) != len(mutationTests) {
 		return fmt.Errorf("mutation inventory has %d tests, want %d", len(inventory.Mutations), len(mutationTests))

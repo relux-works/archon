@@ -65,7 +65,7 @@ func TestSplitConservesInventoryAndRejectsUnclassifiedMutants(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := RequireComplete(partial); err == nil {
-		t.Fatal("incomplete post-landing inventory admitted")
+		t.Fatal("incomplete canonical mutation inventory admitted")
 	}
 }
 
