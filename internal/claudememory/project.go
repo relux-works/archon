@@ -126,7 +126,7 @@ type memoryRootOutput struct{ buffer *bytes.Buffer }
 
 func (out *memoryRootOutput) Write(payload []byte) (int, error) {
 	if out.buffer.Len()+len(payload) > 65536 {
-		return 0, fmt.Errorf("Git toplevel output exceeds bound")
+		return 0, fmt.Errorf("git toplevel output exceeds bound")
 	}
 	return out.buffer.Write(payload)
 }

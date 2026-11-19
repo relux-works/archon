@@ -167,11 +167,11 @@ func canonicalMemoryPath(path string) (string, error) {
 			return "", fmt.Errorf("inspect Claude memory path: %w", statErr)
 		}
 		if metadata.Kind != stateread.KindAbsent {
-			return "", fmt.Errorf("Claude memory path contains an unresolved link or unreadable entry")
+			return "", fmt.Errorf("claude memory path contains an unresolved link or unreadable entry")
 		}
 		parent := filepath.Dir(prefix)
 		if parent == prefix {
-			return "", fmt.Errorf("Claude memory path has no resolvable parent")
+			return "", fmt.Errorf("claude memory path has no resolvable parent")
 		}
 		missing = append(missing, filepath.Base(prefix))
 		prefix = parent

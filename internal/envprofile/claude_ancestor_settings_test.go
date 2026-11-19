@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/curator/internal/privatedir"
 	"github.com/relux-works/curator/internal/transaction"
 )
 
@@ -17,8 +18,11 @@ func claudeMemoryPublicationFixture(t *testing.T) (*operation, *ResolveRequest, 
 	t.Helper()
 	req := &ResolveRequest{Home: t.TempDir(), Profile: "example", EnvID: envregistry.ClaudeCode, LaunchDir: t.TempDir()}
 	root := ManagedHomeDir(req.Home, req.Profile, req.EnvID)
-	if err := os.MkdirAll(root, 0o700); err != nil {
-		t.Fatal(err)
+	if err := privatedir.MakeAll(root); err != nil {
+		t.Fatalf("prepare private Claude memory root: %v", err)
+	}
+	if err := privatedir.Validate(root); err != nil {
+		t.Fatalf("Claude memory fixture root is not private: %v", err)
 	}
 	op, err := beginOperation(req.Home)
 	if err != nil {
