@@ -32,6 +32,52 @@ func claudeMemoryPublicationFixture(t *testing.T) (*operation, *ResolveRequest, 
 	return op, req, root
 }
 
+// Managed state uses slash-separated paths on every host; host-native
+// backslashes and traversal remain refused without creating any state.
+func TestClaudeMemoryStatePathCompatibilityAndRefusal(t *testing.T) {
+	req := &ResolveRequest{Profile: "fixture", EnvID: envregistry.ClaudeCode}
+	rel := claudeMemoryStateRel(req)
+	root := t.TempDir()
+	const want = "state/claude-memory/v1/16343367258ed8116b776c3781910cfca9f631f4b473a0a57051080e93fd22cf.json"
+	if rel != want {
+		t.Fatalf("managed state path changed: got %q, want %q", rel, want)
+	}
+	valid := []struct {
+		name string
+		path string
+	}{
+		{"producer", rel},
+		{"managed-join", managedJoin("", rel)},
+	}
+	for _, tc := range valid {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := managedPath(root, tc.path, false); err != nil {
+				t.Fatalf("legitimate managed state path refused: %q: %v", tc.path, err)
+			}
+		})
+	}
+	if !strings.HasPrefix(rel, "state/claude-memory/v1/") || !strings.HasSuffix(rel, ".json") || strings.Contains(rel, "\\") {
+		t.Fatalf("state producer emitted a nonportable managed path: %q", rel)
+	}
+	invalid := []struct {
+		name string
+		path string
+	}{
+		{"host-native-separators", strings.ReplaceAll(rel, "/", "\\")},
+		{"parent-traversal", strings.Replace(rel, "/claude-memory/", "/../", 1)},
+	}
+	for _, tc := range invalid {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := managedPath(root, tc.path, false); err == nil {
+				t.Fatalf("forbidden managed state path admitted: %q", tc.path)
+			}
+			if _, err := os.Lstat(filepath.Join(root, "state")); !os.IsNotExist(err) {
+				t.Fatalf("path refusal created managed state: %v", err)
+			}
+		})
+	}
+}
+
 // Omitted LaunchDir uses the real CWD for memory policy, without granting CWD
 // project trust. Explicit CWD has the same policy; a relative directory refuses
 // without replacing settings, ownership, seed, marker or composed policy.
@@ -80,7 +126,7 @@ func TestClaudeAncestorSettingsOmittedLaunchDirectory(t *testing.T) {
 				before[path] = snapshot{readClaudeState(t, path), info}
 			}
 			req.LaunchDir = "relative"
-			if _, err := Resolve(req); err == nil || !strings.Contains(err.Error(), envregistry.DiagSeedUnreadable+": Claude launch directory must be absolute") {
+			if _, err := Resolve(req); err == nil || !strings.Contains(err.Error(), envregistry.DiagSeedUnreadable+": claude launch directory must be absolute") {
 				t.Fatalf("relative directory did not specifically refuse: %v", err)
 			}
 			for path, old := range before {

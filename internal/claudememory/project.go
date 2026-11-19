@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/relux-works/curator/internal/stateread"
 )
 
 // ProjectRoot resolves the actual launch checkout, ignoring ambient Git
@@ -18,7 +20,7 @@ import (
 // Broken repository metadata refuses instead of widening the ancestor policy.
 func ProjectRoot(launchDir string) (string, error) {
 	if !filepath.IsAbs(launchDir) {
-		return "", fmt.Errorf("Claude launch directory must be absolute")
+		return "", fmt.Errorf("claude launch directory must be absolute")
 	}
 	launchDir = filepath.Clean(launchDir)
 	canonical, err := filepath.EvalSymlinks(launchDir)
@@ -27,21 +29,31 @@ func ProjectRoot(launchDir string) (string, error) {
 	}
 	info, err := os.Stat(canonical)
 	if err != nil || !info.IsDir() {
-		return "", fmt.Errorf("Claude launch directory must be an existing directory")
+		return "", fmt.Errorf("claude launch directory must be an existing directory")
 	}
 	gitPresent, gitEntryPresent := false, false
 	for dir := canonical; ; dir = filepath.Dir(dir) {
-		if _, err := os.Lstat(filepath.Join(dir, ".git")); err == nil {
+		gitEntry, err := stateread.Lstat(filepath.Join(dir, ".git"))
+		if err != nil {
+			return "", fmt.Errorf("inspect launch repository metadata: %w", err)
+		}
+		if gitEntry.Kind == stateread.KindPresent {
 			gitPresent = true
 			gitEntryPresent = true
 			break
-		} else if !os.IsNotExist(err) {
-			return "", fmt.Errorf("inspect launch repository metadata: %w", err)
 		}
 		// Git also discovers bare repositories. They have no working-tree
 		// toplevel and must refuse, not masquerade as an outside-Git launch.
-		if head, err := os.Lstat(filepath.Join(dir, "HEAD")); err == nil && head.Mode().IsRegular() {
-			if objects, err := os.Stat(filepath.Join(dir, "objects")); err == nil && objects.IsDir() {
+		head, err := stateread.Lstat(filepath.Join(dir, "HEAD"))
+		if err != nil {
+			return "", fmt.Errorf("inspect bare Git HEAD: %w", err)
+		}
+		if head.Kind == stateread.KindPresent && head.Info != nil && head.Info.Mode().IsRegular() {
+			objects, err := stateread.Stat(filepath.Join(dir, "objects"))
+			if err != nil {
+				return "", fmt.Errorf("inspect bare Git objects: %w", err)
+			}
+			if objects.Kind == stateread.KindPresent && objects.Info != nil && objects.Info.IsDir() {
 				gitPresent = true
 				break
 			}

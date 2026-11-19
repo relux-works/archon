@@ -6,11 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/relux-works/curator/internal/claudememory"
 	"github.com/relux-works/curator/internal/envregistry"
 	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/curator/internal/stateread"
 	"github.com/relux-works/curator/internal/transaction"
 )
 
@@ -30,7 +32,7 @@ type claudeAncestorSettingsPlan struct {
 func claudeMemoryStateRel(req *ResolveRequest) string {
 	identity := filepath.ToSlash(filepath.Join(req.Profile, req.EnvID))
 	key := sha256.Sum256([]byte(identity))
-	return filepath.Join("state", "claude-memory", "v1", fmt.Sprintf("%x.json", key))
+	return path.Join("state", "claude-memory", "v1", fmt.Sprintf("%x.json", key))
 }
 
 // All inputs, including the ownership record, are validated before recovery or
@@ -111,10 +113,12 @@ func prepareClaudeAncestorSettings(req *ResolveRequest) (*claudeAncestorSettings
 			return nil, err
 		}
 		for _, path := range missing {
-			if _, err := os.Lstat(path); os.IsNotExist(err) {
-				continue
-			} else if err != nil {
+			metadata, err := stateread.Lstat(path)
+			if err != nil {
 				return nil, fmt.Errorf("%s: inspect ancestor memory: %w", envregistry.DiagSeedUnreadable, err)
+			}
+			if metadata.Kind == stateread.KindAbsent {
+				continue
 			}
 			plan.ancestorDiagnostics = append(plan.ancestorDiagnostics, "managed Claude ancestor exclusion is missing for "+path)
 		}

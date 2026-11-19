@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/relux-works/curator/internal/stateread"
 )
 
 // AncestorFiles names the three Claude instruction forms in every strict
@@ -15,7 +17,7 @@ import (
 // Only path metadata is inspected; instruction contents are never read.
 func AncestorFiles(projectRoot, launchDir, managedRoot string) ([]string, error) {
 	if !filepath.IsAbs(projectRoot) || !filepath.IsAbs(launchDir) || !filepath.IsAbs(managedRoot) {
-		return nil, fmt.Errorf("Claude memory roots must be absolute")
+		return nil, fmt.Errorf("claude memory roots must be absolute")
 	}
 	projectRoot = filepath.Clean(projectRoot)
 	canonicalRoot, err := filepath.EvalSymlinks(projectRoot)
@@ -24,14 +26,14 @@ func AncestorFiles(projectRoot, launchDir, managedRoot string) ([]string, error)
 	}
 	info, err := os.Stat(canonicalRoot)
 	if err != nil || !info.IsDir() {
-		return nil, fmt.Errorf("Claude project root must be an existing directory")
+		return nil, fmt.Errorf("claude project root must be an existing directory")
 	}
 	canonicalLaunch, err := filepath.EvalSymlinks(launchDir)
 	if err != nil || !withinMemoryRoot(canonicalRoot, canonicalLaunch) {
-		return nil, fmt.Errorf("Claude launch directory must be within the project root")
+		return nil, fmt.Errorf("claude launch directory must be within the project root")
 	}
 	if launchInfo, err := os.Stat(canonicalLaunch); err != nil || !launchInfo.IsDir() {
-		return nil, fmt.Errorf("Claude launch directory must be an existing directory")
+		return nil, fmt.Errorf("claude launch directory must be an existing directory")
 	}
 	canonicalManaged, err := canonicalMemoryPath(managedRoot)
 	if err != nil {
@@ -160,7 +162,11 @@ func canonicalMemoryPath(path string) (string, error) {
 		if !os.IsNotExist(err) {
 			return "", fmt.Errorf("resolve Claude memory path: %w", err)
 		}
-		if _, statErr := os.Lstat(prefix); statErr == nil || !os.IsNotExist(statErr) {
+		metadata, statErr := stateread.Lstat(prefix)
+		if statErr != nil {
+			return "", fmt.Errorf("inspect Claude memory path: %w", statErr)
+		}
+		if metadata.Kind != stateread.KindAbsent {
 			return "", fmt.Errorf("Claude memory path contains an unresolved link or unreadable entry")
 		}
 		parent := filepath.Dir(prefix)
