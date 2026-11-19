@@ -376,10 +376,27 @@ func TestTestGateStoreCompatFlagsExpansionIsNounsetSafe(t *testing.T) {
 			}
 		})
 	}
+	// The source check and argument-shape cases above cover the contract. Bash
+	// releases differ on whether the legacy empty-array form fails under nounset.
+}
 
-	legacy := exec.Command(bash, "-c", `set -u; STORE_COMPAT_FLAGS=(); args=("${STORE_COMPAT_FLAGS[*]}")`)
-	if got, err := legacy.CombinedOutput(); err == nil {
-		t.Fatalf("legacy empty-array expansion unexpectedly succeeded: %s", got)
+func normalizeLineEndings(data []byte) string {
+	return strings.ReplaceAll(string(data), "\r\n", "\n")
+}
+
+func TestNormalizeLineEndingsAcceptsLFAndCRLF(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		data string
+	}{
+		{name: "LF", data: "on:\n  push:\n"},
+		{name: "CRLF", data: "on:\r\n  push:\r\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := normalizeLineEndings([]byte(tc.data)); got != "on:\n  push:\n" {
+				t.Fatalf("normalized workflow = %q, want LF form", got)
+			}
+		})
 	}
 }
 
@@ -388,7 +405,7 @@ func TestPostLandingWorkflowIsMainPushOnlyAndRunsTheCanonicalSet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	workflow := string(data)
+	workflow := normalizeLineEndings(data)
 	var parsed map[string]any
 	if err := yaml.Unmarshal(data, &parsed); err != nil || len(parsed) == 0 {
 		t.Fatalf("post-landing workflow is not valid YAML: %v", err)
