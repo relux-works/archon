@@ -11,7 +11,7 @@ import (
 // missing loaders. Project files, AGENTS forms and managed policy stay allowed.
 func TestAncestorFilesCoverageAndBoundary(t *testing.T) {
 	base := t.TempDir()
-	project := filepath.Join(base, "ancestor[1]*", "project")
+	project := filepath.Join(base, "ancestor[1]", "project")
 	if err := os.MkdirAll(project, 0o700); err != nil {
 		t.Fatal(err)
 	}
