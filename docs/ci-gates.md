@@ -6,6 +6,7 @@ Every gate below is a script under `.github/ci/`, called directly by [../.github
 | --- | --- | --- | --- |
 | `test-gate.sh` | plans the run from the supplied conformance root, executes it, then enforces the platform-case ledger; every status is fatal | `make ci-test` | `$EVIDENCE/test/` (including `go-test*.json`, `suite-plan.txt`, `platform-cases.txt`, `skips-observed.tsv`) |
 | `test-gate.sh` (`-race`) | the same gate under the race detector | `make race` | `$EVIDENCE/race/` |
+| `mutationinventory` | records the unfiltered `cmd/curator` test inventory and its exact pull-request/post-landing partition | `go run ./tools/mutationinventory -mode inventory -package ./cmd/curator -timeout 60m -evidence .temp/mutation-inventory` | the requested evidence directory, including `mutation-inventory.json` |
 | `suite-plan.sh` | decides, from the root alone, which packages it serves, which it cannot, and which this platform does not qualify | called by `test-gate.sh` | `$EVIDENCE/*/suite-plan.txt`, `plan-*.txt` |
 | `platform-case-gate.sh` | requires every case [`platform-cases.tsv`](../.github/ci/platform-cases.tsv) names on this runner, and classifies every skip against [`skip-classes.tsv`](../.github/ci/skip-classes.tsv) | called by `test-gate.sh` | `$EVIDENCE/*/platform-cases.txt`, `skips-observed.tsv` |
 | `ledger-consistency.sh` | proves each ledger row against the real per-GOOS builds via `go list` without requiring a runner | `make ledger-check` | `$EVIDENCE/ledger/ledger-consistency.txt` |
@@ -23,6 +24,22 @@ Every gate below is a script under `.github/ci/`, called directly by [../.github
 | Cross-adapter source-closure conformance | runs one normative semantic suite across Rust, npm, pnpm, Yarn Classic, modern Yarn, and SwiftPM/C-family; independently canonicalizes and hashes all 53 accepted CGP05/CGP10 records; drives the published rejection matrix; refuses an incomplete coverage matrix; and emits the committed protocol export for independent implementations | `go test -count=1 ./internal/crossconformance` | Go test output and `internal/crossconformance/testdata/cross-adapter-protocol-export.json`; task evidence may be stored under `.temp/<TASK-ID>/` |
 
 Executing `make ci-test`, `make race`, and `make check-ci` requires setting `CURATOR_CONFORMANCE_ROOT` to a materialized `<curator-spec>/conformance/v1` directory. The Makefile targets refuse execution without this variable set, preventing unconfigured runs.
+
+## `cmd/curator` mutation tests
+
+The canonical seven-test list and exact Go selector live in `internal/curatormutations`. Ordinary full-suite and shard lanes keep `CI_SKIP_MUTATION_TESTS=1`; the gate records an unfiltered `cmd/curator` inventory and the tests selected by the mutation regex for each full package invocation, then passes that same selector as a separate `-skip` value. The report includes the tested commit, platform, Go version, explicit test flags and a digest of effective `go env GOFLAGS` so build-tag context is bound without publishing runner-specific flag values. Race flags remain in `GO_TEST_FLAGS` unchanged. The ordinary Windows, Linux and macOS shard runner removes the seven tests from its shard selectors, passes the same separate `-skip`, and records the full inventory plus mutation subset in each shard manifest. The merge gate checks the source, platform, toolchain, build-flag digest, inventory, selector, skip and execution evidence before admitting the shard union.
+
+The `curator-mutation-pr` job in `ci.yml` runs on pull requests for `ubuntu-latest`, `macos-latest`, and `windows-latest`. It requires the unfiltered inventory to contain all seven tests, then runs the exact selector in a separate parallel job so the normal suite shards stay unchanged. The existing `Test` matrix depends on this job and fails its PR check if the mutation result is not successful. Linux and macOS use a 60-minute package timeout; Windows uses 120 minutes. A missing canonical test makes the inventory preflight fail.
+
+The separate `post-landing-mutation-tests.yml` workflow remains limited to pushes to `main`, on `macos-latest`. It requires the inventory to contain all seven named tests, records the disjoint ordinary/mutation partition whose union equals the unfiltered list, then runs the canonical selector with `go test -race`. The test step is required and has a visible failing verdict in the workflow run.
+
+The Race macOS inventory is expected to contain 531 pull-request tests and seven mutation tests. Every other platform or package invocation records its own counts; its partition must still be disjoint and conserve the complete unfiltered inventory.
+
+To run the complete mutation set locally with the same selector on macOS:
+
+```sh
+go test -race -count=1 -run "$(go run ./tools/mutationinventory -mode selector)" ./cmd/curator
+```
 
 ## Per-package Go timeout budget
 
