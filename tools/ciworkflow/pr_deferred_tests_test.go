@@ -46,6 +46,44 @@ func checkPullRequestDefersPostLandingTests(data []byte) error {
 	return nil
 }
 
+func addStepToWorkflowJob(data []byte, jobName, stepName, command string) ([]byte, error) {
+	var document yaml.Node
+	if err := yaml.Unmarshal(data, &document); err != nil {
+		return nil, err
+	}
+	if len(document.Content) != 1 {
+		return nil, fmt.Errorf("workflow document has no root mapping")
+	}
+	value := func(node *yaml.Node, key string) *yaml.Node {
+		if node == nil || node.Kind != yaml.MappingNode {
+			return nil
+		}
+		for i := 0; i+1 < len(node.Content); i += 2 {
+			if node.Content[i].Value == key {
+				return node.Content[i+1]
+			}
+		}
+		return nil
+	}
+	jobs := value(document.Content[0], "jobs")
+	job := value(jobs, jobName)
+	steps := value(job, "steps")
+	if steps == nil || steps.Kind != yaml.SequenceNode {
+		return nil, fmt.Errorf("workflow job %q has no steps sequence", jobName)
+	}
+	steps.Content = append(steps.Content, &yaml.Node{
+		Kind: yaml.MappingNode,
+		Tag:  "!!map",
+		Content: []*yaml.Node{
+			{Kind: yaml.ScalarNode, Tag: "!!str", Value: "name"},
+			{Kind: yaml.ScalarNode, Tag: "!!str", Value: stepName},
+			{Kind: yaml.ScalarNode, Tag: "!!str", Value: "run"},
+			{Kind: yaml.ScalarNode, Tag: "!!str", Value: command},
+		},
+	})
+	return yaml.Marshal(&document)
+}
+
 // TestPullRequestDefersPostLandingTests keeps the slow mutation and exhaustive
 // set out of the PR package gate. Its controls reject restoring a PR job,
 // dependency, or result bridge; it does not establish main-push execution.
@@ -63,10 +101,6 @@ func TestPullRequestDefersPostLandingTests(t *testing.T) {
 			"needs: [windows-test-shards, unix-test-shards, store-v1-compatibility]",
 			"needs: [windows-test-shards, unix-test-shards, store-v1-compatibility, curator-mutation-pr]",
 		},
-		"restored_pr_result_bridge": {
-			"      - name: Checkout authoritative protocol suite",
-			"      - name: Require PR mutation gate success\n        run: exit 1\n      - name: Checkout authoritative protocol suite",
-		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			mutant := strings.Replace(string(good), pair[0], pair[1], 1)
@@ -78,4 +112,14 @@ func TestPullRequestDefersPostLandingTests(t *testing.T) {
 			}
 		})
 	}
+	t.Run("restored_pr_result_bridge", func(t *testing.T) {
+		// The result bridge must be planted in the test job the checker inspects.
+		mutant, err := addStepToWorkflowJob(good, "test", "Require PR mutation gate success", "exit 1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := checkPullRequestDefersPostLandingTests(mutant); err == nil {
+			t.Fatal("pull-request deferred-suite violation admitted")
+		}
+	})
 }
