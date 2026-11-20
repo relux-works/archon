@@ -589,14 +589,36 @@ func TestPostLandingWorkflowRejectsSkipAndContinueOnErrorPlants(t *testing.T) {
 			"      - name: Run post-landing mutation and exhaustive tests\n        continue-on-error: true\n        shell: bash",
 		},
 	}
-	for _, plant := range plants {
-		t.Run(plant.name, func(t *testing.T) {
-			planted := strings.Replace(string(data), plant.before, plant.after, 1)
-			if planted == string(data) {
-				t.Fatal("workflow plant was not applied")
+
+	lf := normalizeLineEndings(data)
+	variants := []struct {
+		name string
+		data []byte
+	}{
+		{name: "lf", data: []byte(lf)},
+		{name: "crlf", data: []byte(strings.ReplaceAll(lf, "\n", "\r\n"))},
+	}
+	for _, variant := range variants {
+		variant := variant
+		t.Run(variant.name, func(t *testing.T) {
+			if err := validatePostLandingInvocationGates(variant.data); err != nil {
+				t.Fatalf("positive control: valid %s workflow rejected: %v", variant.name, err)
 			}
-			if err := validatePostLandingInvocationGates([]byte(planted)); err == nil {
-				t.Fatal("forbidden post-landing invocation plant was admitted")
+			for _, plant := range plants {
+				plant := plant
+				t.Run(plant.name, func(t *testing.T) {
+					normalized := normalizeLineEndings(variant.data)
+					planted := strings.Replace(normalized, plant.before, plant.after, 1)
+					if planted == normalized {
+						t.Fatal("workflow plant was not applied")
+					}
+					if strings.Contains(string(variant.data), "\r\n") {
+						planted = strings.ReplaceAll(planted, "\n", "\r\n")
+					}
+					if err := validatePostLandingInvocationGates([]byte(planted)); err == nil {
+						t.Fatal("forbidden post-landing invocation plant was admitted")
+					}
+				})
 			}
 		})
 	}
