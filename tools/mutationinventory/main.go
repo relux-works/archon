@@ -1,4 +1,4 @@
-// Command mutationinventory exposes the canonical mutation selector and
+// Command mutationinventory exposes the canonical deferred selectors and
 // records conservation evidence for unfiltered cmd/curator test inventories.
 package main
 
@@ -21,18 +21,21 @@ import (
 )
 
 type inventoryReport struct {
-	Commit           string   `json:"commit"`
-	GOOS             string   `json:"goos"`
-	GOARCH           string   `json:"goarch"`
-	GoVersion        string   `json:"go_version"`
-	GOFLAGSHash      string   `json:"goflags_sha256"`
-	Package          string   `json:"package"`
-	Timeout          string   `json:"timeout"`
-	GoTestFlags      []string `json:"go_test_flags"`
-	MutationSelector string   `json:"mutation_selector"`
-	Unfiltered       []string `json:"unfiltered"`
-	PullRequest      []string `json:"pull_request"`
-	Mutations        []string `json:"mutations"`
+	Commit              string   `json:"commit"`
+	GOOS                string   `json:"goos"`
+	GOARCH              string   `json:"goarch"`
+	GoVersion           string   `json:"go_version"`
+	GOFLAGSHash         string   `json:"goflags_sha256"`
+	Package             string   `json:"package"`
+	Timeout             string   `json:"timeout"`
+	GoTestFlags         []string `json:"go_test_flags"`
+	MutationSelector    string   `json:"mutation_selector"`
+	PostLandingSelector string   `json:"post_landing_selector"`
+	Unfiltered          []string `json:"unfiltered"`
+	PullRequest         []string `json:"pull_request"`
+	Mutations           []string `json:"mutations"`
+	Exhaustive          []string `json:"exhaustive"`
+	PostLanding         []string `json:"post_landing"`
 }
 
 const curatorPackagePath = "./cmd/curator"
@@ -51,6 +54,7 @@ type inventorySelection uint8
 const (
 	unfilteredInventory inventorySelection = iota
 	mutationInventory
+	postLandingInventory
 )
 
 func newInventoryCommandProfile(packagePath, timeout string, flags []string) (inventoryCommandProfile, error) {
@@ -96,6 +100,8 @@ func (profile inventoryCommandProfile) selector(selection inventorySelection) (s
 		return ".", nil
 	case mutationInventory:
 		return curatormutations.Selector(), nil
+	case postLandingInventory:
+		return curatormutations.PostLandingSelector(), nil
 	default:
 		return "", fmt.Errorf("unsupported inventory selection %d", selection)
 	}
@@ -110,13 +116,13 @@ func main() {
 
 func run(args []string) error {
 	fs := flag.NewFlagSet("mutationinventory", flag.ContinueOnError)
-	mode := fs.String("mode", "", "selector, inventory, or verify-invocation")
+	mode := fs.String("mode", "", "selector, post-landing-selector, inventory, or verify-invocation")
 	packagePath := fs.String("package", "./cmd/curator", "package to inventory")
 	timeout := fs.String("timeout", "60m", "go test package timeout")
 	goTestFlags := fs.String("go-test-flags", "", "additional go test flags, separated by spaces")
 	extraGoTestFlags := fs.String("extra-go-test-flags", "", "additional flags supplied by the gate, separated by spaces")
 	evidence := fs.String("evidence", "", "directory for the inventory report")
-	requireAll := fs.Bool("require-all", false, "require all seven mutation tests")
+	requireAll := fs.Bool("require-all", false, "require the complete post-landing test set")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -128,6 +134,12 @@ func run(args []string) error {
 			return errors.New("selector mode takes no arguments")
 		}
 		fmt.Println(curatormutations.Selector())
+		return nil
+	case "post-landing-selector":
+		if len(remaining) != 0 {
+			return errors.New("post-landing-selector mode takes no arguments")
+		}
+		fmt.Println(curatormutations.PostLandingSelector())
 		return nil
 	case "verify-invocation":
 		if err := curatormutations.ValidateInvocation(remaining); err != nil {
@@ -179,11 +191,19 @@ func writeInventory(profile inventoryCommandProfile, evidence string, requireAll
 	if err := verifyMutationSelection(inventory.Mutations, selectedMutations); err != nil {
 		return err
 	}
+	selectedPostLanding, err := listInventory(profile, postLandingInventory)
+	if err != nil {
+		return fmt.Errorf("post-landing -run inventory: %w", err)
+	}
+	expectedPostLanding := append(append([]string(nil), inventory.Mutations...), inventory.Exhaustive...)
+	if err := verifyPostLandingSelection(expectedPostLanding, selectedPostLanding); err != nil {
+		return err
+	}
 	if err := validateInventoryPartition(inventory); err != nil {
 		return err
 	}
 	if requireAll {
-		if err := curatormutations.RequireComplete(inventory); err != nil {
+		if err := curatormutations.RequirePostLandingComplete(inventory); err != nil {
 			return err
 		}
 	}
@@ -209,23 +229,28 @@ func writeInventory(profile inventoryCommandProfile, evidence string, requireAll
 	if err := validateMacRaceInventory(platform[0], profile, inventory); err != nil {
 		return err
 	}
+	postLanding := append(append([]string(nil), inventory.Mutations...), inventory.Exhaustive...)
+	sort.Strings(postLanding)
 	effectiveGoFlags, err := commandOutput(exec.Command("go", "env", "GOFLAGS"))
 	if err != nil {
 		return err
 	}
 	report := inventoryReport{
-		Commit:           strings.TrimSpace(commit),
-		GOOS:             platform[0],
-		GOARCH:           platform[1],
-		GoVersion:        strings.TrimSpace(goVersion),
-		GOFLAGSHash:      fmt.Sprintf("%x", sha256.Sum256([]byte(effectiveGoFlags))),
-		Package:          profile.packagePath,
-		Timeout:          profile.timeout,
-		GoTestFlags:      profile.goTestFlags(),
-		MutationSelector: curatormutations.Selector(),
-		Unfiltered:       inventory.All,
-		PullRequest:      inventory.Pull,
-		Mutations:        inventory.Mutations,
+		Commit:              strings.TrimSpace(commit),
+		GOOS:                platform[0],
+		GOARCH:              platform[1],
+		GoVersion:           strings.TrimSpace(goVersion),
+		GOFLAGSHash:         fmt.Sprintf("%x", sha256.Sum256([]byte(effectiveGoFlags))),
+		Package:             profile.packagePath,
+		Timeout:             profile.timeout,
+		GoTestFlags:         profile.goTestFlags(),
+		MutationSelector:    curatormutations.Selector(),
+		PostLandingSelector: curatormutations.PostLandingSelector(),
+		Unfiltered:          inventory.All,
+		PullRequest:         inventory.Pull,
+		Mutations:           inventory.Mutations,
+		Exhaustive:          inventory.Exhaustive,
+		PostLanding:         postLanding,
 	}
 	data, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
@@ -238,7 +263,7 @@ func writeInventory(profile inventoryCommandProfile, evidence string, requireAll
 	if err := os.WriteFile(path, append(data, '\n'), 0644); err != nil {
 		return err
 	}
-	fmt.Printf("inventory %s: unfiltered=%d PR=%d M=%d evidence=%s\n", profile.packagePath, len(inventory.All), len(inventory.Pull), len(inventory.Mutations), path)
+	fmt.Printf("inventory %s: unfiltered=%d PR=%d mutation=%d exhaustive=%d post-landing=%d evidence=%s\n", profile.packagePath, len(inventory.All), len(inventory.Pull), len(inventory.Mutations), len(inventory.Exhaustive), len(postLanding), path)
 	return nil
 }
 
@@ -277,12 +302,20 @@ func verifyGoLauncherIdentity(versionOutput, toolVersion string) error {
 }
 
 func verifyMutationSelection(expected, selected []string) error {
+	return verifyNamedSelection("mutation", expected, selected)
+}
+
+func verifyPostLandingSelection(expected, selected []string) error {
+	return verifyNamedSelection("post-landing", expected, selected)
+}
+
+func verifyNamedSelection(lane string, expected, selected []string) error {
 	expected = append([]string(nil), expected...)
 	selected = append([]string(nil), selected...)
 	sort.Strings(expected)
 	sort.Strings(selected)
 	if !reflect.DeepEqual(expected, selected) {
-		return fmt.Errorf("mutation selector inventory mismatch: unfiltered partition=%v selected by -run=%v", expected, selected)
+		return fmt.Errorf("%s selector inventory mismatch: expected partition=%v selected by -run=%v", lane, expected, selected)
 	}
 	return nil
 }
@@ -299,11 +332,11 @@ func validateInventoryPartition(inventory curatormutations.Inventory) error {
 		all[name] = struct{}{}
 	}
 
-	partition := make(map[string]string, len(inventory.Pull)+len(inventory.Mutations))
+	partition := make(map[string]string, len(inventory.Pull)+len(inventory.Mutations)+len(inventory.Exhaustive))
 	for _, group := range []struct {
 		name  string
 		tests []string
-	}{{name: "PR", tests: inventory.Pull}, {name: "M", tests: inventory.Mutations}} {
+	}{{name: "PR", tests: inventory.Pull}, {name: "mutation", tests: inventory.Mutations}, {name: "exhaustive", tests: inventory.Exhaustive}} {
 		for _, name := range group.tests {
 			if name == "" {
 				return fmt.Errorf("%s inventory contains an empty test name", group.name)
@@ -322,7 +355,7 @@ func validateInventoryPartition(inventory curatormutations.Inventory) error {
 	}
 	for name := range all {
 		if _, exists := partition[name]; !exists {
-			return fmt.Errorf("unfiltered test %q is missing from PR and M inventories", name)
+			return fmt.Errorf("unfiltered test %q is missing from PR, mutation, and exhaustive inventories", name)
 		}
 	}
 	return nil
@@ -335,8 +368,8 @@ func validateMacRaceInventory(goos string, profile inventoryCommandProfile, inve
 	if err := validateInventoryPartition(inventory); err != nil {
 		return fmt.Errorf("race macOS inventory partition for %s: %w", profile.packagePath, err)
 	}
-	if err := curatormutations.RequireComplete(inventory); err != nil {
-		return fmt.Errorf("race macOS mutation inventory for %s: %w", profile.packagePath, err)
+	if err := curatormutations.RequirePostLandingComplete(inventory); err != nil {
+		return fmt.Errorf("race macOS post-landing inventory for %s: %w", profile.packagePath, err)
 	}
 	return nil
 }

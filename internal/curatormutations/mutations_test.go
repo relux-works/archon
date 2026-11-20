@@ -23,6 +23,12 @@ func TestCanonicalInventoryAndSelector(t *testing.T) {
 	if got := Selector(); got != "^(TestCLIPathIsolationNarrowingMutant|TestCommandHelpNarrowingMutants|TestMuseCredentialPolicyNarrowingMutants|TestMuseRootContextNarrowingMutants|TestNativeSkillsTakeoverHelpNarrowingMutant|TestNativeSkillsTakeoverRegistryNarrowingMutant|TestWindowsGitBashSelectionNarrowingMutant)$" {
 		t.Fatalf("canonical selector drifted: %s", got)
 	}
+	if got, want := ExhaustiveNames(), []string{"TestGlobalCommandsMemoryPolicyDoesNotFollowPreviousCWD"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("exhaustive inventory = %v, want %v", got, want)
+	}
+	if got := PostLandingSelector(); got != "^(TestCLIPathIsolationNarrowingMutant|TestCommandHelpNarrowingMutants|TestGlobalCommandsMemoryPolicyDoesNotFollowPreviousCWD|TestMuseCredentialPolicyNarrowingMutants|TestMuseRootContextNarrowingMutants|TestNativeSkillsTakeoverHelpNarrowingMutant|TestNativeSkillsTakeoverRegistryNarrowingMutant|TestWindowsGitBashSelectionNarrowingMutant)$" {
+		t.Fatalf("post-landing selector drifted: %s", got)
+	}
 	// Callers cannot mutate the canonical list through a returned slice.
 	names := Names()
 	names[0] = "TestCallerMutation"
@@ -32,25 +38,33 @@ func TestCanonicalInventoryAndSelector(t *testing.T) {
 }
 
 func TestSplitConservesInventoryAndRejectsUnclassifiedMutants(t *testing.T) {
-	all := append(Names(), "TestOrdinary", "ExampleOrdinary")
+	all := append(append(Names(), ExhaustiveNames()...), "TestOrdinary", "ExampleOrdinary")
 	inventory, err := Split(all)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(inventory.All) != len(inventory.Pull)+len(inventory.Mutations) {
-		t.Fatalf("inventory is not conserved: all=%d pull=%d mutation=%d", len(inventory.All), len(inventory.Pull), len(inventory.Mutations))
+	if len(inventory.All) != len(inventory.Pull)+len(inventory.Mutations)+len(inventory.Exhaustive) {
+		t.Fatalf("inventory is not conserved: all=%d PR=%d mutation=%d exhaustive=%d", len(inventory.All), len(inventory.Pull), len(inventory.Mutations), len(inventory.Exhaustive))
 	}
-	if len(inventory.Pull) != 2 || len(inventory.Mutations) != 7 {
+	if len(inventory.Pull) != 2 || len(inventory.Mutations) != 7 || len(inventory.Exhaustive) != 1 {
 		t.Fatalf("wrong partition: %+v", inventory)
 	}
 	selector := regexp.MustCompile(Selector())
+	postLandingSelector := regexp.MustCompile(PostLandingSelector())
 	for _, name := range inventory.All {
 		matched := selector.MatchString(name)
 		if matched != contains(inventory.Mutations, name) {
 			t.Fatalf("selector partition drift for %s: matched=%v", name, matched)
 		}
+		matched = postLandingSelector.MatchString(name)
+		if matched != (contains(inventory.Mutations, name) || contains(inventory.Exhaustive, name)) {
+			t.Fatalf("post-landing selector partition drift for %s: matched=%v", name, matched)
+		}
 	}
 	if err := RequireComplete(inventory); err != nil {
+		t.Fatal(err)
+	}
+	if err := RequirePostLandingComplete(inventory); err != nil {
 		t.Fatal(err)
 	}
 
@@ -67,18 +81,25 @@ func TestSplitConservesInventoryAndRejectsUnclassifiedMutants(t *testing.T) {
 	if err := RequireComplete(partial); err == nil {
 		t.Fatal("incomplete canonical mutation inventory admitted")
 	}
+	partialPostLanding, err := Split(append(Names(), "TestOrdinary"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := RequirePostLandingComplete(partialPostLanding); err == nil {
+		t.Fatal("post-landing inventory without the exhaustive test admitted")
+	}
 }
 
 func TestSplitOtherPackageKeepsDescriptiveMutantTestsOrdinary(t *testing.T) {
 	modeTest := "TestClaudeNativeMemoryModeNarrowingMutants"
 	preflightTest := "TestClaudeNativeMemoryPreflightNarrowingMutant"
-	all := append(Names(), modeTest, preflightTest)
+	all := append(append(Names(), ExhaustiveNames()...), modeTest, preflightTest)
 	inventory, err := SplitOtherPackage(all)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(inventory.All) != 9 || len(inventory.Pull) != 2 || len(inventory.Mutations) != 7 {
-		t.Fatalf("other-package partition = all:%d pull:%d mutations:%d, want 9/2/7", len(inventory.All), len(inventory.Pull), len(inventory.Mutations))
+	if len(inventory.All) != 10 || len(inventory.Pull) != 2 || len(inventory.Mutations) != 7 || len(inventory.Exhaustive) != 1 {
+		t.Fatalf("other-package partition = all:%d PR:%d mutations:%d exhaustive:%d, want 10/2/7/1", len(inventory.All), len(inventory.Pull), len(inventory.Mutations), len(inventory.Exhaustive))
 	}
 	if !contains(inventory.Pull, modeTest) || !contains(inventory.Pull, preflightTest) {
 		t.Fatalf("descriptive mutant tests were not kept in the ordinary set: %v", inventory.Pull)
@@ -97,17 +118,21 @@ func TestSkipInvocationAndMissingSelectorNegativeControl(t *testing.T) {
 	// the contract check fail, even though its -run selector is unchanged.
 	withoutSkip := []string{"test", "-json", "-run", "^TestOrdinary$"}
 	if err := ValidateInvocation(withoutSkip); err == nil {
-		t.Fatal("ordinary invocation without the mutation skip was admitted")
+		t.Fatal("ordinary invocation without the post-landing skip was admitted")
 	}
-	selectorWithoutOneMutation := strings.Replace(Selector(), "|TestWindowsGitBashSelectionNarrowingMutant", "", 1)
+	selectorWithoutOneMutation := strings.Replace(PostLandingSelector(), "|TestWindowsGitBashSelectionNarrowingMutant", "", 1)
 	if err := ValidateSkipArgs([]string{"-skip", selectorWithoutOneMutation}); err == nil {
-		t.Fatal("skip selector missing one mutation was admitted")
+		t.Fatal("post-landing skip selector missing one mutation was admitted")
 	}
-	selectorWithOrdinaryTest := strings.TrimSuffix(Selector(), ")$") + "|TestOrdinary)$"
+	selectorWithoutExhaustive := strings.Replace(PostLandingSelector(), "|TestGlobalCommandsMemoryPolicyDoesNotFollowPreviousCWD", "", 1)
+	if err := ValidateSkipArgs([]string{"-skip", selectorWithoutExhaustive}); err == nil {
+		t.Fatal("post-landing skip selector missing the exhaustive test was admitted")
+	}
+	selectorWithOrdinaryTest := strings.TrimSuffix(PostLandingSelector(), ")$") + "|TestOrdinary)$"
 	if err := ValidateSkipArgs([]string{"-skip", selectorWithOrdinaryTest}); err == nil {
 		t.Fatal("skip selector including an ordinary test was admitted")
 	}
-	if err := ValidateSkipArgs([]string{"-skip=" + Selector()}); err == nil {
+	if err := ValidateSkipArgs([]string{"-skip=" + PostLandingSelector()}); err == nil {
 		t.Fatal("combined -skip argument was admitted")
 	}
 	if err := ValidateSkipArgs([]string{"-skip"}); err == nil {

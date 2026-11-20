@@ -57,6 +57,7 @@ type testManifest struct {
 	Shard                          int
 	Inventories                    map[string][]string
 	MutationTests                  map[string][]string
+	ExhaustiveTests                map[string][]string
 	Selector                       string
 	SkipSelector                   string
 	ExitCode                       int
@@ -75,8 +76,8 @@ func (c testLane) partition(tests map[string][]string) (map[string][][]string, e
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", p, err)
 		}
-		if p != ordinaryPackages[len(ordinaryPackages)-1] && len(inventory.Mutations) != 0 {
-			return nil, fmt.Errorf("mutation tests appeared outside cmd/curator in %s", p)
+		if p != ordinaryPackages[len(ordinaryPackages)-1] && (len(inventory.Mutations) != 0 || len(inventory.Exhaustive) != 0) {
+			return nil, fmt.Errorf("post-landing tests appeared outside cmd/curator in %s", p)
 		}
 		for _, name := range inventory.Pull {
 			if strings.Contains(name, "/") {
@@ -118,12 +119,27 @@ func mutationTestsByPackage(tests map[string][]string) (map[string][]string, err
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", p, err)
 		}
-		if p != ordinaryPackages[len(ordinaryPackages)-1] && len(inventory.Mutations) != 0 {
-			return nil, fmt.Errorf("mutation tests appeared outside cmd/curator in %s", p)
+		if p != ordinaryPackages[len(ordinaryPackages)-1] && (len(inventory.Mutations) != 0 || len(inventory.Exhaustive) != 0) {
+			return nil, fmt.Errorf("post-landing tests appeared outside cmd/curator in %s", p)
 		}
 		mutations[p] = inventory.Mutations
 	}
 	return mutations, nil
+}
+
+func exhaustiveTestsByPackage(tests map[string][]string) (map[string][]string, error) {
+	exhaustive := make(map[string][]string, len(ordinaryPackages))
+	for _, p := range ordinaryPackages {
+		inventory, err := splitOrdinaryPackageTests(p, tests[p])
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", p, err)
+		}
+		if p != ordinaryPackages[len(ordinaryPackages)-1] && (len(inventory.Mutations) != 0 || len(inventory.Exhaustive) != 0) {
+			return nil, fmt.Errorf("post-landing tests appeared outside cmd/curator in %s", p)
+		}
+		exhaustive[p] = inventory.Exhaustive
+	}
+	return exhaustive, nil
 }
 
 func (c testLane) goTestArgs(runSelector string) ([]string, error) {
@@ -162,12 +178,24 @@ func (c testLane) inventory() (map[string][]string, error) {
 			if err != nil {
 				return nil, err
 			}
+			if err := curatormutations.RequirePostLandingComplete(inventory); err != nil {
+				return nil, err
+			}
 			selected, err := nativeInventoryPattern(p, false, curatormutations.Selector())
 			if err != nil {
 				return nil, fmt.Errorf("mutation -run inventory: %w", err)
 			}
 			if !reflect.DeepEqual(selected, inventory.Mutations) {
 				return nil, fmt.Errorf("mutation selector inventory mismatch: unfiltered partition=%v selected by -run=%v", inventory.Mutations, selected)
+			}
+			selected, err = nativeInventoryPattern(p, false, curatormutations.PostLandingSelector())
+			if err != nil {
+				return nil, fmt.Errorf("post-landing -run inventory: %w", err)
+			}
+			postLanding := append(append([]string(nil), inventory.Mutations...), inventory.Exhaustive...)
+			sort.Strings(postLanding)
+			if !reflect.DeepEqual(selected, postLanding) {
+				return nil, fmt.Errorf("post-landing selector inventory mismatch: expected=%v selected by -run=%v", postLanding, selected)
 			}
 		}
 		tests[p] = list
@@ -222,6 +250,10 @@ func (c testLane) run(dir string, shard int, tests map[string][]string, commit s
 	if err != nil {
 		return err
 	}
+	exhaustive, err := exhaustiveTestsByPackage(tests)
+	if err != nil {
+		return err
+	}
 	identity, err := currentGoTestIdentity()
 	if err != nil {
 		return err
@@ -232,8 +264,8 @@ func (c testLane) run(dir string, shard int, tests map[string][]string, commit s
 	m := testManifest{
 		Commit: commit, GOOS: c.goos, Lane: c.lane, Shard: shard,
 		GoVersion: identity.Version, GOARCH: identity.GOARCH, GOFLAGSHash: identity.GOFLAGSHash,
-		Inventories: tests, MutationTests: mutations, Selector: c.selector(parts, shard),
-		SkipSelector: curatormutations.Selector(),
+		Inventories: tests, MutationTests: mutations, ExhaustiveTests: exhaustive, Selector: c.selector(parts, shard),
+		SkipSelector: curatormutations.PostLandingSelector(),
 	}
 	// #nosec G304 -- The CLI evidence directory is the explicit output boundary.
 	stream, err := os.Create(filepath.Join(dir, "go-test.json"))
@@ -281,6 +313,10 @@ func (c testLane) merge(dir, out string, tests map[string][]string, commit strin
 	if err != nil {
 		return err
 	}
+	exhaustive, err := exhaustiveTestsByPackage(tests)
+	if err != nil {
+		return err
+	}
 	identity, err := currentGoTestIdentity()
 	if err != nil {
 		return err
@@ -308,7 +344,7 @@ func (c testLane) merge(dir, out string, tests map[string][]string, commit strin
 			return fmt.Errorf("invalid or duplicate ordinary shard %d", m.Shard)
 		}
 		seen[m.Shard] = true
-		if m.Commit != commit || m.GOOS != c.goos || m.Lane != c.lane || m.GoVersion != identity.Version || m.GOARCH != identity.GOARCH || m.GOFLAGSHash != identity.GOFLAGSHash || m.ExitCode != 0 || !reflect.DeepEqual(m.Inventories, tests) || !reflect.DeepEqual(m.MutationTests, mutations) || m.Selector != c.selector(parts, m.Shard) || m.SkipSelector != curatormutations.Selector() {
+		if m.Commit != commit || m.GOOS != c.goos || m.Lane != c.lane || m.GoVersion != identity.Version || m.GOARCH != identity.GOARCH || m.GOFLAGSHash != identity.GOFLAGSHash || m.ExitCode != 0 || !reflect.DeepEqual(m.Inventories, tests) || !reflect.DeepEqual(m.MutationTests, mutations) || !reflect.DeepEqual(m.ExhaustiveTests, exhaustive) || m.Selector != c.selector(parts, m.Shard) || m.SkipSelector != curatormutations.PostLandingSelector() {
 			return fmt.Errorf("ordinary shard %d: source/platform/toolchain/inventory/selector/skip/exit mismatch", m.Shard)
 		}
 		data, err = os.ReadFile(filepath.Join(filepath.Dir(path), "go-test.json"))
@@ -329,7 +365,7 @@ func (c testLane) merge(dir, out string, tests map[string][]string, commit strin
 		return err
 	}
 	for _, p := range ordinaryPackages {
-		fmt.Printf("%s: inventory conserved: %s: unfiltered=%d PR=%d M=%d\n", c.lane, p, len(tests[p]), len(tests[p])-len(mutations[p]), len(mutations[p]))
+		fmt.Printf("%s: inventory conserved: %s: unfiltered=%d PR=%d mutation=%d exhaustive=%d\n", c.lane, p, len(tests[p]), len(tests[p])-len(mutations[p])-len(exhaustive[p]), len(mutations[p]), len(exhaustive[p]))
 	}
 	return nil
 }

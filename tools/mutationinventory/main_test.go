@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -92,7 +93,7 @@ func TestInventoryCommandProfileAllowsOnlySupportedCIPresets(t *testing.T) {
 			if profile.packagePath != test.wantPackage || profile.timeout != test.wantTimeout || !reflect.DeepEqual(profile.goTestFlags(), test.wantFlags) {
 				t.Fatalf("profile = %#v, want package=%q timeout=%q flags=%v", profile, test.wantPackage, test.wantTimeout, test.wantFlags)
 			}
-			// Claim: each preset maps to the exact ordinary or canonical-mutation selector.
+			// Claim: each preset maps to the ordinary, mutation, or post-landing selector.
 			// Limit: argument construction alone does not prove the selected tests pass.
 			for _, selection := range []struct {
 				value        inventorySelection
@@ -100,6 +101,7 @@ func TestInventoryCommandProfileAllowsOnlySupportedCIPresets(t *testing.T) {
 			}{
 				{value: unfilteredInventory, wantSelector: "."},
 				{value: mutationInventory, wantSelector: curatormutations.Selector()},
+				{value: postLandingInventory, wantSelector: curatormutations.PostLandingSelector()},
 			} {
 				cmd, err := inventoryCommand(profile, selection.value)
 				if err != nil {
@@ -172,21 +174,25 @@ func TestVerifyGoLauncherIdentityRequiresTheToolchainThatBuiltTheInventoryTool(t
 	}
 }
 
-// Claim: the Mac race inventory preserves the ordinary/mutation partition and exact names.
-// Limit: the fixtures do not run the mutation tests or establish hosted-runner behavior.
+// Claim: the Mac race inventory preserves the PR/mutation/exhaustive partition and exact names.
+// Limit: the fixtures do not run deferred tests or establish hosted-runner behavior.
 func TestRaceMacInventoryUsesNamedPartitionInvariants(t *testing.T) {
 	profile, err := newInventoryCommandProfile(curatorPackagePath, inventoryTimeout, []string{"-race"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	mutationNames := curatormutations.Names()
+	exhaustiveNames := curatormutations.ExhaustiveNames()
 	ordinaryNames := []string{"TestOrdinaryOne", "TestOrdinaryTwo"}
-	inventory := inventoryWithPartition(ordinaryNames, mutationNames)
+	inventory := inventoryWithPartition(ordinaryNames, mutationNames, exhaustiveNames)
 	if err := validateMacRaceInventory("darwin", profile, inventory); err != nil {
 		t.Fatalf("complete Darwin race inventory rejected: %v", err)
 	}
 	if err := validateInventoryPartition(inventory); err != nil {
 		t.Fatalf("complete inventory partition rejected: %v", err)
+	}
+	if err := curatormutations.RequirePostLandingComplete(inventory); err != nil {
+		t.Fatalf("complete post-landing inventory rejected: %v", err)
 	}
 
 	addedOrdinary := append(append([]string(nil), inventory.All...), "TestAddedOrdinary")
@@ -201,7 +207,7 @@ func TestRaceMacInventoryUsesNamedPartitionInvariants(t *testing.T) {
 	lostOrdinary := inventory
 	lostOrdinary.Pull = append([]string(nil), inventory.Pull[:1]...)
 	if err := validateMacRaceInventory("darwin", profile, lostOrdinary); err == nil {
-		t.Fatal("an ordinary test missing from PR ∪ M was admitted")
+		t.Fatal("an ordinary test missing from PR ∪ M ∪ exhaustive was admitted")
 	}
 
 	duplicateAcross := inventory
@@ -220,7 +226,7 @@ func TestRaceMacInventoryUsesNamedPartitionInvariants(t *testing.T) {
 		t.Fatal("an eighth mutation name was admitted")
 	}
 
-	missingMutation := inventoryWithPartition(ordinaryNames, mutationNames[:len(mutationNames)-1])
+	missingMutation := inventoryWithPartition(ordinaryNames, mutationNames[:len(mutationNames)-1], exhaustiveNames)
 	if err := validateInventoryPartition(missingMutation); err != nil {
 		t.Fatalf("the missing-name fixture is not a conserved partition: %v", err)
 	}
@@ -230,12 +236,19 @@ func TestRaceMacInventoryUsesNamedPartitionInvariants(t *testing.T) {
 
 	renamedMutationNames := append([]string(nil), mutationNames...)
 	renamedMutationNames[0] = "TestRenamedMutation"
-	renamedMutation := inventoryWithPartition(ordinaryNames, renamedMutationNames)
+	renamedMutation := inventoryWithPartition(ordinaryNames, renamedMutationNames, exhaustiveNames)
 	if err := validateInventoryPartition(renamedMutation); err != nil {
 		t.Fatalf("the renamed-name fixture is not a conserved partition: %v", err)
 	}
 	if err := validateMacRaceInventory("darwin", profile, renamedMutation); err == nil {
 		t.Fatal("a renamed mutation name was admitted")
+	}
+	missingExhaustive := inventoryWithPartition(ordinaryNames, mutationNames, nil)
+	if err := validateInventoryPartition(missingExhaustive); err != nil {
+		t.Fatalf("missing-exhaustive fixture is not a conserved partition: %v", err)
+	}
+	if err := validateMacRaceInventory("darwin", profile, missingExhaustive); err == nil {
+		t.Fatal("post-landing inventory without the exhaustive product-behavior test was admitted")
 	}
 
 	if err := validateMacRaceInventory("linux", profile, missingMutation); err != nil {
@@ -246,18 +259,19 @@ func TestRaceMacInventoryUsesNamedPartitionInvariants(t *testing.T) {
 	}
 }
 
-func inventoryWithPartition(ordinary, mutations []string) curatormutations.Inventory {
-	all := append(append([]string(nil), ordinary...), mutations...)
+func inventoryWithPartition(ordinary, mutations, exhaustive []string) curatormutations.Inventory {
+	all := append(append(append([]string(nil), ordinary...), mutations...), exhaustive...)
 	return curatormutations.Inventory{
-		All:       all,
-		Pull:      append([]string(nil), ordinary...),
-		Mutations: append([]string(nil), mutations...),
+		All:        all,
+		Pull:       append([]string(nil), ordinary...),
+		Mutations:  append([]string(nil), mutations...),
+		Exhaustive: append([]string(nil), exhaustive...),
 	}
 }
 
-// Claim: ordinary Go test invocations must carry the canonical mutation skip.
-// Limit: this does not prove a separate PR job actually runs the skipped tests.
-func TestOrdinaryGoTestInvocationRejectsMissingMutationSkip(t *testing.T) {
+// Claim: ordinary Go test invocations must carry the canonical post-landing skip.
+// Limit: this does not prove the main-push workflow actually runs the skipped tests.
+func TestOrdinaryGoTestInvocationRejectsMissingPostLandingSkip(t *testing.T) {
 	base := []string{"-mode", "verify-invocation", "--", "env", "CURATOR_CONFORMANCE_ROOT=/tmp/root", "go", "test", "-json", "-run", "^TestOrdinary$"}
 	withSkip := append(append([]string(nil), base...), curatormutations.SkipArgs()...)
 	withSkip = append(withSkip, "./cmd/curator")
@@ -268,7 +282,7 @@ func TestOrdinaryGoTestInvocationRejectsMissingMutationSkip(t *testing.T) {
 	// from the same invocation while leaving its package and run selector intact.
 	withoutSkip := removePair(withSkip, "-skip")
 	if err := run(withoutSkip); err == nil {
-		t.Fatal("ordinary invocation without the mutation selector was admitted")
+		t.Fatal("ordinary invocation without the post-landing selector was admitted")
 	}
 }
 
@@ -284,13 +298,17 @@ func removePair(args []string, flag string) []string {
 // Claim: a mutation selector must contain exactly the canonical mutation inventory.
 // Limit: this does not prove workflow wiring or the behavior of selected tests.
 func TestMutationRunInventoryMustMatchCanonicalPartition(t *testing.T) {
-	all := append(curatormutations.Names(), "TestOrdinary")
+	all := append(append(curatormutations.Names(), curatormutations.ExhaustiveNames()...), "TestOrdinary")
 	inventory, err := curatormutations.Split(all)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := verifyMutationSelection(inventory.Mutations, curatormutations.Names()); err != nil {
 		t.Fatalf("canonical -run set rejected: %v", err)
+	}
+	postLanding := append(append([]string(nil), inventory.Mutations...), inventory.Exhaustive...)
+	if err := verifyPostLandingSelection(postLanding, curatormutations.PostLandingNames()); err != nil {
+		t.Fatalf("complete post-landing -run set rejected: %v", err)
 	}
 	missing := curatormutations.Names()[:len(curatormutations.Names())-1]
 	if err := verifyMutationSelection(inventory.Mutations, missing); err == nil {
@@ -299,11 +317,18 @@ func TestMutationRunInventoryMustMatchCanonicalPartition(t *testing.T) {
 	if err := verifyMutationSelection(inventory.Mutations, append(curatormutations.Names(), "TestOrdinary")); err == nil {
 		t.Fatal("mutation selector including an ordinary test was admitted")
 	}
+	missingExhaustive := append([]string(nil), inventory.Mutations...)
+	if err := verifyPostLandingSelection(postLanding, missingExhaustive); err == nil {
+		t.Fatal("post-landing selector missing the exhaustive test was admitted")
+	}
+	if err := verifyPostLandingSelection(postLanding, append(postLanding, "TestOrdinary")); err == nil {
+		t.Fatal("post-landing selector including an ordinary test was admitted")
+	}
 }
 
-// Claim: every ordinary test-gate invocation explicitly opts out of mutation tests.
-// Limit: this does not establish that the dedicated PR mutation job runs them.
-func TestEveryCITestGateInvocationOptsOutOfMutationSuite(t *testing.T) {
+// Claim: every ordinary test-gate invocation explicitly skips deferred tests.
+// Limit: this does not establish that the main-push lane runs them.
+func TestEveryCITestGateInvocationSkipsDeferredSet(t *testing.T) {
 	data, err := os.ReadFile("../../.github/workflows/ci.yml")
 	if err != nil {
 		t.Fatal(err)
@@ -336,11 +361,11 @@ func TestEveryCITestGateInvocationOptsOutOfMutationSuite(t *testing.T) {
 			continue
 		}
 		count++
-		if !strings.Contains(block, `CI_SKIP_MUTATION_TESTS: "1"`) {
-			t.Errorf("test-gate workflow step does not opt out of mutation tests:\n%s", block)
+		if !strings.Contains(block, `CI_SKIP_POST_LANDING_TESTS: "1"`) {
+			t.Errorf("test-gate workflow step does not skip the post-landing set:\n%s", block)
 		}
 		if strings.Contains(block, "GO_TEST_FLAGS: -race -skip") || strings.Contains(block, "GO_TEST_FLAGS: '-race -skip") {
-			t.Errorf("mutation skip was folded into GO_TEST_FLAGS:\n%s", block)
+			t.Errorf("post-landing skip was folded into GO_TEST_FLAGS:\n%s", block)
 		}
 	}
 	if count != 5 {
@@ -365,7 +390,7 @@ func TestTestGateStoreCompatFlagsExpansionIsNounsetSafe(t *testing.T) {
 		}
 		flagLines = append(flagLines, trimmed)
 	}
-	wantFlagLine := "-extra-go-test-flags " + safeExpansion + " -evidence \"$EVIDENCE/mutation-inventory/$stage\")"
+	wantFlagLine := "-extra-go-test-flags " + safeExpansion + " -evidence \"$EVIDENCE/post-landing-inventory/$stage\")"
 	if len(flagLines) != 1 || flagLines[0] != wantFlagLine {
 		t.Fatalf("active test-gate store flags argument lines = %q, want exactly %q", flagLines, wantFlagLine)
 	}
@@ -488,9 +513,9 @@ func TestMainPushOnlyTriggerRejectsOtherEventsAndBranches(t *testing.T) {
 	}
 }
 
-// Claim: the post-landing workflow is main-push-only and selects the canonical mutation set.
+// Claim: the post-landing workflow inventories and runs every deferred test on main.
 // Limit: this validates workflow text and YAML, not a completed hosted run.
-func TestPostLandingWorkflowIsMainPushOnlyAndRunsTheCanonicalSet(t *testing.T) {
+func TestPostLandingWorkflowIsMainPushOnlyAndRunsCompleteDeferredSet(t *testing.T) {
 	data, err := os.ReadFile("../../.github/workflows/post-landing-mutation-tests.yml")
 	if err != nil {
 		t.Fatal(err)
@@ -503,206 +528,109 @@ func TestPostLandingWorkflowIsMainPushOnlyAndRunsTheCanonicalSet(t *testing.T) {
 	if !mainPushOnlyTrigger(parsed) {
 		t.Fatal("post-landing workflow must trigger only on pushes to main")
 	}
+	jobs, ok := parsed["jobs"].(map[string]any)
+	if !ok {
+		t.Fatal("post-landing workflow has no jobs mapping")
+	}
+	job, ok := jobs["curator-deferred-tests"].(map[string]any)
+	if !ok || job["runs-on"] != "macos-latest" {
+		t.Fatalf("post-landing job is missing or uses the wrong runner: %#v", job)
+	}
+	if _, ok := job["continue-on-error"]; ok {
+		t.Fatal("post-landing test verdict is allowed to fail")
+	}
 	for _, required := range []string{
-		"runs-on: macos-latest",
 		"-mode inventory -package ./cmd/curator -timeout 60m",
 		"-go-test-flags=-race -require-all",
-		"selector=\"$(go run ./tools/mutationinventory -mode selector)\"",
+		"selector=\"$(go run ./tools/mutationinventory -mode post-landing-selector)\"",
 		"go test -race -count=1 -timeout=60m -v",
 		"-run \"$selector\" ./cmd/curator",
+		"fmt.Println(runtime.NumCPU())",
+		"fmt.Println(runtime.GOMAXPROCS(0))",
+		"runner-capacity.txt",
+		"go-test.txt",
+		"name: post-landing-mutation-evidence",
 	} {
 		if !strings.Contains(workflow, required) {
 			t.Errorf("post-landing workflow is missing %q", required)
 		}
 	}
-	if strings.Contains(workflow, "continue-on-error:") {
-		t.Fatal("post-landing mutation verdict is not required")
+	if strings.Contains(workflow, "fmt.Printf(") || strings.Contains(workflow, "continue-on-error:") {
+		t.Fatal("capacity output or post-landing verdict is not value-only and required")
 	}
 }
 
-// Claim: every PR OS gate inventories and runs all seven canonical mutation tests,
-// and omitting one selected name is rejected by the same inventory comparator.
-// Limit: this checks workflow wiring and selector comparison, not hosted execution
-// or the behavioral strength of each mutation test.
-func TestPullRequestMutationWorkflowRunsCanonicalSetOnEveryPriorOS(t *testing.T) {
+func checkPRDefersPostLandingTests(data []byte) error {
+	var parsed map[string]any
+	if err := yaml.Unmarshal(data, &parsed); err != nil {
+		return err
+	}
+	jobs, ok := parsed["jobs"].(map[string]any)
+	if !ok {
+		return fmt.Errorf("ci.yml has no jobs mapping")
+	}
+	if _, ok := jobs["curator-mutation-pr"]; ok {
+		return fmt.Errorf("deferred mutation job runs in pull-request CI")
+	}
+	job, ok := jobs["test"].(map[string]any)
+	if !ok {
+		return fmt.Errorf("ci.yml has no test gate job")
+	}
+	needs, ok := job["needs"].([]any)
+	if !ok || !reflect.DeepEqual(needs, []any{"windows-test-shards", "unix-test-shards", "store-v1-compatibility"}) {
+		return fmt.Errorf("test gate has unexpected dependencies: %v", job["needs"])
+	}
+	steps, ok := job["steps"].([]any)
+	if !ok {
+		return fmt.Errorf("test gate has no steps")
+	}
+	for _, value := range steps {
+		step, ok := value.(map[string]any)
+		if !ok {
+			continue
+		}
+		if step["name"] == "Require PR mutation gate success" {
+			return fmt.Errorf("test gate still requires a PR mutation job")
+		}
+	}
+	return nil
+}
+
+// Claim: PR test gates defer the expensive suite, while the main-push workflow owns it.
+// Limit: this checks static wiring; hosted execution and product behavior remain unverified.
+func TestPullRequestWorkflowDefersMutationAndExhaustiveSuites(t *testing.T) {
 	data, err := os.ReadFile("../../.github/workflows/ci.yml")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var parsed map[string]any
-	if err := yaml.Unmarshal(data, &parsed); err != nil || len(parsed) == 0 {
-		t.Fatalf("ci.yml is not valid YAML: %v", err)
+	if strings.Contains(string(data), "tools/mutationinventory") {
+		t.Fatal("PR workflow invokes the deferred-suite inventory tool directly")
 	}
-	jobs, ok := parsed["jobs"].(map[string]any)
-	if !ok {
-		t.Fatal("ci.yml has no jobs mapping")
+	if err := checkPRDefersPostLandingTests(data); err != nil {
+		t.Fatalf("valid PR deferral rejected: %v", err)
 	}
-	triggers, ok := parsed["on"].(map[string]any)
-	if !ok {
-		t.Fatal("ci.yml has no event mapping")
-	}
-	if _, ok := triggers["pull_request"]; !ok {
-		t.Fatal("ci.yml does not trigger pull-request validation")
-	}
-	job, ok := jobs["curator-mutation-pr"].(map[string]any)
-	if !ok {
-		t.Fatal("ci.yml has no curator-mutation-pr job")
-	}
-	if job["if"] != "${{ github.event_name == 'pull_request' }}" {
-		t.Fatalf("PR mutation job condition = %v", job["if"])
-	}
-	if job["runs-on"] != "${{ matrix.os }}" {
-		t.Fatalf("PR mutation job runner = %v, want matrix.os", job["runs-on"])
-	}
-	if _, ok := job["continue-on-error"]; ok {
-		t.Fatal("PR mutation result is allowed to fail")
-	}
-	testJob, ok := jobs["test"].(map[string]any)
-	if !ok {
-		t.Fatal("ci.yml has no test gate job")
-	}
-	needs, ok := testJob["needs"].([]any)
-	if !ok {
-		t.Fatal("test gate has no needs list")
-	}
-	dependsOnMutations := false
-	for _, dependency := range needs {
-		if dependency == "curator-mutation-pr" {
-			dependsOnMutations = true
-		}
-	}
-	if !dependsOnMutations {
-		t.Fatal("existing test gate does not depend on curator-mutation-pr")
-	}
-	testSteps, ok := testJob["steps"].([]any)
-	if !ok {
-		t.Fatal("test gate has no steps")
-	}
-	bridgeFound := false
-	for _, item := range testSteps {
-		step, ok := item.(map[string]any)
-		if !ok || step["name"] != "Require PR mutation gate success" {
-			continue
-		}
-		bridgeFound = true
-		if step["if"] != "always()" {
-			t.Errorf("PR mutation bridge condition = %v, want always()", step["if"])
-		}
-		env, ok := step["env"].(map[string]any)
-		if !ok || env["CURATOR_MUTATION_RESULT"] != "${{ needs.curator-mutation-pr.result }}" {
-			t.Errorf("PR mutation bridge does not read the dependency result: %v", step["env"])
-		}
-		run, ok := step["run"].(string)
-		if !ok || !strings.Contains(run, `if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]`) ||
-			!strings.Contains(run, `test "$CURATOR_MUTATION_RESULT" = success`) {
-			t.Errorf("PR mutation bridge does not fail closed on pull requests: %v", step["run"])
-		}
-	}
-	if !bridgeFound {
-		t.Fatal("existing test gate has no PR mutation result check")
-	}
-
-	strategy, ok := job["strategy"].(map[string]any)
-	if !ok {
-		t.Fatal("PR mutation job has no strategy mapping")
-	}
-	matrix, ok := strategy["matrix"].(map[string]any)
-	if !ok {
-		t.Fatal("PR mutation job has no matrix mapping")
-	}
-	included, ok := matrix["include"].([]any)
-	if !ok {
-		t.Fatal("PR mutation job matrix has no include rows")
-	}
-	gotMatrix := make(map[string]string, len(included))
-	for _, item := range included {
-		row, ok := item.(map[string]any)
-		if !ok {
-			t.Fatalf("invalid PR mutation matrix row: %#v", item)
-		}
-		osName, osOK := row["os"].(string)
-		timeout, timeoutOK := row["timeout"].(string)
-		if !osOK || !timeoutOK {
-			t.Fatalf("PR mutation matrix row lacks OS or timeout: %#v", row)
-		}
-		if _, exists := gotMatrix[osName]; exists {
-			t.Fatalf("duplicate PR mutation OS %q", osName)
-		}
-		gotMatrix[osName] = timeout
-	}
-	// Claim: the ordinary PR gate restores the mutation lane to every prior OS.
-	// Limit: this compares configured runner labels, not the hosted images themselves.
-	wantMatrix := map[string]string{
-		"ubuntu-latest":  "60m",
-		"macos-latest":   "60m",
-		"windows-latest": "120m",
-	}
-	if !reflect.DeepEqual(gotMatrix, wantMatrix) {
-		t.Fatalf("PR mutation matrix = %v, want %v", gotMatrix, wantMatrix)
-	}
-
-	steps, ok := job["steps"].([]any)
-	if !ok {
-		t.Fatal("PR mutation job has no steps")
-	}
-	stepRun := func(wantName string) string {
-		t.Helper()
-		for _, item := range steps {
-			step, ok := item.(map[string]any)
-			if !ok || step["name"] != wantName {
-				continue
+	for name, mutate := range map[string]func(string) string{
+		"restored_pr_mutation_job": func(workflow string) string {
+			return strings.Replace(workflow, "  default-build-transport:", "  curator-mutation-pr:\n    runs-on: macos-latest\n  default-build-transport:", 1)
+		},
+		"restored_pr_mutation_dependency": func(workflow string) string {
+			return strings.Replace(workflow,
+				"needs: [windows-test-shards, unix-test-shards, store-v1-compatibility]",
+				"needs: [windows-test-shards, unix-test-shards, store-v1-compatibility, curator-mutation-pr]", 1)
+		},
+		"restored_pr_mutation_result_bridge": func(workflow string) string {
+			return strings.Replace(workflow,
+				"      - name: Checkout authoritative protocol suite",
+				"      - name: Require PR mutation gate success\n        run: test \"$CURATOR_MUTATION_RESULT\" = success\n      - name: Checkout authoritative protocol suite", 1)
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			mutant := mutate(string(data))
+			if mutant == string(data) {
+				t.Fatal("workflow plant not applied")
 			}
-			run, ok := step["run"].(string)
-			if !ok {
-				t.Fatalf("step %q has no run script", wantName)
-			}
-			return run
-		}
-		t.Fatalf("PR mutation job has no %q step", wantName)
-		return ""
-	}
-	inventoryRun := stepRun("Inventory complete pre-merge mutation suite")
-	for _, required := range []string{
-		"bash .github/ci/isolated-test.sh go run ./tools/mutationinventory",
-		"-mode inventory -package ./cmd/curator -timeout ${{ matrix.timeout }}",
-		"-require-all -evidence .temp/ci-evidence/pr-mutation",
-	} {
-		if !strings.Contains(inventoryRun, required) {
-			t.Errorf("PR mutation inventory step is missing %q", required)
-		}
-	}
-	testRun := stepRun("Run all seven pre-merge mutation tests")
-	for _, required := range []string{
-		"selector=\"$(go run ./tools/mutationinventory -mode selector)\"",
-		"bash .github/ci/isolated-test.sh go test -count=1",
-		"-timeout=${{ matrix.timeout }} -v -run \"$selector\" ./cmd/curator",
-	} {
-		if !strings.Contains(testRun, required) {
-			t.Errorf("PR mutation test step is missing %q", required)
-		}
-	}
-
-	// Claim: the complete canonical selector passes, while removing one name fails.
-	// Limit: this exercises the comparator with names; it does not edit or run CI YAML.
-	// This negative control models deleting one test from the PR gate's selected set.
-	names := curatormutations.Names()
-	if len(names) != 7 {
-		t.Fatalf("canonical PR mutation selector has %d names, want seven", len(names))
-	}
-	// Claim: these selector cases cover the full gate and a one-name omission.
-	// Limit: other malformed selector forms are covered by the general inventory tests.
-	for _, tc := range []struct {
-		name     string
-		selected []string
-		wantErr  bool
-	}{
-		{name: "all seven in PR gate", selected: names},
-		{name: "one removed from PR gate", selected: names[:len(names)-1], wantErr: true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			err := verifyMutationSelection(names, tc.selected)
-			if (err != nil) != tc.wantErr {
-				t.Fatalf("verifyMutationSelection error = %v, wantErr=%t", err, tc.wantErr)
+			if err := checkPRDefersPostLandingTests([]byte(mutant)); err == nil {
+				t.Fatal("pull-request deferral violation admitted")
 			}
 		})
 	}
@@ -749,9 +677,12 @@ func TestOtherWorkflowCmdCuratorInvocationsAreNarrow(t *testing.T) {
 			if !strings.Contains(block, "-run") {
 				t.Errorf("direct cmd/curator workflow test is not narrowly selected (%s):\n%s", filepath.Base(path), block)
 			}
-			for _, name := range curatormutations.Names() {
+			if strings.Contains(block, `-run "$`) || strings.Contains(block, `-run "${`) {
+				t.Errorf("direct cmd/curator workflow test uses a dynamic selector (%s):\n%s", filepath.Base(path), block)
+			}
+			for _, name := range curatormutations.PostLandingNames() {
 				if strings.Contains(block, name) {
-					t.Errorf("direct workflow test selects a post-landing mutation test (%s): %s", filepath.Base(path), name)
+					t.Errorf("direct workflow test selects a post-landing test (%s): %s", filepath.Base(path), name)
 				}
 			}
 		}

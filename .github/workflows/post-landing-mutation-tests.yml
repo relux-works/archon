@@ -1,4 +1,4 @@
-name: Post-landing curator mutation tests
+name: Post-landing curator deferred tests
 
 on:
   push:
@@ -8,8 +8,8 @@ permissions:
   contents: read
 
 jobs:
-  curator-mutations:
-    name: macOS cmd/curator mutation tests
+  curator-deferred-tests:
+    name: macOS cmd/curator deferred race tests
     runs-on: macos-latest
     timeout-minutes: 70
     env:
@@ -29,7 +29,7 @@ jobs:
       - name: Verify Go toolchain identity
         shell: bash
         run: bash .github/ci/toolchain-identity.sh
-      - name: Inventory ordinary and post-landing tests
+      - name: Inventory PR and post-landing test sets
         shell: bash
         run: |
           set -euo pipefail
@@ -37,13 +37,33 @@ jobs:
             -mode inventory -package ./cmd/curator -timeout 60m \
             -go-test-flags=-race -require-all \
             -evidence .temp/ci-evidence/post-landing-mutation
-      - name: Run the seven post-landing mutation tests
+      - name: Record macOS race capacity
         shell: bash
         run: |
           set -euo pipefail
-          selector="$(go run ./tools/mutationinventory -mode selector)"
+          mkdir -p .temp/ci-evidence/post-landing-mutation
+          cat > "$RUNNER_TEMP/go-runner-capacity.go" <<'EOF'
+          package main
+
+          import (
+              "fmt"
+              "runtime"
+          )
+
+          func main() {
+              fmt.Println(runtime.NumCPU())
+              fmt.Println(runtime.GOMAXPROCS(0))
+          }
+          EOF
+          go run "$RUNNER_TEMP/go-runner-capacity.go" | tee .temp/ci-evidence/post-landing-mutation/runner-capacity.txt
+      - name: Run post-landing mutation and exhaustive tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          selector="$(go run ./tools/mutationinventory -mode post-landing-selector)"
           bash .github/ci/isolated-test.sh go test -race -count=1 -timeout=60m -v \
-            -run "$selector" ./cmd/curator
+            -run "$selector" ./cmd/curator \
+            2>&1 | tee .temp/ci-evidence/post-landing-mutation/go-test.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -66,7 +66,7 @@ run)
   if [ "$2" = ./tools/check-store-compatibility ]; then [ "$COMPAT_REFUSED" = 0 ] || exit 19; echo checked; exit 0; fi
   if [ "$2" = ./tools/mutationinventory ]; then
     case "$4" in
-      selector) printf '%s\n' "$EXPECTED_MUTATION_SELECTOR"; exit 0 ;;
+      post-landing-selector) printf '%s\n' "$EXPECTED_POST_LANDING_SELECTOR"; exit 0 ;;
       verify-invocation)
         [ "$5" = -- ] || exit 43
         found_skip=0
@@ -74,7 +74,7 @@ run)
         waiting_for_selector=0
         for arg in "${@:6}"; do
           if [ "$waiting_for_selector" = 1 ]; then
-            [ "$arg" = "$EXPECTED_MUTATION_SELECTOR" ] || exit 44
+            [ "$arg" = "$EXPECTED_POST_LANDING_SELECTOR" ] || exit 44
             found_selector=1
             waiting_for_selector=0
           elif [ "$arg" = -skip ]; then
@@ -111,7 +111,7 @@ esac
 			// This fixture intentionally replaces its own gate inputs and Go launcher.
 			cmd.Env = append(os.Environ(),
 				"CI_STORE_COMPATIBILITY=compatibility", "GITHUB_SHA="+strings.Repeat("a", 40), "COMPAT_REFUSED=0",
-				"CI_SKIP_MUTATION_TESTS=1", "EXPECTED_MUTATION_SELECTOR="+curatormutations.Selector(),
+				"CI_SKIP_POST_LANDING_TESTS=1", "EXPECTED_POST_LANDING_SELECTOR="+curatormutations.PostLandingSelector(),
 				"GO="+filepath.ToSlash(filepath.Join(dir, "fake-go")),
 				"CURATOR_CONFORMANCE_ROOT="+filepath.ToSlash(dir),
 				"CI_ENVPROFILE_SHARDS=shards", "CI_WINDOWS_TEST_SHARDS=", "CI_UNIX_TEST_SHARDS=", "GO_TEST_FLAGS=-race", "GO_TEST_TIMEOUT=60m",
@@ -130,9 +130,9 @@ esac
 					t.Fatal(err)
 				}
 				for _, want := range []string{
-					"run ./tools/mutationinventory -mode selector",
+					"run ./tools/mutationinventory -mode post-landing-selector",
 					"run ./tools/mutationinventory -mode verify-invocation",
-					"-skip " + curatormutations.Selector(),
+					"-skip " + curatormutations.PostLandingSelector(),
 					"-mode merge -dir shards",
 					"test -json",
 				} {
