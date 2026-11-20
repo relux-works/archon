@@ -1184,6 +1184,27 @@ jobs:
           pattern: envprofile-race-${{ matrix.os }}-*
           path: .temp/envprofile-shards
 
+      - name: Record macOS race capacity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .temp/ci-evidence/race
+          cat > "$RUNNER_TEMP/go-runner-capacity.go" <<'EOF'
+          package main
+
+          import (
+              "fmt"
+              "runtime"
+          )
+
+          func main() {
+              fmt.Println(runtime.NumCPU())
+              fmt.Println(runtime.GOMAXPROCS(0))
+          }
+          EOF
+          GOTOOLCHAIN=local GOENV=off go run "$RUNNER_TEMP/go-runner-capacity.go" | tee .temp/ci-evidence/race/runner-capacity.txt
+
       - name: go test -race + platform-case gate
         shell: bash
         env:

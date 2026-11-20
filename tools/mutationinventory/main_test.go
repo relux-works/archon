@@ -545,9 +545,6 @@ func TestPostLandingWorkflowIsMainPushOnlyAndRunsCompleteDeferredSet(t *testing.
 		"selector=\"$(go run ./tools/mutationinventory -mode post-landing-selector)\"",
 		"go test -race -count=1 -timeout=60m -v",
 		"-run \"$selector\" ./cmd/curator",
-		"fmt.Println(runtime.NumCPU())",
-		"fmt.Println(runtime.GOMAXPROCS(0))",
-		"runner-capacity.txt",
 		"go-test.txt",
 		"name: post-landing-mutation-evidence",
 	} {
@@ -555,8 +552,94 @@ func TestPostLandingWorkflowIsMainPushOnlyAndRunsCompleteDeferredSet(t *testing.
 			t.Errorf("post-landing workflow is missing %q", required)
 		}
 	}
-	if strings.Contains(workflow, "fmt.Printf(") || strings.Contains(workflow, "continue-on-error:") {
-		t.Fatal("capacity output or post-landing verdict is not value-only and required")
+	if strings.Contains(workflow, "continue-on-error:") {
+		t.Fatal("post-landing verdict is not required")
+	}
+}
+
+func checkMacOSRaceCapacityStep(data []byte) error {
+	var parsed map[string]any
+	if err := yaml.Unmarshal(data, &parsed); err != nil {
+		return err
+	}
+	jobs, ok := parsed["jobs"].(map[string]any)
+	if !ok {
+		return fmt.Errorf("ci.yml has no jobs mapping")
+	}
+	race, ok := jobs["race"].(map[string]any)
+	if !ok {
+		return fmt.Errorf("ci.yml has no Race job")
+	}
+	steps, ok := race["steps"].([]any)
+	if !ok {
+		return fmt.Errorf("Race job has no steps")
+	}
+	found := 0
+	for _, value := range steps {
+		step, ok := value.(map[string]any)
+		if !ok || step["name"] != "Record macOS race capacity" {
+			continue
+		}
+		found++
+		if step["if"] != "runner.os == 'macOS'" {
+			return fmt.Errorf("capacity step is not limited to the macOS runner")
+		}
+		run, ok := step["run"].(string)
+		if !ok {
+			return fmt.Errorf("capacity step has no shell script")
+		}
+		for _, required := range []string{
+			"fmt.Println(runtime.NumCPU())",
+			"fmt.Println(runtime.GOMAXPROCS(0))",
+			"GOTOOLCHAIN=local GOENV=off go run \"$RUNNER_TEMP/go-runner-capacity.go\"",
+			"tee .temp/ci-evidence/race/runner-capacity.txt",
+		} {
+			if !strings.Contains(run, required) {
+				return fmt.Errorf("capacity step is missing %q", required)
+			}
+		}
+		if strings.Count(run, "fmt.Println(") != 2 || strings.Contains(run, "fmt.Printf(") {
+			return fmt.Errorf("capacity step prints data beyond the two requested numeric values")
+		}
+	}
+	if found != 1 {
+		return fmt.Errorf("found %d macOS race capacity steps, want exactly one", found)
+	}
+	return nil
+}
+
+// Claim: the PR macOS Race job logs CPU count and effective GOMAXPROCS as two numeric lines.
+// Limit: this checks workflow source, not the hosted runner's emitted values.
+func TestMacOSRaceJobLogsRunnerCapacity(t *testing.T) {
+	data, err := os.ReadFile("../../.github/workflows/ci.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := checkMacOSRaceCapacityStep(data); err != nil {
+		t.Fatalf("valid macOS capacity step rejected: %v", err)
+	}
+	for name, plant := range map[string]func(string) string{
+		"missing_cpu_count": func(workflow string) string {
+			return strings.Replace(workflow, "fmt.Println(runtime.NumCPU())", "fmt.Println(runtime.NumGoroutine())", 1)
+		},
+		"missing_effective_gomaxprocs": func(workflow string) string {
+			return strings.Replace(workflow, "fmt.Println(runtime.GOMAXPROCS(0))", "fmt.Println(runtime.NumCPU())", 1)
+		},
+		"wrong_runner_condition": func(workflow string) string {
+			return strings.Replace(workflow,
+				"- name: Record macOS race capacity\n        if: runner.os == 'macOS'",
+				"- name: Record macOS race capacity\n        if: runner.os == 'Linux'", 1)
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			mutant := plant(string(data))
+			if mutant == string(data) {
+				t.Fatal("capacity-step plant not applied")
+			}
+			if err := checkMacOSRaceCapacityStep([]byte(mutant)); err == nil {
+				t.Fatal("invalid macOS capacity step admitted")
+			}
+		})
 	}
 }
 

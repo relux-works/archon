@@ -37,25 +37,6 @@ jobs:
             -mode inventory -package ./cmd/curator -timeout 60m \
             -go-test-flags=-race -require-all \
             -evidence .temp/ci-evidence/post-landing-mutation
-      - name: Record macOS race capacity
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p .temp/ci-evidence/post-landing-mutation
-          cat > "$RUNNER_TEMP/go-runner-capacity.go" <<'EOF'
-          package main
-
-          import (
-              "fmt"
-              "runtime"
-          )
-
-          func main() {
-              fmt.Println(runtime.NumCPU())
-              fmt.Println(runtime.GOMAXPROCS(0))
-          }
-          EOF
-          go run "$RUNNER_TEMP/go-runner-capacity.go" | tee .temp/ci-evidence/post-landing-mutation/runner-capacity.txt
       - name: Run post-landing mutation and exhaustive tests
         shell: bash
         run: |
