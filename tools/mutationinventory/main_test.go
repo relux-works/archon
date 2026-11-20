@@ -805,8 +805,38 @@ func checkPRDefersPostLandingTests(data []byte) error {
 
 func requirePullRequestTrigger(on *yaml.Node) error {
 	on = resolveWorkflowAlias(on)
-	if on == nil || on.Kind != yaml.MappingNode {
-		return fmt.Errorf("workflow trigger must use the supported mapping form")
+	if on == nil {
+		return fmt.Errorf("workflow has no trigger")
+	}
+	switch on.Kind {
+	case yaml.ScalarNode:
+		if on.Tag == "!!str" && on.Value == "pull_request" {
+			return nil
+		}
+		return fmt.Errorf("workflow scalar trigger has no pull_request event")
+	case yaml.SequenceNode:
+		seen := make(map[string]struct{}, len(on.Content))
+		found := false
+		for _, event := range on.Content {
+			if event.Kind != yaml.ScalarNode || event.Tag != "!!str" {
+				return fmt.Errorf("workflow trigger has an unreadable event")
+			}
+			if _, ok := seen[event.Value]; ok {
+				return fmt.Errorf("workflow trigger repeats event %q", event.Value)
+			}
+			seen[event.Value] = struct{}{}
+			if event.Value == "pull_request" {
+				found = true
+			}
+		}
+		if !found {
+			return fmt.Errorf("workflow has no pull_request trigger")
+		}
+		return nil
+	case yaml.MappingNode:
+		// Continue below with the event-filter mapping form.
+	default:
+		return fmt.Errorf("workflow trigger must be a scalar, sequence, or mapping")
 	}
 	seen := make(map[string]struct{}, len(on.Content)/2)
 	found := false
@@ -1305,13 +1335,17 @@ func addWorkflowMatrixInclude(data []byte, jobID string, rows []map[string]strin
 }
 
 func setWorkflowTriggerEvents(data []byte, events []string) ([]byte, error) {
-	document, root, err := parseWorkflowDocument(data)
-	if err != nil {
-		return nil, err
-	}
 	on := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
 	for _, event := range events {
 		appendWorkflowMappingPair(on, event, &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!null"})
+	}
+	return setWorkflowTriggerNode(data, on)
+}
+
+func setWorkflowTriggerNode(data []byte, on *yaml.Node) ([]byte, error) {
+	document, root, err := parseWorkflowDocument(data)
+	if err != nil {
+		return nil, err
 	}
 	workflowSetMappingValue(root, "on", on)
 	return yaml.Marshal(document)
@@ -1473,6 +1507,54 @@ func TestPullRequestWorkflowDefersMutationAndExhaustiveSuites(t *testing.T) {
 	if err := checkPRDefersPostLandingTests(good); err != nil {
 		t.Fatalf("valid PR deferral rejected: %v", err)
 	}
+	triggerForms := []struct {
+		name  string
+		plant func([]byte) ([]byte, error)
+	}{
+		{
+			name: "scalar_pull_request_trigger",
+			plant: func(data []byte) ([]byte, error) {
+				return setWorkflowTriggerNode(data, workflowStringNode("pull_request"))
+			},
+		},
+		{
+			name: "sequence_pull_request_trigger",
+			plant: func(data []byte) ([]byte, error) {
+				on := &yaml.Node{Kind: yaml.SequenceNode, Tag: "!!seq", Content: []*yaml.Node{workflowStringNode("push"), workflowStringNode("pull_request")}}
+				return setWorkflowTriggerNode(data, on)
+			},
+		},
+		{
+			name: "mapping_null_pull_request_trigger",
+			plant: func(data []byte) ([]byte, error) {
+				on := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
+				appendWorkflowMappingPair(on, "pull_request", &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!null"})
+				return setWorkflowTriggerNode(data, on)
+			},
+		},
+		{
+			name: "mapping_filtered_pull_request_trigger",
+			plant: func(data []byte) ([]byte, error) {
+				branches := &yaml.Node{Kind: yaml.SequenceNode, Tag: "!!seq", Content: []*yaml.Node{workflowStringNode("main")}}
+				filter := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
+				appendWorkflowMappingPair(filter, "branches", branches)
+				on := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
+				appendWorkflowMappingPair(on, "pull_request", filter)
+				return setWorkflowTriggerNode(data, on)
+			},
+		},
+	}
+	for _, test := range triggerForms {
+		t.Run("valid_"+test.name, func(t *testing.T) {
+			workflow, err := test.plant(good)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := checkPRDefersPostLandingTests(workflow); err != nil {
+				t.Fatalf("supported trigger form rejected: %v", err)
+			}
+		})
+	}
 	tests := []struct {
 		name  string
 		plant func([]byte) ([]byte, error)
@@ -1571,6 +1653,19 @@ func TestPullRequestWorkflowDefersMutationAndExhaustiveSuites(t *testing.T) {
 			name: "unclassified_dynamic_run_selector",
 			plant: func(data []byte) ([]byte, error) {
 				return addWorkflowJob(data, "routine-check", "Routine check", `go test ./... -run '${{ inputs.suite_filter }}'`, "", "")
+			},
+		},
+		{
+			name: "scalar_push_only_trigger",
+			plant: func(data []byte) ([]byte, error) {
+				return setWorkflowTriggerNode(data, workflowStringNode("push"))
+			},
+		},
+		{
+			name: "sequence_push_only_trigger",
+			plant: func(data []byte) ([]byte, error) {
+				on := &yaml.Node{Kind: yaml.SequenceNode, Tag: "!!seq", Content: []*yaml.Node{workflowStringNode("push")}}
+				return setWorkflowTriggerNode(data, on)
 			},
 		},
 		{
