@@ -25,6 +25,8 @@ func windowsFixtureInventory() map[string][]string {
 	return all
 }
 
+// Claim: descriptive mutant-named tests in another package stay in ordinary shards once, while canonical deferred roots there are refused.
+// Limit: this uses generated inventory and does not execute real package shards.
 func TestOrdinaryLaneKeepsOtherPackageNarrowingNamesInPR(t *testing.T) {
 	c, err := ordinaryConfig("unix-test", "linux")
 	if err != nil {
@@ -133,6 +135,8 @@ func testOrdinaryPartitionCoverage(t *testing.T, c testLane) {
 	}
 }
 
+// Claim: a Darwin ordinary shard accepts its canonical skip and rejects the same invocation without that pair.
+// Limit: this validates constructed arguments, not a workflow run or test behavior.
 func TestOrdinaryLaneRejectsMissingPostLandingSkip(t *testing.T) {
 	c, err := ordinaryConfig("unix-test", "darwin")
 	if err != nil {

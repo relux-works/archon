@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+// Claim: canonical mutation and exhaustive names map to exact selectors, and returned names cannot mutate the inventory.
+// Limit: this checks declared names and selectors, not package discovery or test execution.
 func TestCanonicalInventoryAndSelector(t *testing.T) {
 	want := []string{
 		"TestCLIPathIsolationNarrowingMutant",
@@ -37,6 +39,8 @@ func TestCanonicalInventoryAndSelector(t *testing.T) {
 	}
 }
 
+// Claim: partitioning conserves inventory and rejects missing, duplicate, or unclassified narrowing tests.
+// Limit: the inputs are synthetic and do not verify discovery from cmd/curator.
 func TestSplitConservesInventoryAndRejectsUnclassifiedMutants(t *testing.T) {
 	all := append(append(Names(), ExhaustiveNames()...), "TestOrdinary", "ExampleOrdinary")
 	inventory, err := Split(all)
@@ -90,6 +94,8 @@ func TestSplitConservesInventoryAndRejectsUnclassifiedMutants(t *testing.T) {
 	}
 }
 
+// Claim: descriptive mutant-named tests in another package remain in its ordinary partition.
+// Limit: this synthetic inventory does not prove actual shard execution or workflow behavior.
 func TestSplitOtherPackageKeepsDescriptiveMutantTestsOrdinary(t *testing.T) {
 	modeTest := "TestClaudeNativeMemoryModeNarrowingMutants"
 	preflightTest := "TestClaudeNativeMemoryPreflightNarrowingMutant"
@@ -109,6 +115,8 @@ func TestSplitOtherPackageKeepsDescriptiveMutantTestsOrdinary(t *testing.T) {
 	}
 }
 
+// Claim: ordinary invocations accept the canonical post-landing skip and reject missing, incomplete, or overbroad selectors.
+// Limit: this checks argument validation, not whether workflow callers use the validated arguments.
 func TestSkipInvocationAndMissingSelectorNegativeControl(t *testing.T) {
 	args := append([]string{"test", "-json", "-run", "^TestOrdinary$"}, SkipArgs()...)
 	if err := ValidateInvocation(args); err != nil {

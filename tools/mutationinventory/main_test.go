@@ -522,6 +522,9 @@ func TestPostLandingWorkflowIsMainPushOnlyAndRunsCompleteDeferredSet(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := validatePostLandingInvocationGates(data); err != nil {
+		t.Fatalf("valid post-landing invocation rejected: %v", err)
+	}
 	workflow := normalizeLineEndings(data)
 	var parsed map[string]any
 	if err := yaml.Unmarshal(data, &parsed); err != nil || len(parsed) == 0 {
@@ -557,6 +560,90 @@ func TestPostLandingWorkflowIsMainPushOnlyAndRunsCompleteDeferredSet(t *testing.
 	if strings.Contains(workflow, "continue-on-error:") {
 		t.Fatal("post-landing verdict is not required")
 	}
+}
+
+// Claim: the post-landing test invocation refuses skip flags and continue-on-error at job or step scope.
+// Limit: this validates workflow configuration and planted variants, not GitHub Actions execution semantics.
+func TestPostLandingWorkflowRejectsSkipAndContinueOnErrorPlants(t *testing.T) {
+	data, err := os.ReadFile("../../.github/workflows/post-landing-mutation-tests.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := validatePostLandingInvocationGates(data); err != nil {
+		t.Fatalf("positive control: valid workflow rejected: %v", err)
+	}
+
+	plants := []struct {
+		name, before, after string
+	}{
+		{"separate_skip", "go test -race", "go test -skip TestOrdinary -race"},
+		{"equals_skip", "go test -race", "go test -skip=TestOrdinary -race"},
+		{
+			"job_continue_on_error",
+			"  curator-deferred-tests:\n    name:",
+			"  curator-deferred-tests:\n    continue-on-error: true\n    name:",
+		},
+		{
+			"step_continue_on_error",
+			"      - name: Run post-landing mutation and exhaustive tests\n        shell: bash",
+			"      - name: Run post-landing mutation and exhaustive tests\n        continue-on-error: true\n        shell: bash",
+		},
+	}
+	for _, plant := range plants {
+		t.Run(plant.name, func(t *testing.T) {
+			planted := strings.Replace(string(data), plant.before, plant.after, 1)
+			if planted == string(data) {
+				t.Fatal("workflow plant was not applied")
+			}
+			if err := validatePostLandingInvocationGates([]byte(planted)); err == nil {
+				t.Fatal("forbidden post-landing invocation plant was admitted")
+			}
+		})
+	}
+}
+
+func validatePostLandingInvocationGates(data []byte) error {
+	var workflow struct {
+		Jobs map[string]struct {
+			ContinueOnError *bool `yaml:"continue-on-error"`
+			Steps           []struct {
+				ContinueOnError *bool  `yaml:"continue-on-error"`
+				Run             string `yaml:"run"`
+			} `yaml:"steps"`
+		} `yaml:"jobs"`
+	}
+	if err := yaml.Unmarshal(data, &workflow); err != nil {
+		return err
+	}
+	job, ok := workflow.Jobs["curator-deferred-tests"]
+	if !ok {
+		return fmt.Errorf("post-landing workflow has no deferred-test job")
+	}
+	if job.ContinueOnError != nil {
+		return fmt.Errorf("post-landing job allows continue-on-error")
+	}
+	testInvocationFound := false
+	for _, step := range job.Steps {
+		if step.ContinueOnError != nil {
+			return fmt.Errorf("post-landing step allows continue-on-error")
+		}
+		args := strings.Fields(step.Run)
+		for i := 0; i+1 < len(args); i++ {
+			if args[i] != "go" || args[i+1] != "test" {
+				continue
+			}
+			testInvocationFound = true
+			for _, arg := range args[i+2:] {
+				if arg == "-skip" || arg == "--skip" || strings.HasPrefix(arg, "-skip=") || strings.HasPrefix(arg, "--skip=") {
+					return fmt.Errorf("post-landing go test invocation skips deferred tests")
+				}
+			}
+		}
+	}
+	if !testInvocationFound {
+		return fmt.Errorf("post-landing workflow has no go test invocation")
+	}
+	return nil
 }
 
 func checkMacOSRaceCapacityStep(data []byte) error {
