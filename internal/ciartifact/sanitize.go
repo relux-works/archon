@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -90,7 +91,11 @@ func openEvidenceInput(root *os.Root, relative string) (evidenceInput, error) {
 }
 
 func sanitizeTree(src, dst string, removeStage func(string) error, openInput evidenceInputOpener) (total Counts, err error) {
-	homePrefix := accountHomePrefix()
+	return sanitizeTreeWithHomePrefix(src, dst, removeStage, openInput, accountHomePrefix(), nil)
+}
+
+func sanitizeTreeWithHomePrefix(src, dst string, removeStage func(string) error, openInput evidenceInputOpener, homePrefix string, afterCopy func(string) error) (total Counts, err error) {
+	homePrefix = cleanAccountHomePrefix(homePrefix)
 	if homePrefix == "" {
 		return total, errors.New("resolve account home prefix")
 	}
@@ -128,6 +133,11 @@ func sanitizeTree(src, dst string, removeStage func(string) error, openInput evi
 
 	info, err := os.Lstat(source)
 	if errors.Is(err, os.ErrNotExist) {
+		if afterCopy != nil {
+			if err := afterCopy(stage); err != nil {
+				return total, errors.New("finish sanitized evidence copy")
+			}
+		}
 		residuals, err := verifyNoAccountHomePrefixInTree(stage, homePrefix)
 		total.AccountHomePrefixResiduals = residuals
 		if err != nil {
@@ -137,6 +147,14 @@ func sanitizeTree(src, dst string, removeStage func(string) error, openInput evi
 			return total, errors.New("publish empty evidence copy")
 		}
 		stageOwned = false
+		residuals, err = verifyNoAccountHomePrefixInTree(destination, homePrefix)
+		total.AccountHomePrefixResiduals = residuals
+		if err != nil {
+			if removeErr := os.RemoveAll(destination); removeErr != nil {
+				return total, errors.Join(err, errors.New("remove rejected sanitized evidence destination"))
+			}
+			return total, err
+		}
 		return total, nil
 	}
 	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
@@ -190,6 +208,11 @@ func sanitizeTree(src, dst string, removeStage func(string) error, openInput evi
 		return total, errEvidenceRootClose
 	}
 	sourceRootOpen = false
+	if afterCopy != nil {
+		if err := afterCopy(stage); err != nil {
+			return total, errors.New("finish sanitized evidence copy")
+		}
+	}
 	residuals, err := verifyNoAccountHomePrefixInTree(stage, homePrefix)
 	total.AccountHomePrefixResiduals = residuals
 	if err != nil {
@@ -199,6 +222,14 @@ func sanitizeTree(src, dst string, removeStage func(string) error, openInput evi
 		return total, errors.New("publish sanitized evidence copy")
 	}
 	stageOwned = false
+	residuals, err = verifyNoAccountHomePrefixInTree(destination, homePrefix)
+	total.AccountHomePrefixResiduals = residuals
+	if err != nil {
+		if removeErr := os.RemoveAll(destination); removeErr != nil {
+			return total, errors.Join(err, errors.New("remove rejected sanitized evidence destination"))
+		}
+		return total, err
+	}
 	return total, nil
 }
 
@@ -691,8 +722,15 @@ func sanitizeTextWithHomePrefix(text, homePrefix string) (string, counts) {
 }
 
 func accountHomePrefix() string {
-	home, err := os.UserHomeDir()
-	if err != nil || home == "" || !filepath.IsAbs(home) {
+	account, err := user.Current()
+	if err != nil || account == nil {
+		return ""
+	}
+	return cleanAccountHomePrefix(account.HomeDir)
+}
+
+func cleanAccountHomePrefix(home string) string {
+	if home == "" || !filepath.IsAbs(home) {
 		return ""
 	}
 	home = filepath.Clean(home)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -24,13 +25,138 @@ func (f *failingCloseEvidenceInput) Close() error { return f.closeErr }
 func testAccountHomePrefix(t *testing.T) string {
 	t.Helper()
 	if runtime.GOOS == "windows" {
-		const homePrefix = `C:\fixture-account`
-		t.Setenv("USERPROFILE", homePrefix)
-		return homePrefix
+		return `C:\fixture-account`
 	}
-	const homePrefix = "/home/fixture-account"
-	t.Setenv("HOME", homePrefix)
-	return homePrefix
+	return "/home/fixture-account"
+}
+
+func accountHomeEnvironmentVariable() string {
+	if runtime.GOOS == "windows" {
+		return "USERPROFILE"
+	}
+	return "HOME"
+}
+
+func currentAccountHomePrefix(t *testing.T) string {
+	t.Helper()
+	account, err := user.Current()
+	if err != nil || account == nil {
+		t.Fatal("resolve operating-system account home")
+	}
+	home := filepath.Clean(account.HomeDir)
+	if home == "" || !filepath.IsAbs(home) || filepath.Dir(home) == home {
+		t.Fatal("operating-system account home is unusable")
+	}
+	return home
+}
+
+func sanitizeGoTestStreamForHomePrefix(data []byte, homePrefix string) ([]byte, counts, error) {
+	return sanitizeContentWithHomePrefix(data, true, homePrefix)
+}
+
+func TestAccountHomePrefixUsesOperatingSystemAccount(t *testing.T) {
+	want := currentAccountHomePrefix(t)
+	t.Setenv(accountHomeEnvironmentVariable(), filepath.Join(t.TempDir(), "unrelated-home"))
+	if got := accountHomePrefix(); got != want {
+		t.Fatal("account-home prefix followed the HOME override instead of the operating-system account")
+	}
+}
+
+func TestSanitizeGoTestStreamRedactsAccountHomeAfterEveryOutputLabel(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the reported leak uses Unix home paths")
+	}
+	homePrefix := currentAccountHomePrefix(t)
+	t.Setenv(accountHomeEnvironmentVariable(), filepath.Join(t.TempDir(), "unrelated-home"))
+	separator := string(os.PathSeparator)
+	tmp := separator + "tmp" + separator
+	tests := []struct {
+		name   string
+		output string
+	}{
+		{name: "managed-home-curator-3", output: "managed-home Form: Home:" + homePrefix + tmp + "curator-3" + separator + "TestNativeHome"},
+		{name: "managed-home-curator-1", output: "managed-home Form: Home:" + homePrefix + tmp + "curator-1" + separator + "TestNativeHome"},
+		{name: "adapter-codex-cli", output: "{Adapter:codex_cli Home:" + homePrefix + tmp + "fixture-run" + separator + "TestNativeHome"},
+		{name: "environment-claude-code", output: "Environment:claude_code Native:" + homePrefix + tmp + "curator-3" + separator + "TestNativeHome"},
+		{name: "environment-codex-cli", output: "Environment:codex_cli Native:" + homePrefix + tmp + "curator-3" + separator + "TestNativeHome"},
+		{name: "environment-opencode", output: "Environment:opencode Native:" + homePrefix + tmp + "curator-3" + separator + "TestNativeHome"},
+		{name: "environment-pi", output: "Environment:pi Native:" + homePrefix + tmp + "curator-3" + separator + "TestNativeHome"},
+		{name: "codex-managed", output: "snapshot/codex Managed:" + homePrefix + tmp + "curator-3" + separator + "TestNativeHome"},
+		{name: "native-managed", output: "Native: Managed:" + homePrefix + tmp + "curator-3" + separator + "TestNativeHome"},
+		{name: "project-lease-double-slash", output: "project-lease/" + homePrefix + tmp + "fixture-run" + separator + "TestOwnershipRecovery"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			event, err := json.Marshal(struct {
+				Action  string
+				Package string
+				Output  string
+			}{Action: "output", Package: "example/pkg", Output: test.output})
+			if err != nil {
+				t.Fatal("encode event fixture")
+			}
+			if residuals := accountHomePrefixResidualCount(event, homePrefix); residuals != 1 {
+				t.Fatalf("planted account-home count = %d, want 1", residuals)
+			}
+			clean, found, err := sanitizeGoTestStream(append(event, '\n'))
+			if err != nil {
+				t.Fatal("sanitize event fixture")
+			}
+			var got struct {
+				Action  string
+				Package string
+				Output  string
+			}
+			if err := json.Unmarshal(bytes.TrimSpace(clean), &got); err != nil {
+				t.Fatal("decode sanitized event")
+			}
+			if got.Action != "output" || got.Package != "example/pkg" || !strings.Contains(got.Output, redactedPath) {
+				t.Fatal("sanitization changed event metadata or omitted the path replacement")
+			}
+			if found.paths == 0 {
+				t.Fatal("account-home replacement was not counted")
+			}
+			if residuals := accountHomePrefixResidualCount(clean, accountHomePrefix()); residuals != 0 {
+				t.Fatalf("post-sanitize account-home residual count = %d, want 0", residuals)
+			}
+		})
+	}
+}
+
+func TestAccountHomePrefixResidualCountCatchesPostSanitizeWrite(t *testing.T) {
+	homePrefix := currentAccountHomePrefix(t)
+	t.Setenv(accountHomeEnvironmentVariable(), filepath.Join(t.TempDir(), "unrelated-home"))
+	clean, _, err := sanitizeGoTestStream([]byte(`{"Action":"output","Output":"safe witness"}`))
+	if err != nil {
+		t.Fatal("sanitize initial evidence")
+	}
+	finalBytes := append(append([]byte(nil), clean...), []byte("\nlate-write:"+homePrefix+string(os.PathSeparator)+"tmp/fixture/TestLateWrite")...)
+	if residuals := accountHomePrefixResidualCount(finalBytes, accountHomePrefix()); residuals != 1 {
+		t.Fatalf("post-write residual count = %d, want 1", residuals)
+	}
+}
+
+func TestNonAccountHomeFixturePathRemainsUntouchedInJSONOutput(t *testing.T) {
+	const accountHome = "/home/fixture-account"
+	const nonAccountFixture = "/home/TestNativeHome/tmp/curator-3/TestFixture"
+	input, err := json.Marshal(struct {
+		Action string
+		Output string
+	}{Action: "output", Output: "managed-home Form: Home:" + nonAccountFixture})
+	if err != nil {
+		t.Fatal("encode non-account path fixture")
+	}
+	clean, found, err := sanitizeJSONStrings(input, true, accountHome)
+	if err != nil {
+		t.Fatal("sanitize non-account path fixture")
+	}
+	var got struct{ Output string }
+	if err := json.Unmarshal(clean, &got); err != nil {
+		t.Fatal("decode sanitized non-account fixture")
+	}
+	if got.Output != "managed-home Form: Home:"+nonAccountFixture || found.paths != 0 {
+		t.Fatal("non-account /home fixture path was modified")
+	}
 }
 
 func TestSanitizeJSONPreservesGoEventContract(t *testing.T) {
@@ -209,7 +335,7 @@ func TestSanitizeGoTestStreamRedactsAccountHomePrefixAtAnyPosition(t *testing.T)
 			if err != nil {
 				t.Fatal("encode event fixture")
 			}
-			clean, found, err := sanitizeGoTestStream(append(input, '\n'))
+			clean, found, err := sanitizeGoTestStreamForHomePrefix(append(input, '\n'), homePrefix)
 			if err != nil {
 				t.Fatal("sanitize event fixture")
 			}
@@ -251,7 +377,7 @@ func TestSanitizeGoTestStreamRedactsAccountHomePrefixAfterEquals(t *testing.T) {
 	if err != nil {
 		t.Fatal("encode event fixture")
 	}
-	clean, found, err := sanitizeGoTestStream(append(input, '\n'))
+	clean, found, err := sanitizeGoTestStreamForHomePrefix(append(input, '\n'), homePrefix)
 	if err != nil {
 		t.Fatal("sanitize event fixture")
 	}
@@ -443,7 +569,7 @@ func TestSanitizeTreeKeepsSourceAndRejectsExistingDestination(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(source, "go-test.json"), original, 0o600); err != nil {
 		t.Fatal("write source:", err)
 	}
-	counts, err := SanitizeTree(source, destination)
+	counts, err := sanitizeTreeWithHomePrefix(source, destination, os.RemoveAll, openEvidenceInput, homePrefix, nil)
 	if err != nil {
 		t.Fatal("sanitize tree:", err)
 	}
@@ -472,11 +598,37 @@ func TestSanitizeTreeKeepsSourceAndRejectsExistingDestination(t *testing.T) {
 	}
 }
 
-func TestSanitizeTreeFailsClosedWithoutUsableAccountHomePrefix(t *testing.T) {
-	homeVariable := "HOME"
-	if runtime.GOOS == "windows" {
-		homeVariable = "USERPROFILE"
+func TestSanitizeTreeRejectsAccountHomeResidualWrittenAfterCopy(t *testing.T) {
+	const homePrefix = "/home/fixture-account"
+	root := t.TempDir()
+	source := filepath.Join(root, "source")
+	destination := filepath.Join(root, "sanitized")
+	if err := os.Mkdir(source, 0o755); err != nil {
+		t.Fatal("create source:", err)
 	}
+	original := []byte(`{"Action":"output","Output":"safe witness"}` + "\n")
+	if err := os.WriteFile(filepath.Join(source, "go-test.json"), original, 0o600); err != nil {
+		t.Fatal("write source evidence:", err)
+	}
+	afterCopy := func(stage string) error {
+		file, err := os.OpenFile(filepath.Join(stage, "go-test.json"), os.O_APPEND|os.O_WRONLY, 0)
+		if err != nil {
+			return err
+		}
+		_, writeErr := file.WriteString("late-write:" + homePrefix + "/tmp/fixture/TestLateWrite")
+		closeErr := file.Close()
+		return errors.Join(writeErr, closeErr)
+	}
+	counts, err := sanitizeTreeWithHomePrefix(source, destination, os.RemoveAll, openEvidenceInput, homePrefix, afterCopy)
+	if err == nil || counts.AccountHomePrefixResiduals != 1 {
+		t.Fatalf("late-write verification = (%d, %v), want one residual and refusal", counts.AccountHomePrefixResiduals, err)
+	}
+	if _, err := os.Lstat(destination); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("late account-home residual published a destination")
+	}
+}
+
+func TestSanitizeTreeFailsClosedWithoutUsableAccountHomePrefix(t *testing.T) {
 	rootHome := filepath.VolumeName(os.TempDir()) + string(os.PathSeparator)
 	tests := []struct {
 		name string
@@ -487,14 +639,13 @@ func TestSanitizeTreeFailsClosedWithoutUsableAccountHomePrefix(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Setenv(homeVariable, test.home)
 			root := t.TempDir()
 			source := filepath.Join(root, "source")
 			destination := filepath.Join(root, "sanitized")
 			if err := os.Mkdir(source, 0o755); err != nil {
 				t.Fatal("create evidence source")
 			}
-			if _, err := SanitizeTree(source, destination); err == nil {
+			if _, err := sanitizeTreeWithHomePrefix(source, destination, os.RemoveAll, openEvidenceInput, test.home, nil); err == nil {
 				t.Fatal("sanitizer accepted an unusable account-home prefix")
 			}
 			if _, err := os.Lstat(destination); !errors.Is(err, os.ErrNotExist) {
