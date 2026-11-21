@@ -59,6 +59,7 @@ const (
 	redactedHostname   = "[redacted hostname]"
 	redactedIP         = "[redacted IP address]"
 	redactedCredential = "[redacted credential]" // #nosec G101 -- fixed redaction label; contains no credential material.
+	redactedSubtest    = "[redacted subtest]"
 )
 
 var (
@@ -402,7 +403,28 @@ func walkJSONValue(decoder *json.Decoder, data []byte, token json.Token, before 
 	case string:
 		if preserveEventFields && key != "Output" {
 			if hasForbiddenEventIdentifier(key, value) {
-				return errors.New("test event metadata contains a forbidden identifier")
+				if key != "Test" {
+					return errors.New("test event metadata contains a forbidden identifier")
+				}
+				// Downstream admission checks the exact top-level test inventory;
+				// subtest names are diagnostic metadata. Preserve a safe parent and
+				// normalize only the unsafe suffix. Unsafe parents and other fields
+				// still refuse publication.
+				parent, _, ok := strings.Cut(value, "/")
+				if !ok || parent == "" || hasForbiddenEventIdentifier(key, parent) {
+					return errors.New("test event metadata contains a forbidden identifier")
+				}
+				start, end, err := jsonStringSpan(data, before)
+				if err != nil {
+					return err
+				}
+				replacement, err := json.Marshal(parent + "/" + redactedSubtest)
+				if err != nil {
+					return errors.New("encode normalized test metadata")
+				}
+				*changes = append(*changes, jsonChange{start: start, end: end, raw: replacement})
+				_, found := sanitizeText(value)
+				addCounts(total, found)
 			}
 			return nil
 		}

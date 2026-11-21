@@ -65,6 +65,52 @@ func TestSanitizeJSONPreservesGoEventContract(t *testing.T) {
 	}
 }
 
+func TestSanitizeGoTestStreamNormalizesUnsafeSubtestMetadata(t *testing.T) {
+	input := []byte(
+		`{"Action":"run","Package":"` + curatorModulePath + `/internal/ciartifact","Test":"TestSanitizedEvidence/worker.internal.invalid","Output":"safe witness"}` + "\n" +
+			`{"Action":"run","Package":"` + curatorModulePath + `/internal/ciartifact","Test":"TestSanitizedEvidence/child-/home/fixture/private","Output":"safe witness"}` + "\n" +
+			`{"Action":"run","Package":"` + curatorModulePath + `/internal/ciartifact","Test":"TestSanitizedEvidence/safe-child","Output":"safe witness"}` + "\n",
+	)
+	clean, found, err := sanitizeGoTestStream(input)
+	if err != nil {
+		t.Fatal("sanitize subtest metadata:", err)
+	}
+	var got []string
+	for _, line := range bytes.Split(bytes.TrimSpace(clean), []byte("\n")) {
+		if !json.Valid(line) {
+			t.Fatalf("normalized event is invalid JSON: %s", line)
+		}
+		var event struct {
+			Package string
+			Test    string
+		}
+		if err := json.Unmarshal(line, &event); err != nil {
+			t.Fatal("decode normalized event:", err)
+		}
+		if event.Package != curatorModulePath+"/internal/ciartifact" {
+			t.Fatalf("package metadata changed: %q", event.Package)
+		}
+		got = append(got, event.Test)
+	}
+	want := []string{"TestSanitizedEvidence/" + redactedSubtest, "TestSanitizedEvidence/" + redactedSubtest, "TestSanitizedEvidence/safe-child"}
+	if len(got) != len(want) {
+		t.Fatalf("normalized event count = %d, want %d", len(got), len(want))
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("normalized test metadata %d = %q, want %q", i, got[i], want[i])
+		}
+	}
+	for _, forbidden := range []string{"worker.internal.invalid", "/home/fixture/private"} {
+		if bytes.Contains(clean, []byte(forbidden)) {
+			t.Errorf("unsafe subtest metadata survived: %q", forbidden)
+		}
+	}
+	if found.hostnames == 0 || found.paths == 0 {
+		t.Fatalf("host and path controls were not both exercised: %+v", found)
+	}
+}
+
 func TestSanitizeTextIsIdempotent(t *testing.T) {
 	input := "https://worker.internal.invalid/private/data TOKEN=fixture-value 192.0.2.44"
 	first, _ := sanitizeText(input)

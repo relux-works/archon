@@ -10,12 +10,28 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func checkSanitizedArtifactUploads(data []byte) error {
-	var wf struct {
-		Jobs map[string]struct {
-			Steps []step `yaml:"steps"`
-		} `yaml:"jobs"`
+func isArtifactUploadAction(uses string) bool {
+	const prefix = "actions/upload-artifact@"
+	return strings.HasPrefix(uses, prefix) && len(strings.TrimPrefix(uses, prefix)) > 0
+}
+
+func workflowHasArtifactUploads(data []byte) (bool, error) {
+	var wf workflow
+	if err := yaml.Unmarshal(data, &wf); err != nil {
+		return false, err
 	}
+	for _, job := range wf.Jobs {
+		for _, current := range job.Steps {
+			if isArtifactUploadAction(current.Uses) {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func checkSanitizedArtifactUploads(data []byte) error {
+	var wf workflow
 	if err := yaml.Unmarshal(data, &wf); err != nil {
 		return err
 	}
@@ -23,7 +39,7 @@ func checkSanitizedArtifactUploads(data []byte) error {
 	seenPaths := map[string]bool{}
 	for jobName, job := range wf.Jobs {
 		for i, current := range job.Steps {
-			if current.Uses != "actions/upload-artifact@v4" {
+			if !isArtifactUploadAction(current.Uses) {
 				continue
 			}
 			uploads++
@@ -81,6 +97,31 @@ func TestCIArtifactUploadsUseSanitizedCopies(t *testing.T) {
 			}
 		})
 	}
+	t.Run("other-upload-reference-raw-path", func(t *testing.T) {
+		planted := strings.Replace(string(good), "actions/upload-artifact@v4", "actions/upload-artifact@v4.2.0", 1)
+		planted = strings.Replace(planted, "path: .temp/public-artifacts-", "path: .temp/ci-evidence-", 1)
+		if planted == string(good) {
+			t.Fatal("mutation did not apply")
+		}
+		if err := checkSanitizedArtifactUploads([]byte(planted)); err == nil {
+			t.Fatal("unsafe upload at another artifact-action ref survived the control")
+		}
+	})
+}
+
+func TestArtifactUploadGuardAcceptsVersionAndCommitRefs(t *testing.T) {
+	good := workflowBytes(t)
+	for _, ref := range []string{"v4.2.0", "0123456789abcdef0123456789abcdef01234567"} {
+		t.Run(ref, func(t *testing.T) {
+			variant := strings.Replace(string(good), "actions/upload-artifact@v4", "actions/upload-artifact@"+ref, 1)
+			if variant == string(good) {
+				t.Fatal("artifact action reference mutation did not apply")
+			}
+			if err := checkSanitizedArtifactUploads([]byte(variant)); err != nil {
+				t.Fatalf("safe artifact upload at ref %q was rejected: %v", ref, err)
+			}
+		})
+	}
 }
 
 func TestAllWorkflowArtifactUploadsUseSanitizedCopies(t *testing.T) {
@@ -103,7 +144,11 @@ func TestAllWorkflowArtifactUploadsUseSanitizedCopies(t *testing.T) {
 		if err != nil {
 			t.Fatalf("read workflow %s: %v", path, err)
 		}
-		if !strings.Contains(string(data), "actions/upload-artifact@v4") {
+		hasUploads, err := workflowHasArtifactUploads(data)
+		if err != nil {
+			t.Fatalf("parse workflow %s: %v", workflow.Name(), err)
+		}
+		if !hasUploads {
 			continue
 		}
 		checked++
