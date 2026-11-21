@@ -67,6 +67,7 @@ var (
 	errEvidenceFileClose   = errors.New("close evidence file")
 	errEvidenceRootClose   = errors.New("close evidence source")
 	errEvidenceStageRemove = errors.New("remove staged evidence copy")
+	errSanitizedRootClose  = errors.New("close sanitized evidence root")
 )
 
 // SanitizeTree copies src to a new dst directory, sanitizing textual evidence
@@ -204,8 +205,16 @@ func verifyNoAccountHomePrefixInTree(root, homePrefix string) (int, error) {
 	if homePrefix == "" {
 		return 0, errors.New("resolve account home prefix")
 	}
+	rootPath, err := filepath.Abs(root)
+	if err != nil {
+		return 0, errors.New("resolve sanitized evidence root")
+	}
+	rootFS, err := os.OpenRoot(rootPath)
+	if err != nil {
+		return 0, errors.New("open sanitized evidence root")
+	}
 	residuals := 0
-	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+	err = filepath.WalkDir(rootPath, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return errors.New("scan sanitized evidence tree")
 		}
@@ -215,20 +224,44 @@ func verifyNoAccountHomePrefixInTree(root, homePrefix string) (int, error) {
 		if !entry.Type().IsRegular() {
 			return errors.New("sanitized evidence contains an unsupported entry")
 		}
-		data, err := os.ReadFile(path)
+		data, err := readSanitizedEvidenceFile(rootFS, rootPath, path)
 		if err != nil {
 			return errors.New("read sanitized evidence file")
 		}
 		residuals += bytes.Count(data, []byte(homePrefix))
 		return nil
 	})
+	closeErr := rootFS.Close()
 	if err != nil {
 		return residuals, err
+	}
+	if closeErr != nil {
+		return residuals, errSanitizedRootClose
 	}
 	if residuals != 0 {
 		return residuals, errors.New("sanitized evidence retains account home prefix")
 	}
 	return residuals, nil
+}
+
+func readSanitizedEvidenceFile(root *os.Root, rootPath, path string) ([]byte, error) {
+	relativePath, err := filepath.Rel(rootPath, path)
+	if err != nil {
+		return nil, err
+	}
+	file, err := root.Open(relativePath)
+	if err != nil {
+		return nil, err
+	}
+	data, readErr := io.ReadAll(file)
+	closeErr := file.Close()
+	if readErr != nil {
+		return nil, readErr
+	}
+	if closeErr != nil {
+		return nil, closeErr
+	}
+	return data, nil
 }
 
 func overlaps(a, b string) bool {

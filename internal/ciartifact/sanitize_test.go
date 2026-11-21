@@ -376,6 +376,29 @@ func TestVerifyNoAccountHomePrefixFailsClosed(t *testing.T) {
 	}
 }
 
+func TestReadSanitizedEvidenceFileRefusesOutsideRoot(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	outsidePath := filepath.Join(outside, "outside.txt")
+	if err := os.WriteFile(outsidePath, []byte("outside staged root"), 0o600); err != nil {
+		t.Fatal("write outside-root fixture:", err)
+	}
+
+	rootFS, err := os.OpenRoot(root)
+	if err != nil {
+		t.Fatal("open staged root:", err)
+	}
+	t.Cleanup(func() {
+		if err := rootFS.Close(); err != nil {
+			t.Errorf("close staged root: %v", err)
+		}
+	})
+
+	if _, err := readSanitizedEvidenceFile(rootFS, root, outsidePath); err == nil {
+		t.Fatal("outside-root evidence path was accepted")
+	}
+}
+
 func TestSanitizeTreeRejectsOverlappingAndSymlinkInputs(t *testing.T) {
 	root := t.TempDir()
 	source := filepath.Join(root, "source")
