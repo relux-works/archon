@@ -1,16 +1,28 @@
 package ciartifact
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
 
+type failingCloseEvidenceInput struct {
+	*bytes.Reader
+	info     os.FileInfo
+	closeErr error
+}
+
+func (f *failingCloseEvidenceInput) Stat() (os.FileInfo, error) { return f.info, nil }
+
+func (f *failingCloseEvidenceInput) Close() error { return f.closeErr }
+
 func TestSanitizeJSONPreservesGoEventContract(t *testing.T) {
 	hostPath := strings.Join([]string{"/", "home", "runner", "checkout", "internal", "fixture.go"}, "")
-	input := `{"Time":"2026-01-02T03:04:05Z","Action":"output","Package":"example/pkg","Test":"TestSanitizedEvidence","Elapsed":0.25,"Output":"at ` + hostPath + ` TOKEN=secret-value GOAMD64=v3 runner.internal.invalid 192.0.2.44 environment_store_untrusted: store entry failed ownership check: fixture"}`
+	input := `{"Time":"2026-01-02T03:04:05Z","Action":"output","Package":"github.com/relux-works/curator/internal/ciartifact","Test":"TestSanitizedEvidence","Elapsed":0.25,"Output":"at ` + hostPath + ` TOKEN=secret-value GOAMD64=v3 runner.internal.invalid 192.0.2.44 environment_store_untrusted: store entry failed ownership check: fixture"}`
 	clean, found, err := sanitizeGoTestStream([]byte(input))
 	if err != nil {
 		t.Fatal("sanitize JSON:", err)
@@ -28,7 +40,7 @@ func TestSanitizeJSONPreservesGoEventContract(t *testing.T) {
 		t.Fatal("decode sanitized event:", err)
 	}
 	for key, want := range map[string]any{
-		"Time": "2026-01-02T03:04:05Z", "Action": "output", "Package": "example/pkg", "Test": "TestSanitizedEvidence", "Elapsed": 0.25,
+		"Time": "2026-01-02T03:04:05Z", "Action": "output", "Package": curatorModulePath + "/internal/ciartifact", "Test": "TestSanitizedEvidence", "Elapsed": 0.25,
 	} {
 		if event[key] != want {
 			t.Errorf("event field %q changed: got %v, want %v", key, event[key], want)
@@ -67,12 +79,18 @@ func TestSanitizeTextIsIdempotent(t *testing.T) {
 
 func TestSanitizeJSONRedactsSensitiveObjectValues(t *testing.T) {
 	fixturePath := "/" + strings.Join([]string{"private", "runner", "item"}, "/")
-	input := []byte(`{"evidence":{"api_key":"fixture-key-value","path":"` + fixturePath + `","Package":"worker.internal.invalid"},"safe":"keep this witness"}`)
+	mixedValue := "fixture-key-value " + fixturePath + " worker.internal.invalid"
+	input := []byte(`{"evidence":{"api_key":"` + mixedValue + `","password":{"nested":"fixture-password-value"}},"safe":"keep this witness"}`)
 	clean, _, err := sanitizeTextOrJSON(input)
 	if err != nil {
 		t.Fatal("sanitize JSON:", err)
 	}
-	if strings.Contains(string(clean), "fixture-key-value") || strings.Contains(string(clean), fixturePath) || strings.Contains(string(clean), "worker.internal.invalid") {
+	for _, forbidden := range []string{"fixture-key-value", fixturePath, "worker.internal.invalid", "fixture-password-value"} {
+		if strings.Contains(string(clean), forbidden) {
+			t.Errorf("sensitive object value retained %q", forbidden)
+		}
+	}
+	if !strings.Contains(string(clean), `"api_key":"[redacted credential]"`) || !strings.Contains(string(clean), `"password":"[redacted credential]"`) {
 		t.Fatal("sensitive object value survived")
 	}
 	if !strings.Contains(string(clean), "keep this witness") {
@@ -184,5 +202,155 @@ func TestSanitizeTreeRejectsBinaryContent(t *testing.T) {
 	}
 	if _, err := os.Stat(destination); !os.IsNotExist(err) {
 		t.Fatal("failed sanitization left a destination behind")
+	}
+}
+
+func TestSanitizeTreeDoesNotPublishWhenEvidenceCloseFails(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "source")
+	destination := filepath.Join(root, "sanitized")
+	if err := os.Mkdir(source, 0o755); err != nil {
+		t.Fatal("create source:", err)
+	}
+	original := []byte(`{"Output":"token=fixture-secret","Action":"output"}` + "\n")
+	if err := os.WriteFile(filepath.Join(source, "go-test.json"), original, 0o600); err != nil {
+		t.Fatal("write source:", err)
+	}
+	closeErr := errors.New("injected close failure")
+	openInput := func(_ *os.Root, relative string) (evidenceInput, error) {
+		info, err := os.Stat(filepath.Join(source, relative))
+		if err != nil {
+			return nil, err
+		}
+		return &failingCloseEvidenceInput{
+			Reader:   bytes.NewReader(original),
+			info:     info,
+			closeErr: closeErr,
+		}, nil
+	}
+	_, err := sanitizeTree(source, destination, os.RemoveAll, openInput)
+	if !errors.Is(err, errEvidenceFileClose) {
+		t.Fatalf("close failure was not reported: %v", err)
+	}
+	if _, err := os.Stat(destination); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("close failure published a destination: %v", err)
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal("read staging parent:", err)
+	}
+	if len(entries) != 1 || entries[0].Name() != "source" {
+		t.Fatalf("close failure left staging output behind: %v", entries)
+	}
+}
+
+func TestSanitizeTreeDoesNotPublishWhenStageRemovalFails(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "source")
+	destination := filepath.Join(root, "sanitized")
+	if err := os.Mkdir(source, 0o755); err != nil {
+		t.Fatal("create source:", err)
+	}
+	if err := os.WriteFile(filepath.Join(source, "evidence.bin"), []byte{0, 1, 2}, 0o600); err != nil {
+		t.Fatal("write binary fixture:", err)
+	}
+	var stagedPath string
+	t.Cleanup(func() {
+		if stagedPath != "" {
+			if err := os.RemoveAll(stagedPath); err != nil {
+				t.Errorf("remove test staging directory: %v", err)
+			}
+		}
+	})
+	removeErr := errors.New("injected staging removal failure")
+	removeStage := func(path string) error {
+		stagedPath = path
+		return removeErr
+	}
+	_, err := sanitizeTree(source, destination, removeStage, openEvidenceInput)
+	if !errors.Is(err, errEvidenceStageRemove) || !strings.Contains(err.Error(), "binary content") {
+		t.Fatalf("sanitization and cleanup failures were not reported: %v", err)
+	}
+	if _, err := os.Stat(destination); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("stage removal failure published a destination: %v", err)
+	}
+}
+
+func TestSanitizeTreeSuccessfulPublishSkipsStageCleanup(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "source")
+	destination := filepath.Join(root, "sanitized")
+	if err := os.Mkdir(source, 0o755); err != nil {
+		t.Fatal("create source:", err)
+	}
+	original := []byte(`{"Action":"output","Output":"safe evidence"}` + "\n")
+	if err := os.WriteFile(filepath.Join(source, "go-test.json"), original, 0o600); err != nil {
+		t.Fatal("write source evidence:", err)
+	}
+	removeCalls := 0
+	removeStage := func(string) error {
+		removeCalls++
+		return errors.New("unexpected cleanup after successful publish")
+	}
+	if _, err := sanitizeTree(source, destination, removeStage, openEvidenceInput); err != nil {
+		t.Fatalf("successful publish reported a stage cleanup error: %v", err)
+	}
+	if removeCalls != 0 {
+		t.Fatalf("published stage was cleaned up %d times", removeCalls)
+	}
+	clean, err := os.ReadFile(filepath.Join(destination, "go-test.json"))
+	if err != nil {
+		t.Fatal("read published evidence:", err)
+	}
+	if !strings.Contains(string(clean), "safe evidence") {
+		t.Fatalf("published evidence is missing the safe witness: %s", clean)
+	}
+}
+
+func TestSanitizeTreeRefusesForbiddenNonOutputEventIdentifiers(t *testing.T) {
+	tests := []struct {
+		name        string
+		packagePath string
+		testName    string
+	}{
+		{
+			name:        "account path in test name",
+			packagePath: curatorModulePath + "/internal/ciartifact",
+			testName:    "/home/fixture/account/private",
+		},
+		{
+			name:        "host name in package",
+			packagePath: curatorModulePath + "/runner.internal.invalid",
+			testName:    "TestSafeMetadata",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			root := t.TempDir()
+			source := filepath.Join(root, "source")
+			destination := filepath.Join(root, "sanitized")
+			if err := os.Mkdir(source, 0o755); err != nil {
+				t.Fatal("create source:", err)
+			}
+			event, err := json.Marshal(map[string]string{
+				"Action":  "run",
+				"Output":  "safe output",
+				"Package": test.packagePath,
+				"Test":    test.testName,
+				"Time":    "2026-01-02T03:04:05Z",
+			})
+			if err != nil {
+				t.Fatal("encode event fixture:", err)
+			}
+			if err := os.WriteFile(filepath.Join(source, "go-test.json"), append(event, '\n'), 0o600); err != nil {
+				t.Fatal("write event fixture:", err)
+			}
+			if _, err := SanitizeTree(source, destination); err == nil {
+				t.Fatal("forbidden non-Output event identifier was accepted")
+			}
+			if _, err := os.Stat(destination); !errors.Is(err, os.ErrNotExist) {
+				t.Fatalf("refused event published a destination: %v", err)
+			}
+		})
 	}
 }

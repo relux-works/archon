@@ -1,3 +1,4 @@
+// Package main provides the command-line entry point for sanitizing CI evidence.
 package main
 
 import (

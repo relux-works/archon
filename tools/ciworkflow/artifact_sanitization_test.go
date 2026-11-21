@@ -3,6 +3,7 @@ package ciworkflow
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -79,6 +80,39 @@ func TestCIArtifactUploadsUseSanitizedCopies(t *testing.T) {
 				t.Fatal("unsanitized upload survived the control")
 			}
 		})
+	}
+}
+
+func TestAllWorkflowArtifactUploadsUseSanitizedCopies(t *testing.T) {
+	workflowDir := "../../.github/workflows"
+	workflows, err := os.ReadDir(workflowDir)
+	if err != nil {
+		t.Fatal("read workflow directory:", err)
+	}
+	checked := 0
+	for _, workflow := range workflows {
+		if workflow.IsDir() {
+			continue
+		}
+		extension := strings.ToLower(filepath.Ext(workflow.Name()))
+		if extension != ".yml" && extension != ".yaml" {
+			continue
+		}
+		path := filepath.Join(workflowDir, workflow.Name())
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("read workflow %s: %v", path, err)
+		}
+		if !strings.Contains(string(data), "actions/upload-artifact@v4") {
+			continue
+		}
+		checked++
+		if err := checkSanitizedArtifactUploads(data); err != nil {
+			t.Errorf("%s: %v", path, err)
+		}
+	}
+	if checked == 0 {
+		t.Fatal("no workflow artifact uploads were checked")
 	}
 }
 
