@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -19,6 +20,18 @@ type failingCloseEvidenceInput struct {
 func (f *failingCloseEvidenceInput) Stat() (os.FileInfo, error) { return f.info, nil }
 
 func (f *failingCloseEvidenceInput) Close() error { return f.closeErr }
+
+func testAccountHomePrefix(t *testing.T) string {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		const homePrefix = `C:\fixture-account`
+		t.Setenv("USERPROFILE", homePrefix)
+		return homePrefix
+	}
+	const homePrefix = "/home/fixture-account"
+	t.Setenv("HOME", homePrefix)
+	return homePrefix
+}
 
 func TestSanitizeJSONPreservesGoEventContract(t *testing.T) {
 	hostPath := strings.Join([]string{"/", "home", "runner", "checkout", "internal", "fixture.go"}, "")
@@ -161,6 +174,99 @@ func TestSanitizeGoTestStreamRedactsEscapedPath(t *testing.T) {
 	}
 }
 
+func TestSanitizeGoTestStreamRedactsAccountHomePrefixAtAnyPosition(t *testing.T) {
+	homePrefix := testAccountHomePrefix(t)
+	separator := string(os.PathSeparator)
+
+	tests := []struct {
+		name    string
+		output  string
+		witness string
+	}{
+		{
+			name:    "after-home-label-colon",
+			output:  "entry={Adapter:codex_cli Home:" + homePrefix + separator + "tmp" + separator + "curator-2" + separator + "TestNativeHome}",
+			witness: "Home:",
+		},
+		{
+			name:    "embedded-after-path-segment",
+			output:  "target project-lease/" + homePrefix + separator + "tmp" + separator + "curator-1" + separator + "TestOwnershipRecovery",
+			witness: "project-lease/",
+		},
+		{
+			name:    "tmpdir-path-after-letter",
+			output:  "TMPDIR" + homePrefix + separator + "tmp" + separator + "curator-3" + separator + "TestTemporaryDir",
+			witness: "TMPDIR",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			input, err := json.Marshal(struct {
+				Action  string
+				Package string
+				Output  string
+			}{Action: "output", Package: "example/pkg", Output: test.output})
+			if err != nil {
+				t.Fatal("encode event fixture")
+			}
+			clean, found, err := sanitizeGoTestStream(append(input, '\n'))
+			if err != nil {
+				t.Fatal("sanitize event fixture")
+			}
+			if !json.Valid(clean) {
+				t.Fatal("sanitized event is not valid JSON")
+			}
+			var got struct {
+				Action  string
+				Package string
+				Output  string
+			}
+			if err := json.Unmarshal(bytes.TrimSpace(clean), &got); err != nil {
+				t.Fatal("decode sanitized event")
+			}
+			if got.Action != "output" || got.Package != "example/pkg" {
+				t.Fatal("sanitization changed Go test event metadata")
+			}
+			if strings.Contains(got.Output, homePrefix) {
+				t.Fatal("account-home prefix survived in Go test Output")
+			}
+			if !strings.Contains(got.Output, test.witness) {
+				t.Fatal("safe output witness was removed")
+			}
+			if found.paths+found.assignments == 0 {
+				t.Fatal("account-home redaction was not counted")
+			}
+		})
+	}
+}
+
+func TestSanitizeGoTestStreamRedactsAccountHomePrefixAfterEquals(t *testing.T) {
+	homePrefix := testAccountHomePrefix(t)
+	separator := string(os.PathSeparator)
+	input, err := json.Marshal(struct {
+		Action  string
+		Package string
+		Output  string
+	}{Action: "output", Package: "example/pkg", Output: "TMPDIR=" + homePrefix + separator + "tmp" + separator + "curator-4" + separator + "TestTemporaryDir"})
+	if err != nil {
+		t.Fatal("encode event fixture")
+	}
+	clean, found, err := sanitizeGoTestStream(append(input, '\n'))
+	if err != nil {
+		t.Fatal("sanitize event fixture")
+	}
+	var got struct{ Output string }
+	if err := json.Unmarshal(bytes.TrimSpace(clean), &got); err != nil {
+		t.Fatal("decode sanitized event")
+	}
+	if strings.Contains(got.Output, homePrefix) {
+		t.Fatal("account-home prefix survived after equals")
+	}
+	if !strings.Contains(got.Output, "TMPDIR=") || found.paths+found.assignments == 0 {
+		t.Fatal("safe assignment witness was lost or redaction was not counted")
+	}
+}
+
 func TestSanitizePlainTextAndUnparsedLines(t *testing.T) {
 	hostPath := strings.Join([]string{"D:", `\`, "a", `\`, "checkout", `\`, "src", `\`, "item.go"}, "")
 	input := []byte("not-json " + hostPath + " host=worker.internal.invalid API_TOKEN=fixture-secret PID=123\n")
@@ -179,13 +285,14 @@ func TestSanitizePlainTextAndUnparsedLines(t *testing.T) {
 }
 
 func TestSanitizeTreeKeepsSourceAndRejectsExistingDestination(t *testing.T) {
+	homePrefix := testAccountHomePrefix(t)
 	root := t.TempDir()
 	source := filepath.Join(root, "source")
 	destination := filepath.Join(root, "sanitized")
 	if err := os.Mkdir(source, 0o755); err != nil {
 		t.Fatal("create source:", err)
 	}
-	fixturePath := "/" + strings.Join([]string{"home", "runner", "private.txt"}, "/")
+	fixturePath := homePrefix + "/private.txt"
 	original := []byte(`{"Output":"` + fixturePath + ` token=fixture-secret","Action":"output"}` + "\n")
 	if err := os.WriteFile(filepath.Join(source, "go-test.json"), original, 0o600); err != nil {
 		t.Fatal("write source:", err)
@@ -194,7 +301,7 @@ func TestSanitizeTreeKeepsSourceAndRejectsExistingDestination(t *testing.T) {
 	if err != nil {
 		t.Fatal("sanitize tree:", err)
 	}
-	if counts.Files != 1 || counts.Paths == 0 || counts.Credentials == 0 {
+	if counts.Files != 1 || counts.Paths == 0 || counts.Credentials == 0 || counts.AccountHomePrefixResiduals != 0 {
 		t.Fatalf("unexpected sanitizer totals: %+v", counts)
 	}
 	gotSource, err := os.ReadFile(filepath.Join(source, "go-test.json"))
@@ -211,8 +318,61 @@ func TestSanitizeTreeKeepsSourceAndRejectsExistingDestination(t *testing.T) {
 	if strings.Contains(string(gotClean), fixturePath) || strings.Contains(string(gotClean), "fixture-secret") {
 		t.Fatal("sanitized destination retained a forbidden value")
 	}
+	if !json.Valid(bytes.TrimSpace(gotClean)) {
+		t.Fatal("sanitized destination is not valid JSON")
+	}
 	if _, err := SanitizeTree(source, destination); err == nil {
 		t.Fatal("existing destination was accepted")
+	}
+}
+
+func TestSanitizeTreeFailsClosedWithoutUsableAccountHomePrefix(t *testing.T) {
+	homeVariable := "HOME"
+	if runtime.GOOS == "windows" {
+		homeVariable = "USERPROFILE"
+	}
+	rootHome := filepath.VolumeName(os.TempDir()) + string(os.PathSeparator)
+	tests := []struct {
+		name string
+		home string
+	}{
+		{name: "relative", home: "relative-fixture-home"},
+		{name: "filesystem-root", home: rootHome},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Setenv(homeVariable, test.home)
+			root := t.TempDir()
+			source := filepath.Join(root, "source")
+			destination := filepath.Join(root, "sanitized")
+			if err := os.Mkdir(source, 0o755); err != nil {
+				t.Fatal("create evidence source")
+			}
+			if _, err := SanitizeTree(source, destination); err == nil {
+				t.Fatal("sanitizer accepted an unusable account-home prefix")
+			}
+			if _, err := os.Lstat(destination); !errors.Is(err, os.ErrNotExist) {
+				t.Fatal("sanitizer published evidence without a usable account-home prefix")
+			}
+		})
+	}
+}
+
+func TestVerifyNoAccountHomePrefixFailsClosed(t *testing.T) {
+	const homePrefix = "/home/fixture-account"
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "safe.txt"), []byte("safe witness"), 0o600); err != nil {
+		t.Fatal("write safe evidence fixture")
+	}
+	if err := os.WriteFile(filepath.Join(root, "evidence.json"), []byte(`{"Output":"`+homePrefix+`/tmp/fixture"}`), 0o600); err != nil {
+		t.Fatal("write leaking evidence fixture")
+	}
+	residuals, err := verifyNoAccountHomePrefixInTree(root, homePrefix)
+	if err == nil {
+		t.Fatal("residual account-home prefix was accepted")
+	}
+	if residuals != 1 {
+		t.Fatalf("account-home residual count = %d, want 1", residuals)
 	}
 }
 

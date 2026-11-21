@@ -17,14 +17,15 @@ import (
 
 // Counts contains only aggregate redaction totals. It never includes source text.
 type Counts struct {
-	Files       int `json:"files"`
-	Redactions  int `json:"redactions"`
-	Paths       int `json:"paths"`
-	Assignments int `json:"assignments"`
-	Hostnames   int `json:"hostnames"`
-	IPAddresses int `json:"ip_addresses"`
-	Credentials int `json:"credentials"`
-	BinaryFiles int `json:"binary_files"`
+	Files                      int `json:"files"`
+	Redactions                 int `json:"redactions"`
+	Paths                      int `json:"paths"`
+	Assignments                int `json:"assignments"`
+	Hostnames                  int `json:"hostnames"`
+	IPAddresses                int `json:"ip_addresses"`
+	Credentials                int `json:"credentials"`
+	BinaryFiles                int `json:"binary_files"`
+	AccountHomePrefixResiduals int `json:"account_home_prefix_residuals"`
 }
 
 type counts struct {
@@ -87,6 +88,10 @@ func openEvidenceInput(root *os.Root, relative string) (evidenceInput, error) {
 }
 
 func sanitizeTree(src, dst string, removeStage func(string) error, openInput evidenceInputOpener) (total Counts, err error) {
+	homePrefix := accountHomePrefix()
+	if homePrefix == "" {
+		return total, errors.New("resolve account home prefix")
+	}
 	source, err := filepath.Abs(src)
 	if err != nil {
 		return total, errors.New("resolve evidence source")
@@ -121,6 +126,11 @@ func sanitizeTree(src, dst string, removeStage func(string) error, openInput evi
 
 	info, err := os.Lstat(source)
 	if errors.Is(err, os.ErrNotExist) {
+		residuals, err := verifyNoAccountHomePrefixInTree(stage, homePrefix)
+		total.AccountHomePrefixResiduals = residuals
+		if err != nil {
+			return total, err
+		}
 		if err := os.Rename(stage, destination); err != nil {
 			return total, errors.New("publish empty evidence copy")
 		}
@@ -165,7 +175,7 @@ func sanitizeTree(src, dst string, removeStage func(string) error, openInput evi
 			}
 			return nil
 		}
-		if err := copyEvidenceFile(sourceRoot, rel, target, &total, openInput); err != nil {
+		if err := copyEvidenceFile(sourceRoot, rel, target, &total, openInput, homePrefix); err != nil {
 			return err
 		}
 		return nil
@@ -178,11 +188,47 @@ func sanitizeTree(src, dst string, removeStage func(string) error, openInput evi
 		return total, errEvidenceRootClose
 	}
 	sourceRootOpen = false
+	residuals, err := verifyNoAccountHomePrefixInTree(stage, homePrefix)
+	total.AccountHomePrefixResiduals = residuals
+	if err != nil {
+		return total, err
+	}
 	if err := os.Rename(stage, destination); err != nil {
 		return total, errors.New("publish sanitized evidence copy")
 	}
 	stageOwned = false
 	return total, nil
+}
+
+func verifyNoAccountHomePrefixInTree(root, homePrefix string) (int, error) {
+	if homePrefix == "" {
+		return 0, errors.New("resolve account home prefix")
+	}
+	residuals := 0
+	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return errors.New("scan sanitized evidence tree")
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		if !entry.Type().IsRegular() {
+			return errors.New("sanitized evidence contains an unsupported entry")
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return errors.New("read sanitized evidence file")
+		}
+		residuals += bytes.Count(data, []byte(homePrefix))
+		return nil
+	})
+	if err != nil {
+		return residuals, err
+	}
+	if residuals != 0 {
+		return residuals, errors.New("sanitized evidence retains account home prefix")
+	}
+	return residuals, nil
 }
 
 func overlaps(a, b string) bool {
@@ -194,7 +240,7 @@ func overlaps(a, b string) bool {
 	return err == nil && (rel == "." || (rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))))
 }
 
-func copyEvidenceFile(root *os.Root, source, destination string, total *Counts, openInput evidenceInputOpener) (err error) {
+func copyEvidenceFile(root *os.Root, source, destination string, total *Counts, openInput evidenceInputOpener, homePrefix string) (err error) {
 	in, err := openInput(root, source)
 	if err != nil {
 		return errors.New("open evidence file")
@@ -215,7 +261,7 @@ func copyEvidenceFile(root *os.Root, source, destination string, total *Counts, 
 	if !utf8.Valid(data) || bytes.IndexByte(data, 0) >= 0 {
 		return errors.New("evidence tree contains binary content")
 	}
-	clean, redactions, err := sanitizeContent(data, isGoTestEventStream(source))
+	clean, redactions, err := sanitizeContentWithHomePrefix(data, isGoTestEventStream(source), homePrefix)
 	if err != nil {
 		return err
 	}
@@ -257,8 +303,12 @@ func sanitizeGoTestStream(data []byte) ([]byte, counts, error) {
 }
 
 func sanitizeContent(data []byte, preserveEventFields bool) ([]byte, counts, error) {
+	return sanitizeContentWithHomePrefix(data, preserveEventFields, accountHomePrefix())
+}
+
+func sanitizeContentWithHomePrefix(data []byte, preserveEventFields bool, homePrefix string) ([]byte, counts, error) {
 	if json.Valid(data) {
-		return sanitizeJSONStrings(data, preserveEventFields)
+		return sanitizeJSONStrings(data, preserveEventFields, homePrefix)
 	}
 	var out bytes.Buffer
 	var pending bytes.Buffer
@@ -267,7 +317,7 @@ func sanitizeContent(data []byte, preserveEventFields bool) ([]byte, counts, err
 		if pending.Len() == 0 {
 			return
 		}
-		clean, found := sanitizeText(pending.String())
+		clean, found := sanitizeTextWithHomePrefix(pending.String(), homePrefix)
 		out.WriteString(clean)
 		addCounts(&total, found)
 		pending.Reset()
@@ -283,7 +333,7 @@ func sanitizeContent(data []byte, preserveEventFields bool) ([]byte, counts, err
 			}
 			if json.Valid(payload) {
 				flushText()
-				clean, found, scanErr := sanitizeJSONStrings(payload, preserveEventFields)
+				clean, found, scanErr := sanitizeJSONStrings(payload, preserveEventFields, homePrefix)
 				if scanErr != nil {
 					return nil, total, scanErr
 				}
@@ -306,7 +356,7 @@ func sanitizeContent(data []byte, preserveEventFields bool) ([]byte, counts, err
 	return out.Bytes(), total, nil
 }
 
-func sanitizeJSONStrings(data []byte, preserveEventFields bool) ([]byte, counts, error) {
+func sanitizeJSONStrings(data []byte, preserveEventFields bool, homePrefix string) ([]byte, counts, error) {
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.UseNumber()
 	first, err := decoder.Token()
@@ -315,7 +365,7 @@ func sanitizeJSONStrings(data []byte, preserveEventFields bool) ([]byte, counts,
 	}
 	var changes []jsonChange
 	var total counts
-	if err := walkJSONValue(decoder, data, first, 0, "", preserveEventFields, &changes, &total); err != nil {
+	if err := walkJSONValue(decoder, data, first, 0, "", preserveEventFields, homePrefix, &changes, &total); err != nil {
 		return nil, total, err
 	}
 	if _, err := decoder.Token(); !errors.Is(err, io.EOF) {
@@ -340,7 +390,7 @@ type jsonChange struct {
 	raw        []byte
 }
 
-func walkJSONValue(decoder *json.Decoder, data []byte, token json.Token, before int64, key string, preserveEventFields bool, changes *[]jsonChange, total *counts) error {
+func walkJSONValue(decoder *json.Decoder, data []byte, token json.Token, before int64, key string, preserveEventFields bool, homePrefix string, changes *[]jsonChange, total *counts) error {
 	switch value := token.(type) {
 	case json.Delim:
 		switch value {
@@ -378,7 +428,7 @@ func walkJSONValue(decoder *json.Decoder, data []byte, token json.Token, before 
 					total.credentials++
 					continue
 				}
-				if err := walkJSONValue(decoder, data, child, valueBefore, field, preserveEventFields, changes, total); err != nil {
+				if err := walkJSONValue(decoder, data, child, valueBefore, field, preserveEventFields, homePrefix, changes, total); err != nil {
 					return err
 				}
 			}
@@ -392,7 +442,7 @@ func walkJSONValue(decoder *json.Decoder, data []byte, token json.Token, before 
 				if err != nil {
 					return errors.New("parse evidence JSON array")
 				}
-				if err := walkJSONValue(decoder, data, child, valueBefore, key, preserveEventFields, changes, total); err != nil {
+				if err := walkJSONValue(decoder, data, child, valueBefore, key, preserveEventFields, homePrefix, changes, total); err != nil {
 					return err
 				}
 			}
@@ -402,7 +452,7 @@ func walkJSONValue(decoder *json.Decoder, data []byte, token json.Token, before 
 		}
 	case string:
 		if preserveEventFields && key != "Output" {
-			if hasForbiddenEventIdentifier(key, value) {
+			if hasForbiddenEventIdentifier(key, value, homePrefix) {
 				if key != "Test" {
 					return errors.New("test event metadata contains a forbidden identifier")
 				}
@@ -411,7 +461,7 @@ func walkJSONValue(decoder *json.Decoder, data []byte, token json.Token, before 
 				// normalize only the unsafe suffix. Unsafe parents and other fields
 				// still refuse publication.
 				parent, _, ok := strings.Cut(value, "/")
-				if !ok || parent == "" || hasForbiddenEventIdentifier(key, parent) {
+				if !ok || parent == "" || hasForbiddenEventIdentifier(key, parent, homePrefix) {
 					return errors.New("test event metadata contains a forbidden identifier")
 				}
 				start, end, err := jsonStringSpan(data, before)
@@ -423,7 +473,7 @@ func walkJSONValue(decoder *json.Decoder, data []byte, token json.Token, before 
 					return errors.New("encode normalized test metadata")
 				}
 				*changes = append(*changes, jsonChange{start: start, end: end, raw: replacement})
-				_, found := sanitizeText(value)
+				_, found := sanitizeTextWithHomePrefix(value, homePrefix)
 				addCounts(total, found)
 			}
 			return nil
@@ -432,7 +482,7 @@ func walkJSONValue(decoder *json.Decoder, data []byte, token json.Token, before 
 		if err != nil {
 			return err
 		}
-		clean, found := sanitizeText(value)
+		clean, found := sanitizeTextWithHomePrefix(value, homePrefix)
 		if clean == value {
 			return nil
 		}
@@ -518,7 +568,7 @@ func skipJSONValue(decoder *json.Decoder, token json.Token) error {
 	return nil
 }
 
-func hasForbiddenEventIdentifier(key, value string) bool {
+func hasForbiddenEventIdentifier(key, value, homePrefix string) bool {
 	if sensitiveKeyRE.MatchString(key) {
 		return true
 	}
@@ -530,12 +580,20 @@ func hasForbiddenEventIdentifier(key, value string) bool {
 			value = strings.TrimPrefix(value, curatorModulePath+"/")
 		}
 	}
-	_, found := sanitizeText(value)
+	_, found := sanitizeTextWithHomePrefix(value, homePrefix)
 	return found != (counts{})
 }
 
 func sanitizeText(text string) (string, counts) {
+	return sanitizeTextWithHomePrefix(text, accountHomePrefix())
+}
+
+func sanitizeTextWithHomePrefix(text, homePrefix string) (string, counts) {
 	var found counts
+	if homePrefix != "" {
+		found.paths += strings.Count(text, homePrefix)
+		text = strings.ReplaceAll(text, homePrefix, redactedPath)
+	}
 	text = replaceMatches(text, pemRE, redactedCredential, &found.credentials)
 	text = replaceMatches(text, sshKeyRE, redactedCredential, &found.credentials)
 	text = replaceMatches(text, bearerRE, redactedCredential, &found.credentials)
@@ -596,6 +654,18 @@ func sanitizeText(text string) (string, counts) {
 		return parts[1] + redactedPath
 	})
 	return text, found
+}
+
+func accountHomePrefix() string {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" || !filepath.IsAbs(home) {
+		return ""
+	}
+	home = filepath.Clean(home)
+	if filepath.Dir(home) == home {
+		return ""
+	}
+	return home
 }
 
 func isFileLikeName(value string) bool {
