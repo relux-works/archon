@@ -763,15 +763,22 @@ jobs:
       - name: Harness contract and parity gates
         if: always()
         shell: bash
-        env:
-          HARNESS_PREDECESSOR_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
         run: |
           predecessor_status=0
           boundary_status=0
           parity_status=0
-          go run ./internal/harnessboundary/cmd/harnessgate --ci --bootstrap-source 643e727edd2db21307ca6d8c0332935e33d50ac8 --bootstrap-frozen-digest d400920c0956af1ad90b9e964828c6c9dea2fbe8786b3064d133d825e945f0e9 || predecessor_status=$?
+          predecessor_sha=""
+          case "${GITHUB_EVENT_NAME:-}" in
+            pull_request)
+              predecessor_sha="$(jq -r '.pull_request.base.sha // empty' "$GITHUB_EVENT_PATH" 2>/dev/null)" || predecessor_sha=""
+              ;;
+            push)
+              predecessor_sha="$(jq -r '.before // empty' "$GITHUB_EVENT_PATH" 2>/dev/null)" || predecessor_sha=""
+              ;;
+          esac
+          HARNESS_PREDECESSOR_SHA="$predecessor_sha" go run ./internal/harnessboundary/cmd/harnessgate --ci --bootstrap-source 643e727edd2db21307ca6d8c0332935e33d50ac8 --bootstrap-frozen-digest d400920c0956af1ad90b9e964828c6c9dea2fbe8786b3064d133d825e945f0e9 || predecessor_status=$?
           go test -count=1 ./internal/harnessboundary ./internal/harnessprobe -run '^(TestNoHarnessBranches|TestAdapterEffectBoundary|TestAdapterSurfaceOwnership|TestAPIVersionRefusal|TestRegisteredProbePolicies|TestProbeEnvironmentPassThrough|TestProbeSpecRefusal)$' || boundary_status=$?
-          GOFLAGS="${GOFLAGS:+$GOFLAGS }-tags=harness_parity" go test -count=1 ./internal/harnessparity -run '^(TestHomeByteIdentity|TestHomeByteIdentityMutationControl|TestAllAdaptersHaveBaselineCases)$' || parity_status=$?
+          GOFLAGS="${GOFLAGS:+$GOFLAGS }-tags=harness_parity" go test -count=1 ./internal/harnessparity -run '^(TestHomeByteIdentity.*|TestAllAdaptersHaveBaselineCases)$' || parity_status=$?
           if [ "$predecessor_status" -ne 0 ]; then exit "$predecessor_status"; fi
           test "$boundary_status" -eq 0 && test "$parity_status" -eq 0
 
