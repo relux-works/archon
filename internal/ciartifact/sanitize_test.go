@@ -284,6 +284,145 @@ func TestSanitizePlainTextAndUnparsedLines(t *testing.T) {
 	}
 }
 
+func TestSanitizeWindowsHomePrefixFormsAcrossPlatforms(t *testing.T) {
+	const homePrefix = `C:\fixture-account`
+	tests := []struct {
+		name string
+		path string
+	}{
+		{name: "backslash", path: `C:\fixture-account\private.txt`},
+		{name: "forward-slash", path: "C:/fixture-account/private.txt"},
+		{name: "case-varied", path: `c:\FIXTURE-ACCOUNT\private.txt`},
+		{name: "short-name-path", path: `C:\FIXTUR~1\private.txt`},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			clean, found := sanitizeTextWithHomePrefix(test.path+" tail=visible", homePrefix)
+			if found.paths == 0 || !strings.Contains(clean, redactedPath) {
+				t.Fatal("Windows account-home path was not redacted")
+			}
+			if accountHomePrefixResidualCount([]byte(clean), homePrefix) != 0 {
+				t.Fatal("Windows account-home path survived sanitization")
+			}
+			if !strings.Contains(clean, "tail=visible") {
+				t.Fatal("safe text after the path was removed")
+			}
+		})
+	}
+
+	input := []byte(`{"Output":"C:\\fixture-account\\private.txt tail=visible","Action":"output"}`)
+	clean, found, err := sanitizeJSONStrings(input, true, homePrefix)
+	if err != nil {
+		t.Fatal("sanitize JSON-escaped Windows path:", err)
+	}
+	if !json.Valid(clean) {
+		t.Fatal("sanitized Windows event is not valid JSON")
+	}
+	var got struct {
+		Output string
+		Action string
+	}
+	if err := json.Unmarshal(clean, &got); err != nil {
+		t.Fatal("decode sanitized Windows event:", err)
+	}
+	if got.Action != "output" || !strings.Contains(got.Output, redactedPath) || !strings.Contains(got.Output, "tail=visible") {
+		t.Fatal("sanitization changed safe Windows event content")
+	}
+	if found.paths == 0 || accountHomePrefixResidualCount(clean, homePrefix) != 0 {
+		t.Fatal("JSON-escaped Windows account-home path survived sanitization")
+	}
+}
+
+func TestVerifyNoAccountHomePrefixRecognizesWindowsForms(t *testing.T) {
+	const homePrefix = `C:\fixture-account`
+	leaks := []struct {
+		name string
+		data []byte
+	}{
+		{name: "backslash", data: []byte(`C:\fixture-account\private.txt`)},
+		{name: "forward-slash", data: []byte("C:/fixture-account/private.txt")},
+		{name: "case-varied", data: []byte(`c:\FIXTURE-ACCOUNT\private.txt`)},
+		{name: "JSON-escaped", data: []byte(`{"Output":"C:\\fixture-account\\private.txt"}`)},
+	}
+	for _, leak := range leaks {
+		leak := leak
+		t.Run(leak.name, func(t *testing.T) {
+			root := t.TempDir()
+			if err := os.WriteFile(filepath.Join(root, "evidence.txt"), leak.data, 0o600); err != nil {
+				t.Fatal("write leak fixture:", err)
+			}
+			residuals, err := verifyNoAccountHomePrefixInTree(root, homePrefix)
+			if err == nil || residuals != 1 {
+				t.Fatalf("Windows residual check = (%d, %v), want one residual and refusal", residuals, err)
+			}
+		})
+	}
+
+	t.Run("safe-control", func(t *testing.T) {
+		root := t.TempDir()
+		if err := os.WriteFile(filepath.Join(root, "evidence.txt"), []byte("safe witness"), 0o600); err != nil {
+			t.Fatal("write safe fixture:", err)
+		}
+		residuals, err := verifyNoAccountHomePrefixInTree(root, homePrefix)
+		if err != nil || residuals != 0 {
+			t.Fatalf("safe Windows residual check = (%d, %v), want zero and acceptance", residuals, err)
+		}
+	})
+}
+
+func TestSanitizeWindowsUNCAccountHomePrefixFormsAcrossPlatforms(t *testing.T) {
+	const homePrefix = `\\server\share\fixture-account`
+	tests := []struct {
+		name string
+		path string
+	}{
+		{name: "backslash", path: `\\server\share\fixture-account\private.txt`},
+		{name: "forward-slash", path: "//server/share/fixture-account/private.txt"},
+		{name: "case-varied", path: `\\SERVER\SHARE\FIXTURE-ACCOUNT\private.txt`},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			clean, found := sanitizeTextWithHomePrefix(test.path+" tail=visible", homePrefix)
+			if found.paths == 0 || !strings.Contains(clean, redactedPath) {
+				t.Fatal("Windows UNC account-home path was not redacted")
+			}
+			if accountHomePrefixResidualCount([]byte(clean), homePrefix) != 0 {
+				t.Fatal("Windows UNC account-home path survived sanitization")
+			}
+			if !strings.Contains(clean, "tail=visible") {
+				t.Fatal("safe text after the UNC path was removed")
+			}
+		})
+	}
+}
+
+func TestVerifyNoAccountHomePrefixRecognizesWindowsUNCForms(t *testing.T) {
+	const homePrefix = `\\server\share\fixture-account`
+	leaks := []struct {
+		name string
+		data []byte
+	}{
+		{name: "backslash", data: []byte(`\\server\share\fixture-account\private.txt`)},
+		{name: "forward-slash", data: []byte("//server/share/fixture-account/private.txt")},
+		{name: "case-varied", data: []byte(`\\SERVER\SHARE\FIXTURE-ACCOUNT\private.txt`)},
+	}
+	for _, leak := range leaks {
+		leak := leak
+		t.Run(leak.name, func(t *testing.T) {
+			root := t.TempDir()
+			if err := os.WriteFile(filepath.Join(root, "evidence.txt"), leak.data, 0o600); err != nil {
+				t.Fatal("write UNC leak fixture:", err)
+			}
+			residuals, err := verifyNoAccountHomePrefixInTree(root, homePrefix)
+			if err == nil || residuals != 1 {
+				t.Fatalf("Windows UNC residual check = (%d, %v), want one residual and refusal", residuals, err)
+			}
+		})
+	}
+}
+
 func TestSanitizeTreeKeepsSourceAndRejectsExistingDestination(t *testing.T) {
 	homePrefix := testAccountHomePrefix(t)
 	root := t.TempDir()
@@ -292,8 +431,15 @@ func TestSanitizeTreeKeepsSourceAndRejectsExistingDestination(t *testing.T) {
 	if err := os.Mkdir(source, 0o755); err != nil {
 		t.Fatal("create source:", err)
 	}
-	fixturePath := homePrefix + "/private.txt"
-	original := []byte(`{"Output":"` + fixturePath + ` token=fixture-secret","Action":"output"}` + "\n")
+	fixturePath := filepath.Join(homePrefix, "private.txt")
+	original, err := json.Marshal(struct {
+		Output string
+		Action string
+	}{Output: fixturePath + " token=fixture-secret", Action: "output"})
+	if err != nil {
+		t.Fatal("encode source fixture:", err)
+	}
+	original = append(original, byte(10))
 	if err := os.WriteFile(filepath.Join(source, "go-test.json"), original, 0o600); err != nil {
 		t.Fatal("write source:", err)
 	}

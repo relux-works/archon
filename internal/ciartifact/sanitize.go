@@ -33,7 +33,8 @@ type counts struct {
 }
 
 var (
-	windowsPathRE    = regexp.MustCompile(`(?i)(^|[^a-z0-9])([a-z]:\\[^\s"'<>;,]+)`)
+	windowsPathRE    = regexp.MustCompile(`(?i)(^|[^a-z0-9])([a-z]:[\\/][^\s"'<>;,]+|[\\/]{2}[^\s"'<>;,]+)`)
+	windowsSepRE     = regexp.MustCompile(`[\\/]+`)
 	fileURLPathRE    = regexp.MustCompile(`(?i)(file:///{1,3})([a-z]:)?(/[^\s"'<>;,]+)`)
 	unixPathRE       = regexp.MustCompile(`(^|[^a-zA-Z0-9_:/])(/[^\s"'<>;,]+)`)
 	envRE            = regexp.MustCompile(`\b([A-Z][A-Z0-9_]{1,63})=([^\s,;"']+)`)
@@ -228,7 +229,7 @@ func verifyNoAccountHomePrefixInTree(root, homePrefix string) (int, error) {
 		if err != nil {
 			return errors.New("read sanitized evidence file")
 		}
-		residuals += bytes.Count(data, []byte(homePrefix))
+		residuals += accountHomePrefixResidualCount(data, homePrefix)
 		return nil
 	})
 	closeErr := rootFS.Close()
@@ -699,6 +700,41 @@ func accountHomePrefix() string {
 		return ""
 	}
 	return home
+}
+
+func accountHomePrefixResidualCount(data []byte, homePrefix string) int {
+	if isWindowsAbsolutePath(homePrefix) {
+		prefix := normalizeWindowsPath(homePrefix)
+		if prefix == "" {
+			return 0
+		}
+		return strings.Count(normalizeWindowsPath(string(data)), prefix)
+	}
+	return bytes.Count(data, []byte(homePrefix))
+}
+
+func isWindowsAbsolutePath(path string) bool {
+	if isWindowsDrivePath(path) {
+		return true
+	}
+	return len(path) >= 3 &&
+		isWindowsPathSeparator(path[0]) &&
+		isWindowsPathSeparator(path[1]) &&
+		!isWindowsPathSeparator(path[2])
+}
+
+func isWindowsDrivePath(path string) bool {
+	return len(path) >= 3 &&
+		((path[0] >= 'a' && path[0] <= 'z') || (path[0] >= 'A' && path[0] <= 'Z')) &&
+		path[1] == ':' && isWindowsPathSeparator(path[2])
+}
+
+func isWindowsPathSeparator(value byte) bool {
+	return value == '\\' || value == '/'
+}
+
+func normalizeWindowsPath(path string) string {
+	return windowsSepRE.ReplaceAllString(strings.ToLower(path), "/")
 }
 
 func isFileLikeName(value string) bool {
