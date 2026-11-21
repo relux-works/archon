@@ -1,0 +1,311 @@
+{
+  "source_head": "643e727edd2db21307ca6d8c0332935e33d50ac8",
+  "state": "PR0 staged interface; native implementations remain unchanged until individual migrations",
+  "inventory_rows": [
+    "managed-catalog",
+    "skill-catalog",
+    "switch-catalog",
+    "home-materialization",
+    "seed-credentials-trust",
+    "native-home-mcp",
+    "shared-context-rendering",
+    "mcp-inspection",
+    "configuration",
+    "installation",
+    "project-delivery",
+    "other-boundaries",
+    "skill-consumers-notices"
+  ],
+  "owners": [
+    {
+      "name": "registry",
+      "inventory": [
+        "managed-catalog",
+        "configuration"
+      ],
+      "sources": [
+        "internal/envregistry/envregistry.go",
+        "internal/config/config.go"
+      ],
+      "methods": [
+        "ID",
+        "APIVersion",
+        "Capabilities",
+        "Home",
+        "ReleaseProbe",
+        "ParseReleaseProbe"
+      ],
+      "shared_owner": "harnessregistry canonical IDs, aliases, default and compile-time registration; generic host-target selection"
+    },
+    {
+      "name": "skills",
+      "inventory": [
+        "skill-catalog",
+        "skill-consumers-notices"
+      ],
+      "sources": [
+        "internal/adapters/adapters.go",
+        "internal/adapters/stage.go",
+        "internal/adapters/boundaries.go"
+      ],
+      "methods": [
+        "Skills"
+      ],
+      "shared_owner": "ledger, collision checks, path validation and copy transaction"
+    },
+    {
+      "name": "home-instructions",
+      "inventory": [
+        "switch-catalog",
+        "home-materialization",
+        "shared-context-rendering"
+      ],
+      "sources": [
+        "internal/envprofile/switch.go",
+        "internal/envprofile/managed.go",
+        "internal/envprofile/native_home.go",
+        "internal/envprofile/repair_native_home.go",
+        "internal/contextmaterialize/referenced.go"
+      ],
+      "methods": [
+        "Home",
+        "Instructions",
+        "Settings",
+        "PlanSeed"
+      ],
+      "shared_owner": "bounded observation collection, ownership admission and transaction application"
+    },
+    {
+      "name": "settings",
+      "inventory": [
+        "configuration",
+        "seed-credentials-trust"
+      ],
+      "sources": [
+        "internal/config/environments.go",
+        "internal/envprofile/claude_settings.go",
+        "internal/envprofile/claude_readonly_settings.go",
+        "internal/envprofile/managed.go"
+      ],
+      "methods": [
+        "Settings",
+        "Instructions",
+        "Home",
+        "Capabilities"
+      ],
+      "shared_owner": "generic parsing/serialization dispatching typed capabilities"
+    },
+    {
+      "name": "seed-observations",
+      "inventory": [
+        "seed-credentials-trust"
+      ],
+      "sources": [
+        "internal/envprofile/credential_policy.go",
+        "internal/envprofile/credential_diagnostics.go",
+        "internal/envprofile/muse.go",
+        "internal/envprofile/managed.go",
+        "internal/envprofile/migrate.go",
+        "internal/envprofile/status.go"
+      ],
+      "methods": [
+        "Credentials",
+        "Trust",
+        "Preflight",
+        "PlanSeed",
+        "Status",
+        "Drift"
+      ],
+      "shared_owner": "metadata-only credential observation; shared marker, hash, rollback and transaction engine"
+    },
+    {
+      "name": "native-mcp",
+      "inventory": [
+        "native-home-mcp",
+        "shared-context-rendering",
+        "mcp-inspection"
+      ],
+      "sources": [
+        "internal/envprofile/native_mcp.go",
+        "internal/envprofile/native_skills.go",
+        "internal/contextmaterialize/mcp.go",
+        "internal/mcpnative/native.go",
+        "internal/mcp/mcp.go"
+      ],
+      "methods": [
+        "MCP",
+        "Skills",
+        "Trust"
+      ],
+      "shared_owner": "approved nonsecret input reads, pure decoders and transaction writes"
+    },
+    {
+      "name": "skill-consumers",
+      "inventory": [
+        "installation",
+        "skill-consumers-notices"
+      ],
+      "sources": [
+        "internal/install/draftsources.go",
+        "internal/manifest/expand.go",
+        "internal/closure/resolve.go",
+        "internal/adapters/boundaries.go"
+      ],
+      "methods": [
+        "Skills"
+      ],
+      "shared_owner": "install ordering, manifest expansion, closure traversal, generic validation"
+    },
+    {
+      "name": "project-context",
+      "inventory": [
+        "project-delivery"
+      ],
+      "sources": [
+        "internal/projectcontext/types.go",
+        "internal/projectcontext/composition.go",
+        "internal/projectcontext/claude_adapter.go",
+        "internal/projectcontext/claude_native_project.go",
+        "internal/projectcontext/files.go",
+        "internal/projectadapter/codex.go",
+        "internal/projectadapter/muse.go",
+        "internal/projectadapter/materialize.go"
+      ],
+      "methods": [
+        "ProjectContext",
+        "Instructions"
+      ],
+      "shared_owner": "project selection, ownership, plan application and common file handling"
+    },
+    {
+      "name": "admission-leases",
+      "inventory": [
+        "other-boundaries"
+      ],
+      "sources": [
+        "internal/projectmcp/declaration.go",
+        "internal/projectlease/types.go"
+      ],
+      "methods": [
+        "MCP",
+        "Trust",
+        "Capabilities"
+      ],
+      "shared_owner": "generic declaration validation and finite lease accounting"
+    },
+    {
+      "name": "authority-probes-context",
+      "inventory": [
+        "other-boundaries"
+      ],
+      "sources": [
+        "internal/envauthority/authority.go",
+        "internal/testruntimes/runtimes.go",
+        "internal/contextpkg/contextpkg.go"
+      ],
+      "methods": [
+        "Credentials",
+        "ReleaseProbe",
+        "ParseReleaseProbe",
+        "ProjectContext"
+      ],
+      "shared_owner": "generic credential route authority; harnessprobe closed runner; typed protected-field encoder"
+    },
+    {
+      "name": "notices",
+      "inventory": [
+        "skill-consumers-notices"
+      ],
+      "sources": [
+        "internal/contextmaterialize/contextmaterialize.go",
+        "internal/envfiles/envfiles.go"
+      ],
+      "methods": [
+        "Instructions"
+      ],
+      "shared_owner": "envfiles universal product notice and byte-pinned helper header remain generic"
+    }
+  ],
+  "capability_methods": {
+    "ManagedHome": [
+      "Home",
+      "PlanSeed",
+      "Preflight",
+      "Status",
+      "Drift"
+    ],
+    "InstructionOutput": [
+      "Instructions"
+    ],
+    "SkillProjection": [
+      "Skills"
+    ],
+    "NativeSkillDiscovery": [
+      "Skills"
+    ],
+    "MCPInspection": [
+      "MCP"
+    ],
+    "NativeMCPWrite": [
+      "MCP",
+      "Preflight"
+    ],
+    "ProjectContextOutput": [
+      "ProjectContext"
+    ],
+    "HomeLease": [
+      "Capabilities"
+    ],
+    "CredentialMetadata": [
+      "Credentials"
+    ],
+    "TrustObservation": [
+      "Trust"
+    ],
+    "ReleaseProbing": [
+      "ReleaseProbe"
+    ]
+  },
+  "adapters": [
+    {
+      "id": "claude_code",
+      "owner": "internal/harness/claude_code",
+      "status": "staged"
+    },
+    {
+      "id": "codex_cli",
+      "owner": "internal/harness/codex_cli",
+      "status": "staged"
+    },
+    {
+      "id": "cursor",
+      "owner": "internal/harness/cursor",
+      "status": "staged"
+    },
+    {
+      "id": "gemini",
+      "owner": "internal/harness/gemini",
+      "status": "staged"
+    },
+    {
+      "id": "muse",
+      "owner": "internal/harness/muse",
+      "status": "staged"
+    },
+    {
+      "id": "opencode",
+      "owner": "internal/harness/opencode",
+      "status": "staged"
+    },
+    {
+      "id": "pi",
+      "owner": "internal/harness/pi",
+      "status": "staged"
+    },
+    {
+      "id": "windsurf",
+      "owner": "internal/harness/windsurf",
+      "status": "staged"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "case": {
+    "Name": "claude-launcher-invalid-10",
+    "ID": "claude_code",
+    "Operation": "launcher",
+    "State": "invalid-10"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "refusal.txt",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "ZXh0ZW5zaW9uczogaW52YWxpZCBsYXVuY2hlciBzZWxlY3Rpb24=",
+      "sha256": "bf2b8e7ef7c57c763b1e8a03f24d04eadc15e4f82d658150cbde3d1466aaf608"
+    },
+    {
+      "path": "retained-input-mode.txt",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "MDYwMAo=",
+      "sha256": "3449ba0447226ed8098bbfa2ce757530cfde37a612e5608d896b003b39ebf324"
+    },
+    {
+      "path": "retained-input.sha256",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "MmRiMWIyNjUwOTVlNDg1YTQxNTZlOWIwYjkxYzdkY2JjMzc2ODA5ZTg3MjIwNWY3ZTM1NTk2MzY2NTJkYTg1ZA==",
+      "sha256": "53b084b80b45948c5a72c012cd211600be926f67ce131106ae5d32a17ccf9a0c"
+    }
+  ],
+  "refusal": "extensions: invalid launcher selection",
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}

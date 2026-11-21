@@ -1,0 +1,290 @@
+{
+  "case": {
+    "Name": "codex_cli-native-parent",
+    "ID": "codex_cli",
+    "Operation": "managed",
+    "State": "native-parent"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": ".agent-context",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": ".agent-context/system-prompt.md",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/manager/profiles/sample/rendered/codex_cli/.agent-context/system-prompt.md",
+      "sha256": "30666028299d4fd068299de76ffb5b5f09719c69764b5f59a61d3c12a06c531c"
+    },
+    {
+      "path": ".agent-environment.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "ewogICJ2ZXJzaW9uIjogNywKICAiaGFzaF92ZXJzaW9uIjogMiwKICAicHJvZmlsZSI6IHsKICAgICJuYW1lIjogInNhbXBsZSIsCiAgICAicm9vdCI6ICJzYW1wbGUiLAogICAgImtpbmQiOiAicGF0aCIsCiAgICAibG9ja19zaGEyNTYiOiAiNmQ3YzE4MzJkYzY2MTNiMTA2MDY4MGJkYjI4YjVmMmEzN2EyYjQ2MjFhY2U3MTQ5NDZjYzI4ZWI0MDIyZmM1MCIsCiAgICAic291cmNlX3BhdGgiOiAiJHtGSVhUVVJFX1JPT1R9L2NvbnRleHQtc291cmNlIgogIH0sCiAgIm1lbWJlcnMiOiBbCiAgICB7CiAgICAgICJuYW1lIjogInNhbXBsZSIsCiAgICAgICJ2ZXJzaW9uIjogIjEuMC4wIiwKICAgICAgInN0YXRlX3NoYTI1NiI6ICI1YzAzYWIzYmY2ZDFmMmE4NDUxMmI4ZWZjNjEzZGMyZjM3MTExZDAwMTAxMTcxMmRkY2I5MGUwNzY3YjMyM2JiIiwKICAgICAgIndlaWdodCI6IDEwMCwKICAgICAgIm92ZXJsYXkiOiBmYWxzZQogICAgfQogIF0sCiAgInByZWNlZGVuY2UiOiB7CiAgICAid2lubmVyIjogImhpZ2hlci13ZWlnaHQiLAogICAgInBsYWNlbWVudCI6ICJ3aW5uZXItbGFzdCIKICB9LAogICJtb2RlIjogIm1hbmFnZWQtaG9tZSIsCiAgInN1cmZhY2VzIjogewogICAgIm1jcCI6IHsKICAgICAgInBhdGhzIjogWwogICAgICAgICJjdXJhdG9yLW1jcC5jb25maWcudG9tbCIKICAgICAgXSwKICAgICAgImNvbnRlbnRfc2hhMjU2IjogInNoYTI1Njo2MzdkMTZmYzcwMWRjYTY3Y2Y0ZjA4ZGMyNTJkYjE3NTFjYmUxZThjNTI5Zjc2NTcxMzVlZGYyODg2NmI1YzQzIiwKICAgICAgImNvcGllcyI6IFtdCiAgICB9LAogICAgInJvb3QtY29udGV4dCI6IHsKICAgICAgInBhdGhzIjogWwogICAgICAgICJBR0VOVFMubWQiCiAgICAgIF0sCiAgICAgICJmb3JtIjogIm1vbm9saXRoaWMiLAogICAgICAiY29udGVudF9zaGEyNTYiOiAic2hhMjU2OmE1NjJlODhjOWUwOWVlODE0ZDE1MTRhMjRhYjJiMTkzY2JmYTA5NmI2NDQ2ZWJlZDRhY2ZlYmI0ZDBlODcyN2QiLAogICAgICAiY29waWVzIjogW10KICAgIH0sCiAgICAic2tpbGxzIjogewogICAgICAicGF0aHMiOiBbCiAgICAgICAgInNraWxscy9maXh0dXJlLXNraWxsIgogICAgICBdLAogICAgICAiY29udGVudF9zaGEyNTYiOiAic2hhMjU2OmZhZjA2MTIyYjI3YjM5ZDg3MWIzYzhiM2VkMGM0ZWY1ZjVlM2I4MmMxMDk4ZmJkOTFmODQ0OTVhMTg2OGNiMTUiLAogICAgICAiY29waWVzIjogW10KICAgIH0sCiAgICAic3lzdGVtLXByb21wdCI6IHsKICAgICAgInBhdGhzIjogWwogICAgICAgICIuYWdlbnQtY29udGV4dC9zeXN0ZW0tcHJvbXB0Lm1kIgogICAgICBdLAogICAgICAiY29udGVudF9zaGEyNTYiOiAic2hhMjU2Ojk5NDY2OTA5N2JmNzY3MWI3YTM4N2QzNDJlMWM3MjYwMTFlMDA4NzUwZGEwNjlmODBlNzQ3MDE2MmFmNmQ3MTQiLAogICAgICAiY29waWVzIjogW10KICAgIH0KICB9LAogICJwYXNzdGhyb3VnaCI6IFsKICAgIHsKICAgICAgInBhdGgiOiAiYXV0aC5qc29uIiwKICAgICAgImlzb2xhdGlvbiI6ICJzaGFyZWQiLAogICAgICAic3RyYXRlZ3kiOiAia2V5cmluZy1wcmVmZXJyZWQiLAogICAgICAic291cmNlX3JvbGUiOiAibmF0aXZlIiwKICAgICAgImJhY2tlbmQiOiAiZmlsZSIsCiAgICAgICJiYWNrZW5kX3ZlcnNpb24iOiAiMC4xNjIuMSIsCiAgICAgICJwcm92ZW5hbmNlIjogInByb3Zpc2lvbmVkIgogICAgfQogIF0sCiAgInNlZWRzIjogW10sCiAgImNvZGV4X3NlZWRfcmVjb3JkIjogewogICAgInJldmlzaW9uIjogIkMiLAogICAgIm5hdGl2ZV9tY3Bfc2VydmVycyI6IFtdCiAgfSwKICAiY29kZXhfc2V0dGluZ3MiOiB7fSwKICAiY3JlZGVudGlhbF9zb3VyY2UiOiB7CiAgICAibW9kZSI6ICJwZXItaG9tZSIKICB9Cn0K",
+      "sha256": "1ca1af8a6b5692ad6d0aa38d844fee40ee7d8101c036442c7e53f0ed60cb164a"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/manager/profiles/sample/rendered/codex_cli/AGENTS.md",
+      "sha256": "adcb5e58a6c7241b57152618aea216b6d78302bfa6d449614755b0bd9c23a893"
+    },
+    {
+      "path": "auth.json",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/native/codex_cli-native-parent/auth.json",
+      "sha256": "2ffaf2de9abe79bc57eaddcd2034762cd465234170c17e803d81f6496997dd55"
+    },
+    {
+      "path": "curator-mcp.config.toml",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/manager/profiles/sample/rendered/codex_cli/curator-mcp.config.toml",
+      "sha256": "d23734082e437b4fc8db534a87c01b6cd6a06e0a1fc01dc28c5b9abbe9acedc1"
+    },
+    {
+      "path": "skills",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "skills/fixture-skill",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/manager/contexts/skill-context/core-3.1-v1/v2/7f915da7aa2894b626e673b83e932fb9849b249285bc3804566befabf4b1fb6c",
+      "sha256": "7ff9ad305e60496fb82301712bbd073f307bb7f730f87d4952b5cc1e31be55fc"
+    }
+  ],
+  "rendered": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": ".agent-context",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": ".agent-context/system-prompt.md",
+      "kind": "file",
+      "mode": 420,
+      "bytes": "Rml4dHVyZSBzeXN0ZW0gY29udGV4dC4K",
+      "sha256": "9b6d7336bc604997c72c3b0fc3fd233378afff39219af3387a84a2472de214f6"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "file",
+      "mode": 420,
+      "bytes": "PCEtLQpjdXJhdG9yLXJvb3QtY29udGV4dC12Mgpyb290OiBzYW1wbGUgMS4wLjAgc3RhdGUgc2hhMjU2OjVjMDNhYjNiZjZkMWYyYTg0NTEyYjhlZmM2MTNkYzJmMzcxMTFkMDAxMDExNzEyZGRjYjkwZTA3NjdiMzIzYmIKbWVtYmVyOiBzYW1wbGUgMS4wLjAgc3RhdGUgc2hhMjU2OjVjMDNhYjNiZjZkMWYyYTg0NTEyYjhlZmM2MTNkYzJmMzcxMTFkMDAxMDExNzEyZGRjYjkwZTA3NjdiMzIzYmIgd2VpZ2h0IDEwMApwcmVjZWRlbmNlOiB3aW5uZXI9aGlnaGVyLXdlaWdodCBwbGFjZW1lbnQ9d2lubmVyLWxhc3QKbG9jazogc2hhMjU2OjZkN2MxODMyZGM2NjEzYjEwNjA2ODBiZGIyOGI1ZjJhMzdhMmI0NjIxYWNlNzE0OTQ2Y2MyOGViNDAyMmZjNTAKZ2VuZXJhdGVkOiBDdXJhdG9yIFByb3RvY29sIGVudmlyb25tZW50cyByZXZpc2lvbiAxIChodHRwczovL2dpdGh1Yi5jb20vcmVsdXgtd29ya3MvY3VyYXRvci1zcGVjKQpub3RpY2U6IGdlbmVyYXRlZCBmaWxlOyBkaXJlY3QgZWRpdHMgYXJlIHVuc3VwcG9ydGVkIGFuZCBhcmUgZGV0ZWN0ZWQgYXMgZHJpZnQ7IHVwZGF0ZSB0aGUgc291cmNlIHByb2ZpbGUgcmVwb3NpdG9yeSBvciBpdHMgY29tcG9zZWQgcHJvZmlsZXMgaW5zdGVhZAotLT4KCi0tLQoKIyMgQ29udGV4dDogc2FtcGxlIDEuMC4wCgpGaXh0dXJlIHJvb3QgY29udGV4dC4K",
+      "sha256": "58cb7c1136f35c4da6e3d3acab87209b30ab70afe0224e6faa6e8141ddf6bbe6"
+    },
+    {
+      "path": "curator-mcp.config.toml",
+      "kind": "file",
+      "mode": 420,
+      "bytes": "W21jcF9zZXJ2ZXJzLmZpeHR1cmUtc2VydmVyXQpjb21tYW5kID0gImZpeHR1cmUtbmV2ZXItbGF1bmNoZWQiCmFyZ3MgPSBbIi0taW5lcnQiXQo=",
+      "sha256": "c75a6f84b3376752c6799457b5acea5f8343f5b03d662876ad1ce45dada89b0c"
+    }
+  ],
+  "document": "eyJlbnYiOnsiQ09ERVhfSE9NRSI6IiR7RklYVFVSRV9ST09UfS9tYW5hZ2VyL2Vudmlyb25tZW50cy9zYW1wbGUvY29kZXhfY2xpIn0sImVudmlyb25tZW50IjoiY29kZXhfY2xpIiwiZnJhZ21lbnQiOiJsYXVuY2gtZW52LWZyYWdtZW50LXYyIiwibWNwIjp7ImNoYW5uZWxzIjpbeyJhcmd1bWVudCI6Im5hbWUiLCJmbGFnIjoiLXAiLCJraW5kIjoiZmxhZyIsIm5hbWUiOiJjdXJhdG9yLW1jcCJ9XSwiZW52X25hbWVzIjpbXSwicGF0aCI6IiR7RklYVFVSRV9ST09UfS9tYW5hZ2VyL2Vudmlyb25tZW50cy9zYW1wbGUvY29kZXhfY2xpL2N1cmF0b3ItbWNwLmNvbmZpZy50b21sIn0sInBlcm1pc3Npb25zIjp7ImxvY2tlZCI6ZmFsc2UsIm1vZGUiOiJuYXRpdmUiLCJzb3VyY2UiOiJkZWZhdWx0In0sInByZWNlZGVuY2UiOnsicGxhY2VtZW50Ijoid2lubmVyLWxhc3QiLCJ3aW5uZXIiOiJoaWdoZXItd2VpZ2h0In0sInByb2ZpbGUiOnsibG9ja19zaGEyNTYiOiI2ZDdjMTgzMmRjNjYxM2IxMDYwNjgwYmRiMjhiNWYyYTM3YTJiNDYyMWFjZTcxNDk0NmNjMjhlYjQwMjJmYzUwIiwibmFtZSI6InNhbXBsZSJ9LCJzeXN0ZW1fcHJvbXB0Ijp7ImNoYW5uZWxzIjpbeyJrZXkiOiJtb2RlbF9pbnN0cnVjdGlvbnNfZmlsZSIsImtpbmQiOiJjb25maWcta2V5Iiwic2VtYW50aWNzIjoicmVwbGFjZSJ9XSwicGF0aCI6IiR7RklYVFVSRV9ST09UfS9tYW5hZ2VyL2Vudmlyb25tZW50cy9zYW1wbGUvY29kZXhfY2xpLy5hZ2VudC1jb250ZXh0L3N5c3RlbS1wcm9tcHQubWQifX0K",
+  "notice": "Managed home provisioned at ${FIXTURE_ROOT}/manager/environments/sample/codex_cli.\nThe tool treats this home as its own state root: sessions, trust records, and approvals accrue here, not in the native home.\nFirst-run steps the seeds do not cover: Log in unless the native credential is shared through; pass --skip-git-repo-check outside a git repository.",
+  "warnings": [
+    "passthrough entry auth.json is detached-pending: link target ${FIXTURE_ROOT}/native/codex_cli-native-parent/auth.json does not exist yet — log in to codex_cli to populate it",
+    "environment_tool_version_unverified: codex_cli detected release unknown, recorded 0.162.1",
+    "environment_tool_version_unverified: codex_cli detected release unknown, recorded 0.162.1"
+  ],
+  "executed": true,
+  "native_preserved": false,
+  "project_preserved": true,
+  "native_before": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "claude_code",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "claude_code/.credentials.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "codex_cli",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "codex_cli-native-parent",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "codex_cli/auth.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "muse",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "muse/auth.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "opencode",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "pi",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "pi/agent",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "pi/agent/auth.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    }
+  ],
+  "native_after": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "claude_code",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "claude_code/.credentials.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "codex_cli",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "codex_cli-native-parent",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "codex_cli-native-parent/.agent-environment.json",
+      "kind": "file",
+      "mode": 420,
+      "bytes": "ewogICJ2ZXJzaW9uIjogMywKICAiaGFzaF92ZXJzaW9uIjogMiwKICAicHJvZmlsZSI6IHsKICAgICJuYW1lIjogInNhbXBsZSIsCiAgICAicm9vdCI6ICJzYW1wbGUiLAogICAgImtpbmQiOiAicGF0aCIsCiAgICAibG9ja19zaGEyNTYiOiAiNmQ3YzE4MzJkYzY2MTNiMTA2MDY4MGJkYjI4YjVmMmEzN2EyYjQ2MjFhY2U3MTQ5NDZjYzI4ZWI0MDIyZmM1MCIsCiAgICAic291cmNlX3BhdGgiOiAiJHtGSVhUVVJFX1JPT1R9L2NvbnRleHQtc291cmNlIgogIH0sCiAgIm1lbWJlcnMiOiBbCiAgICB7CiAgICAgICJuYW1lIjogInNhbXBsZSIsCiAgICAgICJ2ZXJzaW9uIjogIjEuMC4wIiwKICAgICAgInN0YXRlX3NoYTI1NiI6ICI1YzAzYWIzYmY2ZDFmMmE4NDUxMmI4ZWZjNjEzZGMyZjM3MTExZDAwMTAxMTcxMmRkY2I5MGUwNzY3YjMyM2JiIiwKICAgICAgIndlaWdodCI6IDEwMCwKICAgICAgIm92ZXJsYXkiOiBmYWxzZQogICAgfQogIF0sCiAgInByZWNlZGVuY2UiOiB7CiAgICAid2lubmVyIjogImhpZ2hlci13ZWlnaHQiLAogICAgInBsYWNlbWVudCI6ICJ3aW5uZXItbGFzdCIKICB9LAogICJtb2RlIjogImxpbmtlZCIsCiAgInN1cmZhY2VzIjogewogICAgInJvb3QtY29udGV4dCI6IHsKICAgICAgInBhdGhzIjogWwogICAgICAgICJBR0VOVFMubWQiCiAgICAgIF0sCiAgICAgICJmb3JtIjogIm1vbm9saXRoaWMiLAogICAgICAiY29udGVudF9zaGEyNTYiOiAic2hhMjU2OmE1NjJlODhjOWUwOWVlODE0ZDE1MTRhMjRhYjJiMTkzY2JmYTA5NmI2NDQ2ZWJlZDRhY2ZlYmI0ZDBlODcyN2QiLAogICAgICAiY29waWVzIjogW10KICAgIH0sCiAgICAic2tpbGxzIjogewogICAgICAicGF0aHMiOiBbCiAgICAgICAgInNraWxscy9maXh0dXJlLXNraWxsIgogICAgICBdLAogICAgICAiY29udGVudF9zaGEyNTYiOiAic2hhMjU2OmZhZjA2MTIyYjI3YjM5ZDg3MWIzYzhiM2VkMGM0ZWY1ZjVlM2I4MmMxMDk4ZmJkOTFmODQ0OTVhMTg2OGNiMTUiLAogICAgICAiY29waWVzIjogW10KICAgIH0KICB9Cn0K",
+      "sha256": "d84eb4852c0e0a9e7273106d4d944c06eae6fd8ceb6d7e5fd661ae91474cf432"
+    },
+    {
+      "path": "codex_cli-native-parent/AGENTS.md",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/manager/profiles/sample/rendered/codex_cli/AGENTS.md",
+      "sha256": "adcb5e58a6c7241b57152618aea216b6d78302bfa6d449614755b0bd9c23a893"
+    },
+    {
+      "path": "codex_cli-native-parent/skills",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "codex_cli-native-parent/skills/fixture-skill",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/manager/contexts/skill-context/core-3.1-v1/v2/7f915da7aa2894b626e673b83e932fb9849b249285bc3804566befabf4b1fb6c",
+      "sha256": "7ff9ad305e60496fb82301712bbd073f307bb7f730f87d4952b5cc1e31be55fc"
+    },
+    {
+      "path": "codex_cli/auth.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "muse",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "muse/auth.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "opencode",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "pi",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "pi/agent",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "pi/agent/auth.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    }
+  ],
+  "project_before": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    }
+  ],
+  "project_after": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    }
+  ]
+}

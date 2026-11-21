@@ -1,0 +1,112 @@
+{
+  ".claude": [
+    "claude_code"
+  ],
+  ".codex": [
+    "codex_cli"
+  ],
+  ".cursor": [
+    "cursor"
+  ],
+  ".gemini": [
+    "gemini"
+  ],
+  ".pi": [
+    "pi"
+  ],
+  ".windsurf": [
+    "windsurf"
+  ],
+  "AGENTS.md": [
+    "claude_code",
+    "codex_cli",
+    "opencode",
+    "muse",
+    "pi",
+    "gemini",
+    "cursor",
+    "windsurf"
+  ],
+  "APPEND_SYSTEM.md": [
+    "pi"
+  ],
+  "CLAUDE.md": [
+    "claude_code"
+  ],
+  "CLAUDE_CONFIG_DIR": [
+    "claude_code"
+  ],
+  "CODEX_HOME": [
+    "codex_cli"
+  ],
+  "ClaudeCode": [
+    "claude_code"
+  ],
+  "CodexCLI": [
+    "codex_cli"
+  ],
+  "KIMI_CODE_HOME": [
+    "kimi_code"
+  ],
+  "Muse": [
+    "muse"
+  ],
+  "OPENCODE_CONFIG": [
+    "opencode"
+  ],
+  "OpenCode": [
+    "opencode"
+  ],
+  "PI_CODING_AGENT_DIR": [
+    "pi"
+  ],
+  "Pi": [
+    "pi"
+  ],
+  "SYSTEM.md": [
+    "pi"
+  ],
+  "XDG_CACHE_HOME": [
+    "muse"
+  ],
+  "XDG_CONFIG_HOME": [
+    "opencode",
+    "muse"
+  ],
+  "XDG_DATA_HOME": [
+    "muse"
+  ],
+  "XDG_STATE_HOME": [
+    "muse"
+  ],
+  "claude": [
+    "claude_code"
+  ],
+  "claude_code": [
+    "claude_code"
+  ],
+  "codex": [
+    "codex_cli"
+  ],
+  "codex_cli": [
+    "codex_cli"
+  ],
+  "cursor": [
+    "cursor"
+  ],
+  "gemini": [
+    "gemini"
+  ],
+  "muse": [
+    "muse"
+  ],
+  "opencode": [
+    "opencode"
+  ],
+  "pi": [
+    "pi"
+  ],
+  "windsurf": [
+    "windsurf"
+  ]
+}

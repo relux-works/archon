@@ -1,0 +1,29 @@
+{
+  "case": {
+    "Name": "claude-launcher-typed-projection",
+    "ID": "claude_code",
+    "Operation": "launcher",
+    "State": "typed-projection"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "projection.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "eyJzY2hlbWEiOiJjdXJhdG9yLmxhdW5jaGVyLWNvbmZpZy8xIiwiY29uZmlnX3NjaGVtYSI6NywiY29uZmlnX3BhdGgiOiIke0ZJWFRVUkVfUk9PVH0vc2VsZWN0ZWQuanNvbiIsImV4dGVuc2lvbnMiOnsicHJveHkiOnsicHJvZmlsZSI6InByaXZhdGUifSwiY2xhdWRlX2F1dGgiOnsidHlwZSI6Im9hdXRoIiwic3RvcmUiOnsidHlwZSI6ImtleWNoYWluIiwic2VydmljZSI6ImNsYXVkZSIsImFjY291bnQiOiJvcGVyYXRvciJ9fX19",
+      "sha256": "1edbc0690bd70c67c8a3262a759e79dc1d2a436d091fd8bbef1f044983e8dcb0"
+    }
+  ],
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}
