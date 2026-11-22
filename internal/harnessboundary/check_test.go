@@ -12,8 +12,8 @@ import (
 	"github.com/relux-works/curator/internal/harnessvalue"
 )
 
-const baselineHead = "643e727edd2db21307ca6d8c0332935e33d50ac8"
-const frozenDigest = "d400920c0956af1ad90b9e964828c6c9dea2fbe8786b3064d133d825e945f0e9"
+const baselineHead = "267bbf477354f4f3d35c9530ec8da0503cd86b8a"
+const frozenDigest = "a186ea55e67809751365ae5d5d08e9af47af3d16fc629b682e1ee544cc03ae1c"
 
 func readJSON(t *testing.T, name string, output any) []byte {
 	t.Helper()

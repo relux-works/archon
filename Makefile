@@ -9,17 +9,35 @@ EVIDENCE ?= .temp/ci-evidence
 GO_TEST_TIMEOUT ?= 60m
 TEST_GATE := .github/ci/test-gate.sh
 CANDIDATE := .github/ci/candidate-suite.sh
+CAPTURE_SOURCE_REV := 44ff5d16c7dc6d2382981b83e14b0efd9ffddb85
+CAPTURE_SOURCE_REMOTE := https://github.com/relux-works/curator.git
+CAPTURE_SOURCE_DIR := $(CURDIR)/.temp/capture-source-44ff
+CAPTURE_WORKFLOW_PATH := $(CAPTURE_SOURCE_DIR)/.github/workflows/original-capture-native.yml
 
 .PHONY: build test fmt lint vet check \
 	require-pin-root ci-test race race-full check-ci \
 	gate-selftest ledger-check no-broad-suppression \
-	verify-spec-pin candidate-verify-ref candidate-record candidate-test
+	verify-spec-pin candidate-verify-ref candidate-record candidate-test \
+	capture-source capture-source-revision
 
 build:
 	$(GO) build -ldflags '$(LDFLAGS)' -o bin/curator ./cmd/curator
 
-test:
-	$(GO) test ./...
+capture-source-revision:
+	@printf '%s\n' '$(CAPTURE_SOURCE_REV)'
+
+capture-source:
+	@git check-ignore -q .temp/capture-source-44ff || { \
+		echo '.temp/capture-source-44ff must be ignored before materializing capture sources'; \
+		exit 1; \
+	}
+	$(GO) run ./internal/harnessparity/cmd/capture-source materialize \
+		--revision '$(CAPTURE_SOURCE_REV)' \
+		--remote '$(CAPTURE_SOURCE_REMOTE)' \
+		--destination '$(CAPTURE_SOURCE_DIR)'
+
+test: capture-source
+	CAPTURE_WORKFLOW_PATH='$(CAPTURE_WORKFLOW_PATH)' $(GO) test ./...
 
 fmt:
 	gofmt -l -w .
@@ -30,7 +48,7 @@ vet:
 lint:
 	golangci-lint run
 
-check: vet test
+check: capture-source vet test
 	@test -z "$$(gofmt -l .)" || { echo 'gofmt: files need formatting:'; gofmt -l .; exit 1; }
 
 # --- CI gates ---------------------------------------------------------------

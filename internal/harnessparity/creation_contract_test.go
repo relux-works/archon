@@ -42,6 +42,21 @@ var admittedCapturePolicies = map[string]capturePolicyPins{
 	},
 }
 
+var refreshedCapturePolicies = map[string]capturePolicyPins{
+	"linux": {
+		driver:   "b96b012122f3ecb70537e2f64ca5fefbbdf6225123ce11f3ff7d6fc038c3a6eb",
+		launcher: "deaefe19fadacd5d449176bfab0aa60d029c842f14c5070fbea7e9f0e539e983",
+		arch:     "amd64", goVersion: "go1.25.5", linuxDeclaration: "declared by run.sh, not attested",
+		nativeDeclaration: "umask 0077 and probe directory mode 0700 recorded in export seal",
+	},
+	"darwin": {
+		driver:   "b96b012122f3ecb70537e2f64ca5fefbbdf6225123ce11f3ff7d6fc038c3a6eb",
+		launcher: "deaefe19fadacd5d449176bfab0aa60d029c842f14c5070fbea7e9f0e539e983",
+		arch:     "arm64", goVersion: "go1.25.5",
+		nativeDeclaration: "umask 0077 and probe directory mode 0700 recorded in export seal",
+	},
+}
+
 // Valid Linux and Darwin records pass their respective pure contracts; this
 // does not execute Darwin on Linux. Missing, contradictory and cross-platform
 // evidence is refused before any legacy call; Windows has no implicit fallback.
@@ -63,8 +78,8 @@ func testNativeCreationContract(t *testing.T) {
 					t.Fatal("incomplete captured case set")
 				}
 			})
-			pins := admittedCapturePolicies[osName]
-			p := creationProvenance{OS: osName, Arch: pins.arch, GoVersion: "go1.25.5", SourceHead: originalSource, Driver: replayDriverPin, LauncherDriver: replayLauncherDriverPin, CaptureDriver: pins.driver, CaptureLauncherDriver: pins.launcher, CaptureArch: pins.arch, CaptureGoVersion: pins.goVersion, OriginalPolicyDeclaration: pins.linuxDeclaration, CapturePolicyDeclaration: pins.nativeDeclaration, Expected: 47, EffectiveUmask: "0077", ProbeRequestedMode: 0777, ProbeActualMode: 0700}
+			pins := refreshedCapturePolicies[osName]
+			p := creationProvenance{OS: osName, Arch: pins.arch, GoVersion: "go1.25.5", SourceHead: refreshedSource, Driver: replayDriverPin, LauncherDriver: replayLauncherDriverPin, CaptureDriver: pins.driver, CaptureLauncherDriver: pins.launcher, CaptureArch: pins.arch, CaptureGoVersion: pins.goVersion, OriginalPolicyDeclaration: pins.linuxDeclaration, CapturePolicyDeclaration: pins.nativeDeclaration, Expected: 47, EffectiveUmask: "0077", ProbeRequestedMode: 0777, ProbeActualMode: 0700}
 			p.CapturePayloadIdentity = "original capture"
 			if code := validateCreationContract(p, osName, pins.arch, p.GoVersion); code != "" {
 				t.Fatal(code)

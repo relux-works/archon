@@ -192,6 +192,42 @@ jobs:
             go test -count=1 -timeout=10m -v ./cmd/curator \
               -run '^Test(ProductionGitTool(RejectsProjectPATH|IgnoresInheritedSSHWrapper)|ProductionBinaryDispatchesSSHWrapper)$'
 
+  native-capture-workflow-contract:
+    name: Native capture workflow contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Read pinned native capture revision
+        id: capture-revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          revision="$(make -s capture-source-revision)"
+          [[ "$revision" =~ ^[0-9a-f]{40}$ ]]
+          echo "sha=$revision" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: relux-works/curator
+          ref: ${{ steps.capture-revision.outputs.sha }}
+          path: capture-source-44ff
+
+      - name: Run workflow-bound native capture tests
+        env:
+          CAPTURE_WORKFLOW_PATH: ${{ github.workspace }}/capture-source-44ff/.github/workflows/original-capture-native.yml
+        run: |
+          go run ./internal/harnessparity/cmd/capture-source verify-tests \
+            --package ./internal/harnessparity/ \
+            --required TestNativeCaptureUploadRequiresSuccessfulCaptureAndSanitizer \
+            --required TestNativeCaptureFailureNamesPassThroughSanitizer \
+            --required TestNativeCapturePrivateLogCannotReachOutput \
+            --required TestNativeCaptureWorkflowGoProgramAcceptsCRLF
+
   default-build-transport:
     name: Default build transport (hosted Linux)
     runs-on: ubuntu-latest

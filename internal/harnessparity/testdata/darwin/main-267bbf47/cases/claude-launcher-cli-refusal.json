@@ -1,0 +1,36 @@
+{
+  "case": {
+    "Name": "claude-launcher-cli-refusal",
+    "ID": "claude_code",
+    "Operation": "launcher",
+    "State": "cli-refusal"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "refusal.txt",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Y3VyYXRvcjogZXh0ZW5zaW9uczogaW52YWxpZCBsYXVuY2hlciBzZWxlY3Rpb24K",
+      "sha256": "853d9593b78f1ad32d991007e6e160b4f8a22c467e77b33cde27eda2051ec2e3"
+    },
+    {
+      "path": "stdout.txt",
+      "kind": "file",
+      "mode": 384,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "refusal": "curator: extensions: invalid launcher selection\n",
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}

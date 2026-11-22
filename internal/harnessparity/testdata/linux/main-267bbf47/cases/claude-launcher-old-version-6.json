@@ -1,0 +1,44 @@
+{
+  "case": {
+    "Name": "claude-launcher-old-version-6",
+    "ID": "claude_code",
+    "Operation": "launcher",
+    "State": "old-version-6"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "refusal.txt",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "c2NoZW1hX3ZlcnNpb246IHVuc3VwcG9ydGVkIGNvbmZpZyBzY2hlbWFfdmVyc2lvbiA2OyB0aGlzIGNvbmZpZyByZXF1aXJlcyBhIG5ld2VyIHRvb2w=",
+      "sha256": "c87ec1d25e3ffe8f87e4e91118d7794c653b0f2fbb28b334001a2626aac94c94"
+    },
+    {
+      "path": "retained-input-mode.txt",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "MDYwMAo=",
+      "sha256": "3449ba0447226ed8098bbfa2ce757530cfde37a612e5608d896b003b39ebf324"
+    },
+    {
+      "path": "retained-input.sha256",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "MWEyY2JkNTg0NmZhMDVjYjI2YTFmODA2MmNhNGU1YWIyMzRhYWNlYmI4NDhhMzM4OWY1MWY3NTg0OGZlNzc1YQ==",
+      "sha256": "4ded8efb097d1b9c3976b185107af2344277a661af37b1bdb33206a3a4c91b40"
+    }
+  ],
+  "refusal": "schema_version: unsupported config schema_version 6; this config requires a newer tool",
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}

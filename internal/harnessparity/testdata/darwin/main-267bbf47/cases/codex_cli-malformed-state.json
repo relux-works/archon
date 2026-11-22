@@ -1,0 +1,274 @@
+{
+  "case": {
+    "Name": "codex_cli-malformed-state",
+    "ID": "codex_cli",
+    "Operation": "managed",
+    "State": "malformed-state"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": ".agent-context",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": ".agent-context/system-prompt.md",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/manager/profiles/sample/rendered/codex_cli/.agent-context/system-prompt.md",
+      "sha256": "30666028299d4fd068299de76ffb5b5f09719c69764b5f59a61d3c12a06c531c"
+    },
+    {
+      "path": ".agent-environment.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "e2ludmFsaWQK",
+      "sha256": "578e653b9c6a4223498c599f2341dd5fb81eb4a9d89d6e57094e32ff07b03e51"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/manager/profiles/sample/rendered/codex_cli/AGENTS.md",
+      "sha256": "adcb5e58a6c7241b57152618aea216b6d78302bfa6d449614755b0bd9c23a893"
+    },
+    {
+      "path": "auth.json",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/native/codex_cli/auth.json",
+      "sha256": "a8b90b63909ec4f44a1f51fcabb5bc1f81fd8d64d0482803c8119db060ce55c2"
+    },
+    {
+      "path": "curator-mcp.config.toml",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/manager/profiles/sample/rendered/codex_cli/curator-mcp.config.toml",
+      "sha256": "d23734082e437b4fc8db534a87c01b6cd6a06e0a1fc01dc28c5b9abbe9acedc1"
+    },
+    {
+      "path": "skills",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "skills/fixture-skill",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/manager/contexts/skill-context/core-3.1-v1/v2/7f915da7aa2894b626e673b83e932fb9849b249285bc3804566befabf4b1fb6c",
+      "sha256": "7ff9ad305e60496fb82301712bbd073f307bb7f730f87d4952b5cc1e31be55fc"
+    }
+  ],
+  "rendered": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": ".agent-context",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": ".agent-context/system-prompt.md",
+      "kind": "file",
+      "mode": 420,
+      "bytes": "Rml4dHVyZSBzeXN0ZW0gY29udGV4dC4K",
+      "sha256": "9b6d7336bc604997c72c3b0fc3fd233378afff39219af3387a84a2472de214f6"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "file",
+      "mode": 420,
+      "bytes": "PCEtLQpjdXJhdG9yLXJvb3QtY29udGV4dC12Mgpyb290OiBzYW1wbGUgMS4wLjAgc3RhdGUgc2hhMjU2OjVjMDNhYjNiZjZkMWYyYTg0NTEyYjhlZmM2MTNkYzJmMzcxMTFkMDAxMDExNzEyZGRjYjkwZTA3NjdiMzIzYmIKbWVtYmVyOiBzYW1wbGUgMS4wLjAgc3RhdGUgc2hhMjU2OjVjMDNhYjNiZjZkMWYyYTg0NTEyYjhlZmM2MTNkYzJmMzcxMTFkMDAxMDExNzEyZGRjYjkwZTA3NjdiMzIzYmIgd2VpZ2h0IDEwMApwcmVjZWRlbmNlOiB3aW5uZXI9aGlnaGVyLXdlaWdodCBwbGFjZW1lbnQ9d2lubmVyLWxhc3QKbG9jazogc2hhMjU2OjZkN2MxODMyZGM2NjEzYjEwNjA2ODBiZGIyOGI1ZjJhMzdhMmI0NjIxYWNlNzE0OTQ2Y2MyOGViNDAyMmZjNTAKZ2VuZXJhdGVkOiBDdXJhdG9yIFByb3RvY29sIGVudmlyb25tZW50cyByZXZpc2lvbiAxIChodHRwczovL2dpdGh1Yi5jb20vcmVsdXgtd29ya3MvY3VyYXRvci1zcGVjKQpub3RpY2U6IGdlbmVyYXRlZCBmaWxlOyBkaXJlY3QgZWRpdHMgYXJlIHVuc3VwcG9ydGVkIGFuZCBhcmUgZGV0ZWN0ZWQgYXMgZHJpZnQ7IHVwZGF0ZSB0aGUgc291cmNlIHByb2ZpbGUgcmVwb3NpdG9yeSBvciBpdHMgY29tcG9zZWQgcHJvZmlsZXMgaW5zdGVhZAotLT4KCi0tLQoKIyMgQ29udGV4dDogc2FtcGxlIDEuMC4wCgpGaXh0dXJlIHJvb3QgY29udGV4dC4K",
+      "sha256": "58cb7c1136f35c4da6e3d3acab87209b30ab70afe0224e6faa6e8141ddf6bbe6"
+    },
+    {
+      "path": "curator-mcp.config.toml",
+      "kind": "file",
+      "mode": 420,
+      "bytes": "W21jcF9zZXJ2ZXJzLmZpeHR1cmUtc2VydmVyXQpjb21tYW5kID0gImZpeHR1cmUtbmV2ZXItbGF1bmNoZWQiCmFyZ3MgPSBbIi0taW5lcnQiXQo=",
+      "sha256": "c75a6f84b3376752c6799457b5acea5f8343f5b03d662876ad1ce45dada89b0c"
+    }
+  ],
+  "refusal": "environment_marker_unreadable: manager_state_unreadable: ${FIXTURE_ROOT}/manager/environments/sample/codex_cli/.agent-environment.json: environment_marker_invalid: malformed protocol JSON object: invalid character 'i'",
+  "executed": true,
+  "native_preserved": false,
+  "project_preserved": true,
+  "native_before": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "claude_code",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "claude_code/.credentials.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "codex_cli",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "codex_cli/auth.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "muse",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "muse/auth.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "opencode",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "pi",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "pi/agent",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "pi/agent/auth.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    }
+  ],
+  "native_after": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "claude_code",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "claude_code/.credentials.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "codex_cli",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "codex_cli/.agent-environment.json",
+      "kind": "file",
+      "mode": 420,
+      "bytes": "ewogICJ2ZXJzaW9uIjogMywKICAiaGFzaF92ZXJzaW9uIjogMiwKICAicHJvZmlsZSI6IHsKICAgICJuYW1lIjogInNhbXBsZSIsCiAgICAicm9vdCI6ICJzYW1wbGUiLAogICAgImtpbmQiOiAicGF0aCIsCiAgICAibG9ja19zaGEyNTYiOiAiNmQ3YzE4MzJkYzY2MTNiMTA2MDY4MGJkYjI4YjVmMmEzN2EyYjQ2MjFhY2U3MTQ5NDZjYzI4ZWI0MDIyZmM1MCIsCiAgICAic291cmNlX3BhdGgiOiAiJHtGSVhUVVJFX1JPT1R9L2NvbnRleHQtc291cmNlIgogIH0sCiAgIm1lbWJlcnMiOiBbCiAgICB7CiAgICAgICJuYW1lIjogInNhbXBsZSIsCiAgICAgICJ2ZXJzaW9uIjogIjEuMC4wIiwKICAgICAgInN0YXRlX3NoYTI1NiI6ICI1YzAzYWIzYmY2ZDFmMmE4NDUxMmI4ZWZjNjEzZGMyZjM3MTExZDAwMTAxMTcxMmRkY2I5MGUwNzY3YjMyM2JiIiwKICAgICAgIndlaWdodCI6IDEwMCwKICAgICAgIm92ZXJsYXkiOiBmYWxzZQogICAgfQogIF0sCiAgInByZWNlZGVuY2UiOiB7CiAgICAid2lubmVyIjogImhpZ2hlci13ZWlnaHQiLAogICAgInBsYWNlbWVudCI6ICJ3aW5uZXItbGFzdCIKICB9LAogICJtb2RlIjogImxpbmtlZCIsCiAgInN1cmZhY2VzIjogewogICAgInJvb3QtY29udGV4dCI6IHsKICAgICAgInBhdGhzIjogWwogICAgICAgICJBR0VOVFMubWQiCiAgICAgIF0sCiAgICAgICJmb3JtIjogIm1vbm9saXRoaWMiLAogICAgICAiY29udGVudF9zaGEyNTYiOiAic2hhMjU2OmE1NjJlODhjOWUwOWVlODE0ZDE1MTRhMjRhYjJiMTkzY2JmYTA5NmI2NDQ2ZWJlZDRhY2ZlYmI0ZDBlODcyN2QiLAogICAgICAiY29waWVzIjogW10KICAgIH0sCiAgICAic2tpbGxzIjogewogICAgICAicGF0aHMiOiBbCiAgICAgICAgInNraWxscy9maXh0dXJlLXNraWxsIgogICAgICBdLAogICAgICAiY29udGVudF9zaGEyNTYiOiAic2hhMjU2OmZhZjA2MTIyYjI3YjM5ZDg3MWIzYzhiM2VkMGM0ZWY1ZjVlM2I4MmMxMDk4ZmJkOTFmODQ0OTVhMTg2OGNiMTUiLAogICAgICAiY29waWVzIjogW10KICAgIH0KICB9Cn0K",
+      "sha256": "d84eb4852c0e0a9e7273106d4d944c06eae6fd8ceb6d7e5fd661ae91474cf432"
+    },
+    {
+      "path": "codex_cli/AGENTS.md",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/manager/profiles/sample/rendered/codex_cli/AGENTS.md",
+      "sha256": "adcb5e58a6c7241b57152618aea216b6d78302bfa6d449614755b0bd9c23a893"
+    },
+    {
+      "path": "codex_cli/auth.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "codex_cli/skills",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "codex_cli/skills/fixture-skill",
+      "kind": "link",
+      "mode": 448,
+      "link": "${FIXTURE_ROOT}/manager/contexts/skill-context/core-3.1-v1/v2/7f915da7aa2894b626e673b83e932fb9849b249285bc3804566befabf4b1fb6c",
+      "sha256": "7ff9ad305e60496fb82301712bbd073f307bb7f730f87d4952b5cc1e31be55fc"
+    },
+    {
+      "path": "muse",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "muse/auth.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "opencode",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "pi",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "pi/agent",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "pi/agent/auth.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    }
+  ],
+  "project_before": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    }
+  ],
+  "project_after": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    }
+  ]
+}

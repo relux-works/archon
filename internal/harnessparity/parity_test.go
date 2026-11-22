@@ -72,6 +72,11 @@ var frozenManifestHashes = map[string]string{
 	"darwin": "f042708fa9ccff21771995ca73b5c8d11b04cb6f82c77e489c8e490c2871b976",
 }
 
+var frozenRefreshedManifestHashes = map[string]string{
+	"linux":  "601d939606c9c6fb441ba0309b13f539e1d84d93e3314a3a7ffa4fccad22648b",
+	"darwin": "aa69ae09bbe74e3d5017e2ace0108f273902cdb3469de126a764926ebb7ada2c",
+}
+
 func verifyManifest(payload []byte, platform string) (baselineManifest, error) {
 	path := filepath.Join("testdata", platform, "manifest.json")
 	expected, known := frozenManifestHashes[platform]
@@ -91,6 +96,25 @@ func verifyManifest(payload []byte, platform string) (baselineManifest, error) {
 	return manifest, nil
 }
 
+func verifyRefreshedManifest(payload []byte, platform string) (baselineManifest, error) {
+	path := filepath.Join("testdata", platform, "main-267bbf47", "manifest.json")
+	expected, known := frozenRefreshedManifestHashes[platform]
+	if !known {
+		return baselineManifest{}, fmt.Errorf("%s: refreshed_platform_manifest_missing", path)
+	}
+	if hashBytes(payload) != expected {
+		return baselineManifest{}, fmt.Errorf("%s: frozen_manifest_mismatch", path)
+	}
+	var manifest baselineManifest
+	if err := json.Unmarshal(payload, &manifest); err != nil {
+		return baselineManifest{}, fmt.Errorf("%s: frozen_manifest_invalid", path)
+	}
+	if err := validateRefreshedBaselineProvenance(manifest, platform); err != nil {
+		return baselineManifest{}, err
+	}
+	return manifest, nil
+}
+
 func loadBaseline(t *testing.T, c fixtureCase) fixtureResult {
 	t.Helper()
 	return loadPlatformBaseline(t, c, runtime.GOOS)
@@ -98,24 +122,17 @@ func loadBaseline(t *testing.T, c fixtureCase) fixtureResult {
 
 func loadPlatformBaseline(t *testing.T, c fixtureCase, platform string) fixtureResult {
 	t.Helper()
-	base := filepath.Join("testdata", platform)
-	if platform == "linux" {
-		base = filepath.Join("testdata", "linux", "capture-07")
-	}
+	base := filepath.Join("testdata", platform, "main-267bbf47")
 	payload, err := os.ReadFile(filepath.Join(base, "manifest.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	var manifest baselineManifest
-	if platform == "linux" {
-		manifest, err = verifyLinux07Manifest(payload)
-	} else {
-		manifest, err = verifyManifest(payload, platform)
-	}
+	manifest, err = verifyRefreshedManifest(payload, platform)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if manifest.SourceHead != "643e727edd2db21307ca6d8c0332935e33d50ac8" || manifest.Subject != "unchanged legacy implementation" || manifest.CaptureDriverSHA256 == "" {
+	if manifest.SourceHead != refreshedSource || manifest.Subject != "unchanged legacy implementation" || manifest.CaptureDriverSHA256 == "" {
 		t.Fatal("baseline provenance missing or substituted")
 	}
 	if manifest.Platform != platform {

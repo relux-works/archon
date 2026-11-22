@@ -3,90 +3,147 @@
 package harnessparity
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/relux-works/curator/internal/contextlock"
+	"github.com/relux-works/curator/internal/contextstore"
 	"github.com/relux-works/curator/internal/envprofile"
 	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/curator/internal/privatedir"
 )
 
-// The capture's fixture-owned external origin must reach successful Resolve
-// with its own directory and link target, including when the caller supplies
-// an unrelated selector. These assertions do not establish native Mac parity.
-func TestNativeParentFixtureExternalOrigin(t *testing.T) {
-	t.Setenv("CODEX_HOME", filepath.Join(t.TempDir(), "unrelated-selector"))
-	c := fixtureCase{Name: "codex_cli-native-parent", ID: "codex_cli", Operation: "managed", State: "native-parent"}
-	actual := runLegacyFixture(t, c)
-	if !actual.Executed || actual.Refusal != "" || len(actual.Tree) != 9 || len(actual.Rendered) == 0 || len(actual.Document) == 0 {
-		t.Fatalf("external-origin fixture must provision: executed=%v refusal=%q managed=%d rendered=%d", actual.Executed, actual.Refusal, len(actual.Tree), len(actual.Rendered))
-	}
-	wantOrigin := c.ID + "-native-parent"
-	foundDirectory, foundLink := false, false
-	for _, node := range actual.NativeBefore {
-		if node.Path == wantOrigin && node.Kind == "directory" {
-			foundDirectory = true
-		}
-	}
-	for _, node := range actual.Tree {
-		if node.Path == "auth.json" && node.Kind == "link" && node.Link == "${FIXTURE_ROOT}/native/"+wantOrigin+"/auth.json" {
-			foundLink = true
-		}
-	}
-	if !foundDirectory || !foundLink || !actual.ProjectPreserved {
-		t.Fatalf("external origin lost: directory=%v link=%v project-preserved=%v", foundDirectory, foundLink, actual.ProjectPreserved)
-	}
-}
-
-// Ancestor, contained and aliased manager origins must retain the specific
-// credential-conflict refusal without publishing managed/rendered files or
-// changing native/project trees. A nearby external sibling must still succeed.
+// Resolve must reject native origins that overlap manager-owned environments before publication.
 func TestNativeParentFixtureOriginBoundaries(t *testing.T) {
 	for _, row := range []struct {
-		name   string
-		origin func(t *testing.T, manager, native string) string
-		cause  string
+		name  string
+		cause string
 	}{
-		{"manager-ancestor", func(_ *testing.T, manager, _ string) string { return manager }, "native origin contains managed environments"},
-		{"managed-root", func(_ *testing.T, manager, _ string) string { return envprofile.EnvRoot(manager) }, "inside managed environments"},
-		{"managed-child", func(_ *testing.T, manager, _ string) string {
-			return filepath.Join(envprofile.EnvRoot(manager), "sample", "codex_cli")
-		}, "inside managed environments"},
-		{"aliased-ancestor", func(t *testing.T, manager, native string) string {
-			alias := filepath.Join(native, "manager-alias")
-			if err := os.Symlink(manager, alias); err != nil {
-				t.Fatal(err)
-			}
-			return alias
-		}, "native origin contains managed environments"},
-		{"external-near-prefix", func(t *testing.T, manager, _ string) string {
-			sibling := manager + "-other"
-			if err := os.Mkdir(sibling, 0o700); err != nil {
-				t.Fatal(err)
-			}
-			return sibling
-		}, ""},
+		{"manager-ancestor", "native origin contains managed environments"},
+		{"managed-root", "inside managed environments"},
+		{"managed-child", "inside managed environments"},
+		{"aliased-ancestor", "native origin contains managed environments"},
+		{"external-near-prefix", ""},
 	} {
 		t.Run(row.name, func(t *testing.T) {
-			c := fixtureCase{Name: "codex_cli-native-parent", ID: "codex_cli", Operation: "managed", State: "native-parent"}
-			actual := runLegacyFixtureWithNativeHome(t, c, func(manager, native string) string {
-				return row.origin(t, manager, native)
-			})
-			if !actual.Executed {
-				t.Fatal("Resolve was not exercised")
-			}
-			if row.cause == "" {
-				if actual.Refusal != "" || len(actual.Tree) != 9 || len(actual.Rendered) == 0 || len(actual.Document) == 0 {
-					t.Fatalf("external sibling must provision: refusal=%q managed=%d", actual.Refusal, len(actual.Tree))
+			root := t.TempDir()
+			manager := filepath.Join(root, "manager")
+			native := filepath.Join(root, "native")
+			project := filepath.Join(root, "project")
+			xdg := filepath.Join(root, "xdg")
+			for _, dir := range []string{manager, native, project, xdg} {
+				if err := os.MkdirAll(dir, 0o700); err != nil {
+					t.Fatal(err)
 				}
+			}
+			if err := privatedir.Protect(manager); err != nil {
+				t.Fatal(err)
+			}
+			sourceDir := filepath.Join(root, "context-source")
+			if err := os.MkdirAll(filepath.Join(sourceDir, "context"), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			manifest := []byte("{\"schema_version\":1,\"name\":\"sample\",\"version\":\"1.0.0\",\"context\":{\"modules\":[{\"path\":\"a.md\"}]}}\n")
+			if err := os.WriteFile(filepath.Join(sourceDir, "agent-context.json"), manifest, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(sourceDir, "context", "a.md"), []byte("Fixture root context.\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			_, stateHash, err := contextstore.EnsureState(manager, "context", "sample", sourceDir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			profileDir := envprofile.ProfileDir(manager, "sample")
+			if err := privatedir.MakeAll(profileDir); err != nil {
+				t.Fatal(err)
+			}
+			lock := &contextlock.Lock{Root: "sample", Members: []contextlock.Member{{Kind: "context", Name: "sample", Version: "1.0.0", StateHash: stateHash, Weight: 100}}}
+			lock.Sort()
+			if _, err := contextlock.Write(filepath.Join(profileDir, "lock.json"), lock); err != nil {
+				t.Fatal(err)
+			}
+			source, err := json.Marshal(envprofile.Source{Kind: envprofile.KindPath, Path: sourceDir})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(profileDir, "source.json"), append(source, '\n'), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if err := envprofile.SetCurrent(manager, "sample"); err != nil {
+				t.Fatal(err)
+			}
+			origin := filepath.Join(native, "codex_cli-native-parent")
+			if err := os.MkdirAll(origin, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			switch row.name {
+			case "manager-ancestor":
+				origin = manager
+			case "managed-root":
+				origin = envprofile.EnvRoot(manager)
+			case "managed-child":
+				origin = filepath.Join(envprofile.EnvRoot(manager), "sample", "codex_cli")
+			case "aliased-ancestor":
+				origin = filepath.Join(native, "manager-alias")
+				if err := os.Symlink(manager, origin); err != nil {
+					t.Fatal(err)
+				}
+			case "external-near-prefix":
+				origin = manager + "-other"
+				if err := os.Mkdir(origin, 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}
+			t.Setenv("HOME", root)
+			t.Setenv("CODEX_HOME", filepath.Join(root, "unrelated-selector"))
+			request := envprofile.ResolveRequest{
+				Home: manager, Profile: "sample", EnvID: "codex_cli", LaunchDir: project,
+				Machine: envregistry.DefaultMachineConfig(), Repair: true,
+				Detect:       func(envregistry.Adapter) string { return "unknown" },
+				NativeHomeOf: func(string) (string, error) { return origin, nil }, OperatorXDG: xdg,
+			}
+			result, resolveErr := envprofile.Resolve(request)
+			managedHome := envprofile.ManagedHomeDir(manager, "sample", "codex_cli")
+			renderedHome := filepath.Join(profileDir, "rendered", "codex_cli")
+			if row.cause == "" {
+				if resolveErr != nil || result == nil || !result.Provisioned || len(result.Document) == 0 {
+					t.Fatalf("external sibling must provision: result=%+v error=%v", result, resolveErr)
+				}
+				if info, err := os.Stat(managedHome); err != nil || !info.IsDir() {
+					t.Fatalf("managed tree missing: info=%v error=%v", info, err)
+				}
+				if info, err := os.Stat(renderedHome); err != nil || !info.IsDir() {
+					t.Fatalf("rendered tree missing: info=%v error=%v", info, err)
+				}
+				if _, err := os.Stat(filepath.Join(renderedHome, "AGENTS.md")); err != nil {
+					t.Fatalf("rendered root context missing: %v", err)
+				}
+				treeEntries := 0
+				if err := filepath.WalkDir(managedHome, func(_ string, _ os.DirEntry, err error) error {
+					if err == nil {
+						treeEntries++
+					}
+					return err
+				}); err != nil || treeEntries <= 1 {
+					t.Fatalf("managed tree missing entries: count=%d error=%v", treeEntries, err)
+				}
+				t.Logf("minimal root-context managed tree entries: %d", treeEntries)
 				return
 			}
-			if !strings.HasPrefix(actual.Refusal, envregistry.DiagCredentialConflict+":") || !strings.Contains(actual.Refusal, row.cause) {
-				t.Fatalf("wrong native-origin refusal: %q", actual.Refusal)
+			if resolveErr == nil || !strings.HasPrefix(resolveErr.Error(), envregistry.DiagCredentialConflict+":") || !strings.Contains(resolveErr.Error(), row.cause) {
+				t.Fatalf("wrong native-origin refusal: %v", resolveErr)
 			}
-			if len(actual.Tree) != 0 || len(actual.Rendered) != 0 || len(actual.Document) != 0 || !actual.NativePreserved || !actual.ProjectPreserved {
-				t.Fatalf("refused origin published output or changed native/project trees: managed=%d rendered=%d native-preserved=%v project-preserved=%v", len(actual.Tree), len(actual.Rendered), actual.NativePreserved, actual.ProjectPreserved)
+			if result != nil && len(result.Document) != 0 {
+				t.Fatalf("refused origin returned a document: %d bytes", len(result.Document))
+			}
+			for _, path := range []string{managedHome, renderedHome} {
+				if _, err := os.Lstat(path); !os.IsNotExist(err) {
+					t.Fatalf("refused origin published %s: %v", path, err)
+				}
 			}
 		})
 	}

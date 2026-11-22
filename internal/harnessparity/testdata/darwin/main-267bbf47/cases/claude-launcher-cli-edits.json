@@ -1,0 +1,42 @@
+{
+  "case": {
+    "Name": "claude-launcher-cli-edits",
+    "ID": "claude_code",
+    "Operation": "launcher",
+    "State": "cli-edits"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "edited-config.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "ewogICJlbnZpcm9ubWVudHMiOiB7CiAgICAiY3JlZGVudGlhbF9zdG9yZSI6IHsKICAgICAgInNhbXBsZSI6IHsKICAgICAgICAiY29kZXhfY2xpIjogImZpbGUiCiAgICAgIH0KICAgIH0KICB9LAogICJleHRlbnNpb25zIjogewogICAgImNsYXVkZV9hdXRoIjogewogICAgICAic3RvcmUiOiB7CiAgICAgICAgInBhdGgiOiAiJHtGSVhUVVJFX1JPT1R9L25vdC1jcmVhdGVkLXRva2VuIiwKICAgICAgICAidHlwZSI6ICJmaWxlIgogICAgICB9LAogICAgICAidHlwZSI6ICJvYXV0aCIKICAgIH0sCiAgICAicHJveHkiOiB7CiAgICAgICJwcm9maWxlIjogInByaXZhdGUiCiAgICB9CiAgfSwKICAicHJlZmVycmVkX2xvY2FsZSI6ICJlbiIsCiAgInByb2plY3RzIjoge30sCiAgInNjaGVtYV92ZXJzaW9uIjogNywKICAic2tpbGxzX3Jvb3QiOiAieCIKfQo=",
+      "sha256": "6a0a6d822ff67452d4b0ac97a608ad038344916478fff72aa3c12829c5598048"
+    },
+    {
+      "path": "projection.json",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "eyJzY2hlbWEiOiJjdXJhdG9yLmxhdW5jaGVyLWNvbmZpZy8xIiwiY29uZmlnX3NjaGVtYSI6NywiY29uZmlnX3BhdGgiOiIke0ZJWFRVUkVfUk9PVH0vc2VsZWN0ZWQuanNvbiIsImV4dGVuc2lvbnMiOnsicHJveHkiOnsicHJvZmlsZSI6InByaXZhdGUifSwiY2xhdWRlX2F1dGgiOnsidHlwZSI6Im9hdXRoIiwic3RvcmUiOnsidHlwZSI6ImZpbGUiLCJwYXRoIjoiJHtGSVhUVVJFX1JPT1R9L25vdC1jcmVhdGVkLXRva2VuIn19fX0K",
+      "sha256": "fa522ea43b207cd65e6b7693d4efad73b0e0107cd8672b0a4d1b18fc78c7137b"
+    },
+    {
+      "path": "stderr.txt",
+      "kind": "file",
+      "mode": 384,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}

@@ -2,10 +2,10 @@ package harnessboundary
 
 import "strings"
 
-// These pins identify the immutable original source and its exception bytes.
+// These pins identify the current frozen source and its exception bytes.
 const (
-	OriginalSourceHead    = "643e727edd2db21307ca6d8c0332935e33d50ac8"
-	FrozenExceptionDigest = "d400920c0956af1ad90b9e964828c6c9dea2fbe8786b3064d133d825e945f0e9"
+	OriginalSourceHead    = "267bbf477354f4f3d35c9530ec8da0503cd86b8a"
+	FrozenExceptionDigest = "a186ea55e67809751365ae5d5d08e9af47af3d16fc629b682e1ee544cc03ae1c"
 	EmptyPayloadDigest    = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 	TargetRepository      = "relux-works/curator"
 	ActiveExceptionPath   = "internal/harnessboundary/testdata/exceptions.json"

@@ -1,0 +1,44 @@
+{
+  "case": {
+    "Name": "claude-launcher-system-authority",
+    "ID": "claude_code",
+    "Operation": "launcher",
+    "State": "system-authority"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 448
+    },
+    {
+      "path": "refusal.txt",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "ZXh0ZW5zaW9uczogbGF1bmNoZXIgc2VsZWN0aW9ucyBiZWxvbmcgb25seSB0byB0aGUgc2VsZWN0ZWQgbWFjaGluZSBjb25maWd1cmF0aW9u",
+      "sha256": "21ef331bdd89fc7a004f3e00b0bedb7eb9ed2e97fb8f901147a4471ef43c5da0"
+    },
+    {
+      "path": "retained-input-mode.txt",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "MDYwMAo=",
+      "sha256": "3449ba0447226ed8098bbfa2ce757530cfde37a612e5608d896b003b39ebf324"
+    },
+    {
+      "path": "retained-input.sha256",
+      "kind": "file",
+      "mode": 384,
+      "bytes": "MmYwMjU1ZGNhMTQ5YzhlZThmZTZiOTgzNTAzMTA5ZWI0NWM5NzI5ZGE5N2NjMjgzZTA1ZTZlNjRjMGNkZDdmNg==",
+      "sha256": "6a4f949dcbae81331647ed97bb09eeccc21ab0207252b66c2a473cd5b67a11e8"
+    }
+  ],
+  "refusal": "extensions: launcher selections belong only to the selected machine configuration",
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}

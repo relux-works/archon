@@ -1,0 +1,303 @@
+{
+  "source_head": "267bbf477354f4f3d35c9530ec8da0503cd86b8a",
+  "subject": "unchanged legacy implementation",
+  "platform": "darwin",
+  "go_version": "go1.25.5",
+  "architecture": "arm64",
+  "capture_driver_sha256": "b96b012122f3ecb70537e2f64ca5fefbbdf6225123ce11f3ff7d6fc038c3a6eb",
+  "launcher_capture_driver_sha256": "deaefe19fadacd5d449176bfab0aa60d029c842f14c5070fbea7e9f0e539e983",
+  "capture_source_head": "44ff5d16c7dc6d2382981b83e14b0efd9ffddb85",
+  "capture_source_tree": "d72b3900459be99d1b407ef74c4cb3b9db942097",
+  "capture_workflow_head": "44ff5d16c7dc6d2382981b83e14b0efd9ffddb85",
+  "capture_workflow_tree": "d72b3900459be99d1b407ef74c4cb3b9db942097",
+  "capture_workflow_sha256": "948e0cfe0ea0b5f6434b26a9ed64e5c1a6ebd7b9e1acb7035902adee29af1b1a",
+  "capture_artifact_sha256": "8e55fbb5849f76d1cc277002bc3a8395d922b9042e5ee83cba903d0850983ace",
+  "capture_seal_sha256": "269654f39eac1bad06c253e916bbab5b6d4301a3d4238351901e4b76b0270187",
+  "capture_outputs_manifest_sha256": "612a02d752d4e8232ef0c483707b6b75eee64639d662403d4f86eecd10c7ec71",
+  "capture_outputs_manifest_bytes": "eyJzY2hlbWEiOiJjYXB0dXJlLW1hbmlmZXN0L3YyIiwibGVnYWN5X2Jhc2UiOiIyNjdiYmY0NzczNTRmNGYzZDM1Yzk1MzBlYzhkYTA1MDNjZDg2YjhhIiwiZmlsZXMiOlt7InBhdGgiOiJjbGF1ZGUtbGF1bmNoZXItY2xpLWFyZ3VtZW50cy5qc29uIiwiYnl0ZXMiOjg5MCwic2hhMjU2IjoiNDhjZGYwNWZjY2Q0NWQwYmJlMjExZGMwNjFmZjNiNjBlYmYzY2JlYTM5ZDQwYWUzNDhjMmRhYjI2YWRiM2U4NyJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1jbGktZWRpdHMuanNvbiIsImJ5dGVzIjoxODU2LCJzaGEyNTYiOiI5OTM2ZjlmYmU3N2I3MzY5YmRmZWYyZmE2ZmQxMTUwZmNmY2ZiYWI5MWFlZDhlNjQwZDQ0ZDY2M2U5ZTdhYzdjIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWNsaS1yZWZ1c2FsLmpzb24iLCJieXRlcyI6ODk0LCJzaGEyNTYiOiJhYzg0NWJhOTJjZGNhYTM1MjEzNjBkMGM1ZTI2NDMzNjhlNjQxYWY4N2VkZTI5Y2ZiZjA1YWEwZDY0YzYxNDU0In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDAuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiI4MzQ2MDBjMzE3YzMxNWQ0MGFiNWE1ODMzOGJiYWFkOGNmMDQxNDc0OGVmMjAyNThhMTQzMzI1MTc0MjZkNzc0In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDEuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiI3ZTI1NjJmOWFlZTllYjM4NmI0ZmYyMTJlZTdkYTQ1OWU4OWU2YTM1ZTBjZTdlYmMxMTlhOWI1YWVlMTRiYzlmIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDIuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiJmNzFiODg0OGQxNzdjM2IzMDdiY2FkNWYzMGNiYjZiY2Q3OTE0ZDkwYWU2YjYwNDNhNGI3NjliZTZiMDRlMGEzIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDMuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiI2NWUyMmRhOThhNjEyNDYyNWI1MDg2OTFmMTg0MDgxYWZjMjVlNDBlZDQ4MDdiZTI4YjE5MGRmNTFmZGVkYjIxIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDQuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiJjY2VjYzM1ZWQzNWQyNThiM2Y1YmI1YTZjYWEwZDJkMjQxNWU1MmFmMDYxMjZkN2IwYjg4Mjc5NTQwNjI4Y2IxIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDUuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiI2OTYxNzBkNmNkYzliMzNiNThiMDk3MDVlY2MwMTE0ZGY4MzMyZGM1NzQyNjA4ODYzM2FiN2U4YzAyYzhjZTI0In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDYuanNvbiIsImJ5dGVzIjoxMjI4LCJzaGEyNTYiOiI4YzlkYmVkMGU3ZmRjOTYzYTkwYWJkMzIzMGY3OTEzM2JkZDdhYzI0YzZmZGUxYzdhYzUxMzY1MDk2NzU0ZDU1In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDcuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiI2MTU0ZjBhZDc5NTg0ZGVlNjVkYzA2NjJjNDRlNzNjNmFiZWE5YzMyZWY0OWE3MDRkY2I5NTY1NmMxZjA0ZmJiIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDguanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiIyY2NlMDNmM2FkMmVkZDc5OGE1ZmYxZTAwNmQxODlmNDA4NTE4MGUyMzk3M2ZkOTUzZjllNWE4MGZkNzg4NzdhIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDkuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiIwMGI3NTQxZDkyNjE4MzYyODM0NTBmZmZhMzQ4NDNkYzg2ZTgzNTM1ODVkNTY2MTI2MmU5MTgyNmE3NjU2NDQ1In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMTAuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiJjY2YxYTczNDc2ZTBiNTJjMWIxMjgwYzM2NjFhOTQyZDFmNzFjNmY0MjNkNmRiNjg2NGUzMTA5Nzc5ZGY5YzUxIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMTEuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiJhZmI0MzI1NmU4ZDI2ZDNhNWM2NjJjZDU1MDAxYTUxYTYyMzYwZTVjNTJhY2E2ZjUwM2NlZTc3YWYwOGViOTFkIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMTIuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiJiYWYxMWE4ZmJkOTg2NzVlYTk1ZGIyMTcyZjViZDBkMTgwNWE2NWYxYjNhZGY0NTczNjZiMDUxMDJmOTg5NjZmIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMTMuanNvbiIsImJ5dGVzIjoxMjI4LCJzaGEyNTYiOiJiYjJiODI4OWJmNzYyMzNlZTkyZWMzMGU5ZjNjNTc3NTI5NTJiYTZiMjRlYmE5NmEwNzMxZmY3OGM2MDc2MzBkIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLW5vcm1hbC1lZGl0Lmpzb24iLCJieXRlcyI6MzE3OSwic2hhMjU2IjoiYzFiYWI5YzI1ZTNkZjhjOGRhZDk4ZjczN2I0N2Y2NTRhNWU5ZDU2ZjNhMGNkNTVjM2Y4NzdlYzc3NDlhMzFkOSJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1vbGQtdmVyc2lvbi0xLmpzb24iLCJieXRlcyI6MTIzMiwic2hhMjU2IjoiYWY4YTk0ZTNhM2QwN2RiYmVmOWM2ZmFhZWY5NjFkN2NlZjRiZjM1YzM0MjZiMzhlMjE0ZGVmMzI1NDc3ZDUxYSJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1vbGQtdmVyc2lvbi0yLmpzb24iLCJieXRlcyI6MTIzMiwic2hhMjU2IjoiOWIyYWMzMmRiNzIwMGM1N2Q4NmE1NThmY2RkNmI0MTEyNzc3ZTUwN2Y0ODM0YjllODM1MTVlZWIzZWE0NjFiZCJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1vbGQtdmVyc2lvbi0zLmpzb24iLCJieXRlcyI6MTIzMiwic2hhMjU2IjoiZGUyOTQ5NmMwOTdkY2ZmYzJiZTQ2YWZlNTRiNzUzZGVhMmRjNmFjMDczNzMwNzMwY2RkZWRjOGIzZDRlMzc3NiJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1vbGQtdmVyc2lvbi01Lmpzb24iLCJieXRlcyI6MTIzMiwic2hhMjU2IjoiZThhZWVkMjczZThjNThmMDExMTIyOTRhZmY4NzE3YTlhYzJhZDk0OWFhNGQzODJmYjlkOTBjODFlM2E1MzczYyJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1vbGQtdmVyc2lvbi02Lmpzb24iLCJieXRlcyI6MTMxMCwic2hhMjU2IjoiZTU0ZGQzZTlmNzBmMjEyOTc4MWQ2MDU3OGE5MmRiMjUwYWVlYWYyMTQzYTA2OTBjZmI0ODQ4NWUyMzk1Mjg0OCJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1zeXN0ZW0tYXV0aG9yaXR5Lmpzb24iLCJieXRlcyI6MTMwMywic2hhMjU2IjoiZDlmNGIzNDhmMjBkNTlkYmY2NTI4MzJkZGI4MmIxN2M2YTEyYWE5MmNkNzU0ZjUwMGFlNDJmMzQ2YmI4NjlkNyJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci10eXBlZC1wcm9qZWN0aW9uLmpzb24iLCJieXRlcyI6OTQxLCJzaGEyNTYiOiIyMTA1MjFlMmIyYjNkNmIwYmQ1MDI3Y2EzZDEzMjg1OTUwMTMzMzA5YzlmYTczOWNlZWUwOTZiNjJjYzUwMzU5In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLXZhbGlkLTAwLmpzb24iLCJieXRlcyI6NzU3LCJzaGEyNTYiOiI5MzY3YzZhNTE2MTdiM2VkMmE5NWQ0ZThmMDkwZDFkOTViM2I1MWI0MDg1NGNjNzFiNzZiZmI1NzcxOGNmYThlIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLXZhbGlkLTAxLmpzb24iLCJieXRlcyI6NzU3LCJzaGEyNTYiOiJmZjM3OTJiODBjNmNkNjc0YWI4MmYxYTAyNGE2N2EwZjYyNzUyNjNmMDFiMzlkYTEyNWU1NjgyZDk5NWFmNDgwIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLXZhbGlkLTAyLmpzb24iLCJieXRlcyI6NzkzLCJzaGEyNTYiOiIwZThlNDZkMGE2ZmE1NzVjMWM2NGRkMDFlYjc0MzUzNzVkNjU0ZTc2OGZiMGMxOTNmODJhY2E2MzA3ODAwNDk1In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLXZhbGlkLTAzLmpzb24iLCJieXRlcyI6ODY5LCJzaGEyNTYiOiJjYTZiYjc0MWUwMWMxZDZiZDAxZjU5NTJkOWExNDJiNGVlMjM5YzFiOTVkMzg2ZGI3ZjZmMmE3YmQxMDc1ZTVlIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLXZhbGlkLTA0Lmpzb24iLCJieXRlcyI6OTI1LCJzaGEyNTYiOiIyMzU3ODQ5ZmRmMjQ0NGI2OGUzYTI1ODA4MDM4YzgwZmQ5MzBkNmRkNzUyZTZmMzcyYzA2YjExNDdmNDY0ZjJjIn0seyJwYXRoIjoiY2xhdWRlX2NvZGUtZW1wdHkuanNvbiIsImJ5dGVzIjoxNTEwNSwic2hhMjU2IjoiZDEwYTgzNGIwOWU0ZmU2N2ZiMDM4OWQ0NmU0OWI0ZjNlMjBkNjllYmU2MTcwZTllYjk2ZmIyMWYyZTY2YzcxYyJ9LHsicGF0aCI6ImNsYXVkZV9jb2RlLW1jcC5qc29uIiwiYnl0ZXMiOjE1NTczLCJzaGEyNTYiOiIxOGM5MWI3Yzc2NDM1MTE2Yjc2YTc0YzNkYTk4NGEwMDg4ZjliZDQ2ODIzMzZlZjkwNmE2NWQyZDY0ZTRkMGFlIn0seyJwYXRoIjoiY29kZXhfY2xpLWN1cnJlbnQuanNvbiIsImJ5dGVzIjoxMjg3OSwic2hhMjU2IjoiY2JlNjJhMjYzMzc5NjFjZTFlOTYzZjFiMDBlZjkzNTc0YWQ4MDdjMTFjMzU4YWRlNjA0ZmI3MjIwNTgzMTBjYiJ9LHsicGF0aCI6ImNvZGV4X2NsaS1lbXB0eS5qc29uIiwiYnl0ZXMiOjEzMzQ1LCJzaGEyNTYiOiJjODQ2NDk4M2JhOTdmOGNlNjBlN2Y3NjI2ZTE0YjZiODMzZTEzMWQ4MzM4ZjhiZDQ5ZGM0NDQxZmZhZTBkNTVkIn0seyJwYXRoIjoiY29kZXhfY2xpLW1hbGZvcm1lZC1zdGF0ZS5qc29uIiwiYnl0ZXMiOjk0NzgsInNoYTI1NiI6ImUwNzYzNTQ2ZjcyMWU0NzAzZjUwNzA0NzI4ZmMxMjQ4NTY3ZWY3NjFhYWEzYTg2N2EyY2NhMTUxZDE1MTc1MDcifSx7InBhdGgiOiJjb2RleF9jbGktbWlzc2luZy1zdGF0ZS5qc29uIiwiYnl0ZXMiOjkyMjgsInNoYTI1NiI6IjE4MDIzYTFiMGU0MzYwNGQ3M2IyNjQxZjFiYTQ5Yzg4NmEwMTA3ZTIxNDNiYWIzN2Y5NWQ4ZDhlMjU5YTAzMjcifSx7InBhdGgiOiJjb2RleF9jbGktbW9kaWZpZWQuanNvbiIsImJ5dGVzIjoxMTA3Miwic2hhMjU2IjoiM2NhYjE0MzQ4NTIxZWJjYTYwNzgyOTRkMjMzN2NjYzc3ZWEyZDNmNjc2NGZjNzIyMDllOWEwNWNhNGUwMmViMiJ9LHsicGF0aCI6ImNvZGV4X2NsaS1uYXRpdmUtcGFyZW50Lmpzb24iLCJieXRlcyI6MTM4MTIsInNoYTI1NiI6IjQ4NTMxNzE2YmQ5OWU1NTJlZjgwMGNmZTk5YjhlMDBmNTFhY2JjNDdkY2FiYTlmZDA4MDRhZTMwOTA2ODAzYTIifSx7InBhdGgiOiJjb2RleF9jbGktdW5yZWFkYWJsZS1zdGF0ZS5qc29uIiwiYnl0ZXMiOjkzODcsInNoYTI1NiI6ImEzNmY0NWIzOWIwMDBkNWE1NzcxMWY1M2I3MWVjYzQ2NzVmM2YzNjgyMGE0YmQ4YjBhOGJiMjE4MzJiMjlmZjYifSx7InBhdGgiOiJjb2RleF9jbGktdXNlci1zZXR0aW5ncy5qc29uIiwiYnl0ZXMiOjE0NDk1LCJzaGEyNTYiOiI5Zjk2YjM1Yzg3N2I0MjM1ZTBkYTFjN2Q2ODE4NTk4YmYyMGE3YWY0N2I2MGU2OGE3MzkwMGVkZDA0NTIxMzhjIn0seyJwYXRoIjoiY3Vyc29yLXByb2plY3QtbWlycm9yLmpzb24iLCJieXRlcyI6MTIwNSwic2hhMjU2IjoiMjU2YWQ1NDRmMzE0NWVhZjViNDg5NDNkZGNlZjBhYjAwMjQzNzkyNjE0ZTE3NTNiZGY5ODBkOWU4OGIxNjMxOSJ9LHsicGF0aCI6ImdlbWluaS1wcm9qZWN0LW1pcnJvci5qc29uIiwiYnl0ZXMiOjEyMDksInNoYTI1NiI6ImRkMDBmYWUyNGEyZTAyYmQ1MTcxMmFiZTg1ZDMzNDkwMGNlOGU4MGVjYThkMTU0NDY0MWFkNmUyYTUzZjUzMGIifSx7InBhdGgiOiJtdXNlLWVtcHR5Lmpzb24iLCJieXRlcyI6OTgzOCwic2hhMjU2IjoiZDc4MjVhYTk4MTliNDNkODdiOWQ2YmI0ZmEwMTg4ZDdmYTdjYTY1OWE3OTQ3MDBlOTExNDRjZGY5YmEyYzhlOSJ9LHsicGF0aCI6Im9wZW5jb2RlLWVtcHR5Lmpzb24iLCJieXRlcyI6OTg4Miwic2hhMjU2IjoiNDMzOWViODFhZDc1MTVjM2QzNjE0NzAyNjVkZjlhZjE0ZTQ0ODRmMDJjYjAwM2QwOTA4MzVlNDBlMGZkMDRlYiJ9LHsicGF0aCI6Im9wZW5jb2RlLW5hdGl2ZS1kaXNjb3ZlcnkuanNvbiIsImJ5dGVzIjo0NTksInNoYTI1NiI6ImY4NzMyM2NmYjQzMGVhYzQxMmFmODllZWQxN2E3MDY1ZGY1OGVmNWZhNmVmNDBkYzUyNzg5ODZiZDZmZjlkMmQifSx7InBhdGgiOiJwaS1lbXB0eS5qc29uIiwiYnl0ZXMiOjEyMDU3LCJzaGEyNTYiOiI2NjcyYzA1NDRkZjlmNGJhYWFlYmRiZGQ5ODQyYmFiMjc0NmY1NDE3OWU3OTIwNjk5MGNiNWRmMzVkYmEyYTkxIn0seyJwYXRoIjoid2luZHN1cmYtbmF0aXZlLWRpc2NvdmVyeS5qc29uIiwiYnl0ZXMiOjQ1OSwic2hhMjU2IjoiNGM5MzlkYmY2MGU1OTY0NTBiM2U1YWJkM2JmN2JkN2QzZWQyNmM4YTk4ZWJkNzY4YjdhODViNzRmNWY4ZmRkZCJ9XX0K",
+  "capture_repeat_manifest_sha256": "40d635560094090587939014376ccd0fe13833ab555e2ff74f9bc15715f9bca0",
+  "capture_repeat_manifest_bytes": "eyJzY2hlbWEiOiJjYXB0dXJlLW1hbmlmZXN0L3YyIiwibGVnYWN5X2Jhc2UiOiIyNjdiYmY0NzczNTRmNGYzZDM1Yzk1MzBlYzhkYTA1MDNjZDg2YjhhIiwiZmlsZXMiOlt7InBhdGgiOiJmaXJzdC5qc29uIiwiYnl0ZXMiOjE1OTgxLCJzaGEyNTYiOiI1ZTMxOWRiNTkzZGQ3MDZiOTg0MGFlZDI0ZTAzYTQ5YmVjZjQ1NTc0YmVjNjMyYzYxODFhYmQ2MzA5NDI4MjY1In0seyJwYXRoIjoic2Vjb25kLmpzb24iLCJieXRlcyI6MTU5ODIsInNoYTI1NiI6IjMzYjE3M2E0Nzc2NDk5YmQ5MzFiZTQ0YzkyYmQxNjIxMTZmYjExNDM3YjhmYWZhMjg1Njk0ZmEwNjQxMDJlMzkifV19Cg==",
+  "capture_repeat_root_binding": "t.TempDir -> filepath.EvalSymlinks",
+  "capture_repeat_result_sha256": "d10a834b09e4fe67fb0389d46e49b4f3e20d69ebe6170e9eb96fb21f2e66c71c",
+  "capture_driver_pins": {
+    "testdata/originalcapture/ancestor_projection_test.go": "03e153275c7ca9a7a83ade0705ae9d4aac8e4ee3d30a36e381b8f97dbaf1851f",
+    "testdata/originalcapture/capture_homes_test.go": "35457d6728df2436292d85702621318d33b420b7d8aafd891cc96421be8d293b",
+    "testdata/originalcapture/capture_launchers_test.go": "e202ab658c45b6ebaba731c2a72eda82de4cb94583b251d0f73054361e124518",
+    "testdata/originalcapture/controls_test.go": "2928b6a0001dccfd39f430caa93ced8528b23653f4b3542103639eef09b908e4",
+    "testdata/originalcapture/launcher_fixture_test.go": "deaefe19fadacd5d449176bfab0aa60d029c842f14c5070fbea7e9f0e539e983",
+    "testdata/originalcapture/legacy_fixture_test.go": "b96b012122f3ecb70537e2f64ca5fefbbdf6225123ce11f3ff7d6fc038c3a6eb"
+  },
+  "metadata_role": "consumer provenance index for immutable producer capture",
+  "capture_creation_policy": "umask 0077 and probe directory mode 0700 recorded in export seal",
+  "capture_payload_identity": "original capture",
+  "capture_redacted_fields": 0,
+  "capture_redacted_values": 0,
+  "cases": [
+    {
+      "name": "claude-launcher-cli-arguments",
+      "sha256": "48cdf05fccd45d0bbe211dc061ff3b60ebf3cbea39d40ae348c2dab26adb3e87",
+      "bytes": 890
+    },
+    {
+      "name": "claude-launcher-cli-edits",
+      "sha256": "9936f9fbe77b7369bdfef2fa6fd1150fcfcfbab91aed8e640d44d663e9e7ac7c",
+      "bytes": 1856
+    },
+    {
+      "name": "claude-launcher-cli-refusal",
+      "sha256": "ac845ba92cdcaa3521360d0c5e2643368e641af87ede29cfbf05aa0d64c61454",
+      "bytes": 894
+    },
+    {
+      "name": "claude-launcher-invalid-00",
+      "sha256": "834600c317c315d40ab5a58338bbaad8cf0414748ef20258a14332517426d774",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-01",
+      "sha256": "7e2562f9aee9eb386b4ff212ee7da459e89e6a35e0ce7ebc119a9b5aee14bc9f",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-02",
+      "sha256": "f71b8848d177c3b307bcad5f30cbb6bcd7914d90ae6b6043a4b769be6b04e0a3",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-03",
+      "sha256": "65e22da98a6124625b508691f184081afc25e40ed4807be28b190df51fdedb21",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-04",
+      "sha256": "ccecc35ed35d258b3f5bb5a6caa0d2d2415e52af06126d7b0b88279540628cb1",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-05",
+      "sha256": "696170d6cdc9b33b58b09705ecc0114df8332dc57426088633ab7e8c02c8ce24",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-06",
+      "sha256": "8c9dbed0e7fdc963a90abd3230f79133bdd7ac24c6fde1c7ac51365096754d55",
+      "bytes": 1228
+    },
+    {
+      "name": "claude-launcher-invalid-07",
+      "sha256": "6154f0ad79584dee65dc0662c44e73c6abea9c32ef49a704dcb95656c1f04fbb",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-08",
+      "sha256": "2cce03f3ad2edd798a5ff1e006d189f4085180e23973fd953f9e5a80fd78877a",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-09",
+      "sha256": "00b7541d9261836283450fffa34843dc86e8353585d5661262e91826a7656445",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-10",
+      "sha256": "ccf1a73476e0b52c1b1280c3661a942d1f71c6f423d6db6864e3109779df9c51",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-11",
+      "sha256": "afb43256e8d26d3a5c662cd55001a51a62360e5c52aca6f503cee77af08eb91d",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-12",
+      "sha256": "baf11a8fbd98675ea95db2172f5bd0d1805a65f1b3adf457366b05102f98966f",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-13",
+      "sha256": "bb2b8289bf76233ee92ec30e9f3c57752952ba6b24eba96a0731ff78c607630d",
+      "bytes": 1228
+    },
+    {
+      "name": "claude-launcher-normal-edit",
+      "sha256": "c1bab9c25e3df8c8dad98f737b47f654a5e9d56f3a0cd55c3f877ec7749a31d9",
+      "bytes": 3179
+    },
+    {
+      "name": "claude-launcher-old-version-1",
+      "sha256": "af8a94e3a3d07dbbef9c6faaef961d7cef4bf35c3426b38e214def325477d51a",
+      "bytes": 1232
+    },
+    {
+      "name": "claude-launcher-old-version-2",
+      "sha256": "9b2ac32db7200c57d86a558fcdd6b4112777e507f4834b9e83515eeb3ea461bd",
+      "bytes": 1232
+    },
+    {
+      "name": "claude-launcher-old-version-3",
+      "sha256": "de29496c097dcffc2be46afe54b753dea2dc6ac073730730cddedc8b3d4e3776",
+      "bytes": 1232
+    },
+    {
+      "name": "claude-launcher-old-version-5",
+      "sha256": "e8aeed273e8c58f01112294aff8717a9ac2ad949aa4d382fb9d90c81e3a5373c",
+      "bytes": 1232
+    },
+    {
+      "name": "claude-launcher-old-version-6",
+      "sha256": "e54dd3e9f70f2129781d60578a92db250aeeaf2143a0690cfb48485e23952848",
+      "bytes": 1310
+    },
+    {
+      "name": "claude-launcher-system-authority",
+      "sha256": "d9f4b348f20d59dbf652832ddb82b17c6a12aa92cd754f500ae42f346bb869d7",
+      "bytes": 1303
+    },
+    {
+      "name": "claude-launcher-typed-projection",
+      "sha256": "210521e2b2b3d6b0bd5027ca3d13285950133309c9fa739ceee096b62cc50359",
+      "bytes": 941
+    },
+    {
+      "name": "claude-launcher-valid-00",
+      "sha256": "9367c6a51617b3ed2a95d4e8f090d1d95b3b51b40854cc71b76bfb57718cfa8e",
+      "bytes": 757
+    },
+    {
+      "name": "claude-launcher-valid-01",
+      "sha256": "ff3792b80c6cd674ab82f1a024a67a0f6275263f01b39da125e5682d995af480",
+      "bytes": 757
+    },
+    {
+      "name": "claude-launcher-valid-02",
+      "sha256": "0e8e46d0a6fa575c1c64dd01eb7435375d654e768fb0c193f82aca6307800495",
+      "bytes": 793
+    },
+    {
+      "name": "claude-launcher-valid-03",
+      "sha256": "ca6bb741e01c1d6bd01f5952d9a142b4ee239c1b95d386db7f6f2a7bd1075e5e",
+      "bytes": 869
+    },
+    {
+      "name": "claude-launcher-valid-04",
+      "sha256": "2357849fdf2444b68e3a25808038c80fd930d6dd752e6f372c06b1147f464f2c",
+      "bytes": 925
+    },
+    {
+      "name": "claude_code-empty",
+      "sha256": "d10a834b09e4fe67fb0389d46e49b4f3e20d69ebe6170e9eb96fb21f2e66c71c",
+      "bytes": 15105
+    },
+    {
+      "name": "claude_code-mcp",
+      "sha256": "18c91b7c76435116b76a74c3da984a0088f9bd4682336ef906a65d2d64e4d0ae",
+      "bytes": 15573
+    },
+    {
+      "name": "codex_cli-current",
+      "sha256": "cbe62a26337961ce1e963f1b00ef93574ad807c11c358ade604fb722058310cb",
+      "bytes": 12879
+    },
+    {
+      "name": "codex_cli-empty",
+      "sha256": "c8464983ba97f8ce60e7f7626e14b6b833e131d8338f8bd49dc4441ffae0d55d",
+      "bytes": 13345
+    },
+    {
+      "name": "codex_cli-malformed-state",
+      "sha256": "e0763546f721e4703f50704728fc1248567ef761aaa3a867a2cca151d1517507",
+      "bytes": 9478
+    },
+    {
+      "name": "codex_cli-missing-state",
+      "sha256": "18023a1b0e43604d73b2641f1ba49c886a0107e2143bab37f95d8d8e259a0327",
+      "bytes": 9228
+    },
+    {
+      "name": "codex_cli-modified",
+      "sha256": "3cab14348521ebca6078294d2337ccc77ea2d3f6764fc72209e9a05ca4e02eb2",
+      "bytes": 11072
+    },
+    {
+      "name": "codex_cli-native-parent",
+      "sha256": "48531716bd99e552ef800cfe99b8e00f51acbc47dcaba9fd0804ae30906803a2",
+      "bytes": 13812
+    },
+    {
+      "name": "codex_cli-unreadable-state",
+      "sha256": "a36f45b39b000d5a57711f53b71ecc4675f3f36820a4bd8b0a8bb21832b29ff6",
+      "bytes": 9387
+    },
+    {
+      "name": "codex_cli-user-settings",
+      "sha256": "9f96b35c877b4235e0da1c7d6818598bf20a7af47b60e68a73900edd0452138c",
+      "bytes": 14495
+    },
+    {
+      "name": "cursor-project-mirror",
+      "sha256": "256ad544f3145eaf5b48943ddcef0ab00243792614e1753bdf980d9e88b16319",
+      "bytes": 1205
+    },
+    {
+      "name": "gemini-project-mirror",
+      "sha256": "dd00fae24a2e02bd51712abe85d334900ce8e80eca8d1544641ad6e2a53f530b",
+      "bytes": 1209
+    },
+    {
+      "name": "muse-empty",
+      "sha256": "d7825aa9819b43d87b9d6bb4fa0188d7fa7ca659a794700e91144cdf9ba2c8e9",
+      "bytes": 9838
+    },
+    {
+      "name": "opencode-empty",
+      "sha256": "4339eb81ad7515c3d361470265df9af14e4484f02cb003d090835e40e0fd04eb",
+      "bytes": 9882
+    },
+    {
+      "name": "opencode-native-discovery",
+      "sha256": "f87323cfb430eac412af89eed17a7065df58ef5fa6ef40dc5278986bd6ff9d2d",
+      "bytes": 459
+    },
+    {
+      "name": "pi-empty",
+      "sha256": "6672c0544df9f4baaaebdbdd9842bab2746f54179e79206990cb5df35dba2a91",
+      "bytes": 12057
+    },
+    {
+      "name": "windsurf-native-discovery",
+      "sha256": "4c939dbf60e596450b3e5abd3bf7bd7d3ed26c8a98ebd768b7a85b74f5f8fddd",
+      "bytes": 459
+    }
+  ],
+  "repeat_observations": [
+    {
+      "name": "first.json",
+      "sha256": "5e319db593dd706b9840aed24e03a49becf45574bec632c6181abd6309428265",
+      "bytes": 15981
+    },
+    {
+      "name": "second.json",
+      "sha256": "33b173a4776499bd931be44c92bd162116fb11437b8fafa285694fa064102e39",
+      "bytes": 15982
+    }
+  ],
+  "corpora": [
+    {
+      "path": "internal/envprofile/testdata/codex-seed-c-v1/cases.json",
+      "sha256": "a76f34c25a4c7363aab753ef39d4530f4134de4519699cb9adfbf6e6c51f9553",
+      "bytes": 18061
+    },
+    {
+      "path": "internal/config/launcher_extensions_test.go",
+      "sha256": "4390dca8fd9c96a5cd604ad41a706918ffe8393d836abbeb40951989a291e693",
+      "bytes": 6242
+    },
+    {
+      "path": "cmd/curator/config_launcher_test.go",
+      "sha256": "5929248e6b69061440efdca4f0c0ee62cbc61aa3e02bcfff281498313fa851d2",
+      "bytes": 3598
+    }
+  ],
+  "root_parameter": "${FIXTURE_ROOT}; exact disposable fixture-root substitution plus the accepted Claude ancestor exclusion projection",
+  "clock": "fixed fixture Git author/committer dates 2000-01-01T00:00:00Z; no wall-clock field emitted by selected operations"
+}

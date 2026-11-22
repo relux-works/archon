@@ -11,6 +11,8 @@ import (
 	"github.com/relux-works/curator/internal/harnessregistry"
 )
 
+const ownershipSourceHead = "643e727edd2db21307ca6d8c0332935e33d50ac8"
+
 // Every inventory row has explicit adapter methods and a neutral effect owner.
 // Each previously omitted package is scanned, with ID and path plants paired
 // with a harness-neutral control. The map describes migration ownership, not
@@ -45,7 +47,7 @@ func TestAdapterSurfaceOwnership(t *testing.T) {
 		}
 	}
 	readJSON(t, "source-ownership.json", &ownership)
-	if ownership.SourceHead != baselineHead {
+	if ownership.SourceHead != ownershipSourceHead {
 		t.Fatal("source map baseline changed")
 	}
 	expected := []string{"managed-catalog", "skill-catalog", "switch-catalog", "home-materialization", "seed-credentials-trust", "native-home-mcp", "shared-context-rendering", "mcp-inspection", "configuration", "installation", "project-delivery", "other-boundaries", "skill-consumers-notices"}

@@ -11,12 +11,15 @@ contract ownership groups, shared effect owners, capabilities and adapter
 packages. It records intended migration ownership. The staged methods do not
 yet implement their corresponding native surfaces.
 
-The conservative legacy exception list was captured from original source head
-`643e727edd2db21307ca6d8c0332935e33d50ac8`. Every allowance names a path,
-canonical ID and exact source-line SHA-256. Counts are consumed one-to-one;
-copying a permitted line cannot reuse its allowance. The frozen allowance bytes
-are digest-pinned. Active exceptions must be counted subsets of both this frozen ceiling and the
-previous accepted active set. Restoring a removed allowance is refused. Source hashes for the
+The original conservative exception list was captured from source head
+`643e727edd2db21307ca6d8c0332935e33d50ac8`. The accepted first refresh binds the
+frozen ceiling and active inventory to `267bbf477354f4f3d35c9530ec8da0503cd86b8a`
+and adds the 23 legacy source sites introduced on main since the original
+capture. Every allowance names a path, canonical ID and exact source-line
+SHA-256. Counts are consumed one-to-one; copying a permitted line cannot reuse
+its allowance. The frozen allowance bytes are digest-pinned. Active exceptions
+must be counted subsets of both this frozen ceiling and the previous accepted
+active set. Restoring a removed allowance is refused. Source hashes for the
 original production inventory are retained separately. A move removes its own
 active entries; it never expands the frozen baseline.
 
@@ -74,9 +77,9 @@ cannot replace the CI event. The one workflow step runs predecessor, source and
 parity checks even when an earlier check fails, preserving the predecessor
 refusal's exit code.
 
-The initial introduction has a separate explicit authorization:
-`--bootstrap-source 643e727edd2db21307ca6d8c0332935e33d50ac8`
-and `--bootstrap-frozen-digest d400920c0956af1ad90b9e964828c6c9dea2fbe8786b3064d133d825e945f0e9`.
+The first refresh has a separate explicit bootstrap binding:
+`--bootstrap-source 267bbf477354f4f3d35c9530ec8da0503cd86b8a`
+and `--bootstrap-frozen-digest a186ea55e67809751365ae5d5d08e9af47af3d16fc629b682e1ee544cc03ae1c`.
 It applies only after the existing predecessor commit tree proves the active
 path absent. An empty or failed read is not absence. Its explicit payload digest
 is SHA-256 of empty bytes, distinguished from an existing file by that proven
