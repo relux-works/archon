@@ -135,8 +135,8 @@ func reviewedManagerReadExceptions() map[string]string {
 	allow("Inspects a caller-owned native environment surface or seed; an absent external file is skipped or reported as missing, and other read errors are preserved.",
 		"internal/adapters/stage.go:*Mirror.stageStale",
 	)
-	allow("Reads only the caller-supplied CI evidence source and destination; a missing source represents no evidence to copy, an existing destination is refused, and all other filesystem failures stop publication without consulting manager state.",
-		"internal/ciartifact/sanitize.go:sanitizeTree",
+	allow("Reads only caller-supplied CI evidence paths and its private staging copy; a missing source means there is no evidence to copy, an existing destination is refused, and other filesystem errors stop publication. These paths do not inspect or select manager-owned state.",
+		"internal/ciartifact/sanitize.go:sanitizeTreeWithHomePrefix",
 	)
 	allow("Checks an external destination or target namespace before a write or removal; ENOENT describes path topology, while other metadata failures abort the operation.",
 		"internal/adapters/adapters.go:unmanagedConflict",
