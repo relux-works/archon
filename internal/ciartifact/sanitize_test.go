@@ -62,10 +62,8 @@ func TestAccountHomePrefixUsesOperatingSystemAccount(t *testing.T) {
 	}
 }
 
+// Claim: the stream sanitizer redacts the operating-system account-home prefix in every CI output label without losing event metadata.
 func TestSanitizeGoTestStreamRedactsAccountHomeAfterEveryOutputLabel(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("the reported leak uses Unix home paths")
-	}
 	homePrefix := currentAccountHomePrefix(t)
 	t.Setenv(accountHomeEnvironmentVariable(), filepath.Join(t.TempDir(), "unrelated-home"))
 	separator := string(os.PathSeparator)
@@ -118,6 +116,72 @@ func TestSanitizeGoTestStreamRedactsAccountHomeAfterEveryOutputLabel(t *testing.
 			}
 			if residuals := accountHomePrefixResidualCount(clean, accountHomePrefix()); residuals != 0 {
 				t.Fatalf("post-sanitize account-home residual count = %d, want 0", residuals)
+			}
+		})
+	}
+}
+
+// Claim: Windows account-home paths are redacted in raw text, Go test JSON output, and forward-slash form on every host OS.
+func TestSanitizeGoTestStreamRedactsWindowsAccountHomeForms(t *testing.T) {
+	const windowsHome = `C:\Users\example`
+	const slashWindowsHome = `C:/Users/example`
+	const rawWindowsPath = windowsHome + `\tmp\fixture-run\TestNativeHome`
+	tests := []struct {
+		name       string
+		homePrefix string
+		output     string
+		jsonEvent  bool
+	}{
+		{name: "raw_backslashes", homePrefix: slashWindowsHome, output: "Native: " + rawWindowsPath},
+		{name: "go_test_json_escaped_backslashes", homePrefix: slashWindowsHome, output: "Native: " + rawWindowsPath, jsonEvent: true},
+		{name: "forward_slashes", homePrefix: slashWindowsHome, output: "Native: " + `C:/Users/example/tmp/fixture-run/TestNativeHome`},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var input []byte
+			if test.jsonEvent {
+				event, err := json.Marshal(struct {
+					Action  string
+					Package string
+					Output  string
+				}{Action: "output", Package: "example/pkg", Output: test.output})
+				if err != nil {
+					t.Fatal("encode JSON test event")
+				}
+				if !bytes.Contains(event, []byte(`C:\\Users\\example`)) {
+					t.Fatal("JSON fixture did not contain escaped Windows separators")
+				}
+				input = append(event, '\n')
+			} else {
+				input = []byte(test.output)
+			}
+
+			clean, found, err := sanitizeGoTestStreamForHomePrefix(input, test.homePrefix)
+			if err != nil {
+				t.Fatal("sanitize Windows account-home fixture")
+			}
+			if !bytes.Contains(clean, []byte(redactedPath)) || found.paths == 0 {
+				t.Fatal("Windows account-home path was not redacted and counted")
+			}
+			if !bytes.Contains(clean, []byte("Native:")) {
+				t.Fatal("sanitization removed the output label")
+			}
+			if residuals := accountHomePrefixResidualCount(clean, test.homePrefix); residuals != 0 {
+				t.Fatalf("post-sanitize Windows account-home residual count = %d, want 0", residuals)
+			}
+			if test.jsonEvent {
+				var got struct {
+					Action  string
+					Package string
+					Output  string
+				}
+				if err := json.Unmarshal(bytes.TrimSpace(clean), &got); err != nil {
+					t.Fatal("decode sanitized JSON test event")
+				}
+				if got.Action != "output" || got.Package != "example/pkg" ||
+					!strings.HasPrefix(got.Output, "Native:") || !strings.Contains(got.Output, redactedPath) {
+					t.Fatal("sanitization changed event metadata or omitted the path replacement")
+				}
 			}
 		})
 	}
