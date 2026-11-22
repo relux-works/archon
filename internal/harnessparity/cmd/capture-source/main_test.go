@@ -77,6 +77,22 @@ func TestMaterializeRemoteAllowlist(t *testing.T) {
 	}
 }
 
+func TestMaterializeCommandRejectsUnapprovedRemoteBeforeFetch(t *testing.T) {
+	remote, revision := newCaptureSourceRemote(t)
+	destination := filepath.Join(t.TempDir(), "capture-source")
+	err := runMaterialize([]string{
+		"--remote", remote,
+		"--revision", revision,
+		"--destination", destination,
+	})
+	if err == nil || !strings.Contains(err.Error(), "accepted capture source") {
+		t.Fatalf("unapproved remote error = %v", err)
+	}
+	if _, err := os.Lstat(destination); !os.IsNotExist(err) {
+		t.Fatalf("destination was created before rejecting the remote: %v", err)
+	}
+}
+
 func TestArchivePathsUseAnExplicitAllowlist(t *testing.T) {
 	for _, valid := range []string{
 		workflowArchivePath,
