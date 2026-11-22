@@ -21,6 +21,7 @@ import (
 )
 
 const (
+	captureSourceRemote = "https://github.com/relux-works/curator.git"
 	workflowArchivePath = ".github/workflows/original-capture-native.yml"
 	fixtureArchiveRoot  = "testdata/originalcapture/"
 )
@@ -62,6 +63,9 @@ func runMaterialize(args []string) error {
 	}
 	if strings.TrimSpace(*remote) == "" {
 		return errors.New("remote is required")
+	}
+	if !isAllowedCaptureRemote(*remote) {
+		return fmt.Errorf("remote must be the accepted capture source %q", captureSourceRemote)
 	}
 	if strings.TrimSpace(*destination) == "" {
 		return errors.New("destination is required")
@@ -391,6 +395,10 @@ func isFullCommitSHA(value string) bool {
 		}
 	}
 	return true
+}
+
+func isAllowedCaptureRemote(remote string) bool {
+	return remote == captureSourceRemote
 }
 
 type testEvent struct {

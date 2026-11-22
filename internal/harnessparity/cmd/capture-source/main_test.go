@@ -56,6 +56,27 @@ func TestMaterializeRequiresAFullCommitSHA(t *testing.T) {
 	}
 }
 
+func TestMaterializeRemoteAllowlist(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		remote string
+		valid  bool
+	}{
+		{name: "accepted HTTPS repository", remote: captureSourceRemote, valid: true},
+		{name: "different repository", remote: "https://github.com/other/curator.git"},
+		{name: "lookalike host", remote: "https://github.com.attacker.invalid/relux-works/curator.git"},
+		{name: "SSH form", remote: "git@github.com:relux-works/curator.git"},
+		{name: "local file remote", remote: "file:///tmp/curator.git"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			valid := isAllowedCaptureRemote(test.remote)
+			if valid != test.valid {
+				t.Fatalf("remote %q valid = %t, want %t", test.remote, valid, test.valid)
+			}
+		})
+	}
+}
+
 func TestArchivePathsUseAnExplicitAllowlist(t *testing.T) {
 	for _, valid := range []string{
 		workflowArchivePath,
