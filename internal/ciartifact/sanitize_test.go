@@ -365,7 +365,7 @@ func TestSanitizeGoTestStreamRedactsEscapedPath(t *testing.T) {
 }
 
 func TestSanitizeGoTestStreamRedactsAccountHomePrefixAtAnyPosition(t *testing.T) {
-	homePrefix := testAccountHomePrefix(t)
+	homePrefix := "fixture-run"
 	separator := string(os.PathSeparator)
 
 	tests := []struct {
