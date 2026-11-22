@@ -449,11 +449,12 @@ jobs:
           go run ./tools/check-store-compatibility -dir "$evidence" -commit "$GITHUB_SHA" >"$evidence/report.json"
           bash .github/ci/isolated-test.sh go test -count=1 ./internal/storecompatibility
       - name: Sanitize uploaded evidence
+        id: sanitize_store_evidence
         if: always()
         shell: bash
         run: go run ./tools/sanitize-ci-evidence -source .temp/store-v1-compatibility -destination .temp/public-artifacts-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-store
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.sanitize_store_evidence.outcome == 'success'
         with:
           name: store-v1-compatibility
           path: .temp/public-artifacts-${{ github.run_id }}-${{ github.run_attempt }}-store/
@@ -538,11 +539,12 @@ jobs:
           CURATOR_CONFORMANCE_ROOT: ${{ github.workspace }}/protocol-spec/conformance/v1
         run: env -u GIT_DIR -u GIT_WORK_TREE -u SSH_AUTH_SOCK -u GOFLAGS -u GIT_CONFIG_COUNT -u GIT_CONFIG_PARAMETERS -u CODEX_HOME -u CLAUDE_CONFIG_DIR -u PI_CODING_AGENT_DIR -u XDG_DATA_HOME -u XDG_STATE_HOME -u XDG_CACHE_HOME HOME="$(mktemp -d)" go run ./tools/envprofilerace -lane windows-test -shard ${{ matrix.shard }} -dir .temp/ci-evidence/windows-shard
       - name: Sanitize uploaded evidence
+        id: sanitize_windows_evidence
         if: always()
         shell: bash
         run: go run ./tools/sanitize-ci-evidence -source .temp/ci-evidence/windows-shard -destination .temp/public-artifacts-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-windows-${{ matrix.shard }}
       - name: Upload Windows shard
-        if: always()
+        if: always() && steps.sanitize_windows_evidence.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: windows-test-shard-${{ matrix.shard }}
@@ -642,11 +644,12 @@ jobs:
           CURATOR_CONFORMANCE_ROOT: ${{ github.workspace }}/protocol-spec/conformance/v1
         run: bash .github/ci/isolated-test.sh go run ./tools/envprofilerace -lane unix-test -shard ${{ matrix.shard }} -dir .temp/ci-evidence/unix-shard
       - name: Sanitize uploaded evidence
+        id: sanitize_unix_evidence
         if: always()
         shell: bash
         run: go run ./tools/sanitize-ci-evidence -source .temp/ci-evidence/unix-shard -destination .temp/public-artifacts-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-unix-${{ matrix.os }}-${{ matrix.shard }}
       - name: Upload Unix shard
-        if: always()
+        if: always() && steps.sanitize_unix_evidence.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: unix-test-shard-${{ matrix.os }}-${{ matrix.shard }}
@@ -879,11 +882,12 @@ jobs:
         run: bash .github/ci/isolated-test.sh bash .github/ci/test-gate.sh .temp/ci-evidence/test
 
       - name: Sanitize uploaded evidence
+        id: sanitize_test_evidence
         if: always()
         shell: bash
         run: go run ./tools/sanitize-ci-evidence -source .temp/ci-evidence -destination .temp/public-artifacts-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-test-${{ matrix.os }}
       - name: Upload gate evidence
-        if: always()
+        if: always() && steps.sanitize_test_evidence.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: test-evidence-${{ matrix.os }}
@@ -1014,11 +1018,12 @@ jobs:
         run: bash .github/ci/test-gate.sh .temp/ci-evidence/test
 
       - name: Sanitize uploaded evidence
+        id: sanitize_rose_air_evidence
         if: always()
         shell: bash
         run: go run ./tools/sanitize-ci-evidence -source .temp/ci-evidence -destination .temp/public-artifacts-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-rose-air
       - name: Upload gate evidence
-        if: always()
+        if: always() && steps.sanitize_rose_air_evidence.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: test-evidence-rose-air
@@ -1087,11 +1092,12 @@ jobs:
           CURATOR_CONFORMANCE_ROOT: ${{ github.workspace }}/protocol-spec/conformance/v1
         run: env -u GIT_DIR -u GIT_WORK_TREE -u SSH_AUTH_SOCK -u GOFLAGS -u CODEX_HOME -u CLAUDE_CONFIG_DIR -u PI_CODING_AGENT_DIR -u XDG_DATA_HOME -u XDG_STATE_HOME -u XDG_CACHE_HOME HOME="$(mktemp -d)" go run ./tools/envprofilerace -shard ${{ matrix.shard }} -dir .temp/ci-evidence/envprofile
       - name: Sanitize uploaded evidence
+        id: sanitize_envprofile_evidence
         if: always()
         shell: bash
         run: go run ./tools/sanitize-ci-evidence -source .temp/ci-evidence/envprofile -destination .temp/public-artifacts-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-envprofile-${{ matrix.os }}-${{ matrix.shard }}
       - name: Upload envprofile race shard
-        if: always()
+        if: always() && steps.sanitize_envprofile_evidence.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: envprofile-race-${{ matrix.os }}-${{ matrix.shard }}
@@ -1240,11 +1246,12 @@ jobs:
         run: bash .github/ci/test-gate.sh .temp/ci-evidence/race
 
       - name: Sanitize uploaded evidence
+        id: sanitize_race_evidence
         if: always()
         shell: bash
         run: go run ./tools/sanitize-ci-evidence -source .temp/ci-evidence -destination .temp/public-artifacts-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-race-${{ matrix.os }}
       - name: Upload race evidence
-        if: always()
+        if: always() && steps.sanitize_race_evidence.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: race-evidence-${{ matrix.os }}
@@ -1578,11 +1585,12 @@ jobs:
         run: bash .github/ci/test-gate.sh .temp/ci-evidence/test
 
       - name: Sanitize uploaded evidence
+        id: sanitize_candidate_evidence
         if: always()
         shell: bash
         run: go run ./tools/sanitize-ci-evidence -source .temp/ci-evidence -destination .temp/public-artifacts-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-candidate-${{ matrix.os }}
       - name: Upload candidate evidence
-        if: always()
+        if: always() && steps.sanitize_candidate_evidence.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: candidate-evidence-${{ matrix.os }}
@@ -1671,11 +1679,12 @@ jobs:
           print(json.dumps(result, indent=2))
           PY
       - name: Sanitize uploaded evidence
+        id: sanitize_snapshot_evidence
         if: always()
         shell: bash
         run: go run ./tools/sanitize-ci-evidence -source .temp/sharing-evidence -destination .temp/public-artifacts-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-snapshot
       - name: Upload comparison commands and outcomes
-        if: always()
+        if: always() && steps.sanitize_snapshot_evidence.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: snapshot-sharing-comparison

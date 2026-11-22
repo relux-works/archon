@@ -569,7 +569,7 @@ func TestSanitizeTreeKeepsSourceAndRejectsExistingDestination(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(source, "go-test.json"), original, 0o600); err != nil {
 		t.Fatal("write source:", err)
 	}
-	counts, err := sanitizeTreeWithHomePrefix(source, destination, os.RemoveAll, openEvidenceInput, homePrefix, nil)
+	counts, err := sanitizeTreeWithHomePrefix(source, destination, os.RemoveAll, openEvidenceInput, homePrefix, nil, nil)
 	if err != nil {
 		t.Fatal("sanitize tree:", err)
 	}
@@ -596,10 +596,15 @@ func TestSanitizeTreeKeepsSourceAndRejectsExistingDestination(t *testing.T) {
 	if _, err := SanitizeTree(source, destination); err == nil {
 		t.Fatal("existing destination was accepted")
 	}
+	afterRefusal, err := os.ReadFile(filepath.Join(destination, "go-test.json"))
+	if err != nil || !bytes.Equal(afterRefusal, gotClean) {
+		t.Fatal("refusing an existing destination changed or removed it")
+	}
 }
 
 func TestSanitizeTreeRejectsAccountHomeResidualWrittenAfterCopy(t *testing.T) {
-	const homePrefix = "/home/fixture-account"
+	homePrefix := testAccountHomePrefix(t)
+	latePath := filepath.Join(homePrefix, "tmp", "fixture", "TestLateWrite")
 	root := t.TempDir()
 	source := filepath.Join(root, "source")
 	destination := filepath.Join(root, "sanitized")
@@ -615,16 +620,47 @@ func TestSanitizeTreeRejectsAccountHomeResidualWrittenAfterCopy(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		_, writeErr := file.WriteString("late-write:" + homePrefix + "/tmp/fixture/TestLateWrite")
+		_, writeErr := file.WriteString("late-write:" + latePath)
 		closeErr := file.Close()
 		return errors.Join(writeErr, closeErr)
 	}
-	counts, err := sanitizeTreeWithHomePrefix(source, destination, os.RemoveAll, openEvidenceInput, homePrefix, afterCopy)
+	counts, err := sanitizeTreeWithHomePrefix(source, destination, os.RemoveAll, openEvidenceInput, homePrefix, afterCopy, nil)
 	if err == nil || counts.AccountHomePrefixResiduals != 1 {
 		t.Fatalf("late-write verification = (%d, %v), want one residual and refusal", counts.AccountHomePrefixResiduals, err)
 	}
 	if _, err := os.Lstat(destination); !errors.Is(err, os.ErrNotExist) {
 		t.Fatal("late account-home residual published a destination")
+	}
+}
+
+func TestSanitizeTreeRejectsResidualBetweenStagedAndDestinationScans(t *testing.T) {
+	homePrefix := testAccountHomePrefix(t)
+	latePath := filepath.Join(homePrefix, "tmp", "fixture", "TestAfterStageScan")
+	root := t.TempDir()
+	source := filepath.Join(root, "source")
+	destination := filepath.Join(root, "sanitized")
+	if err := os.Mkdir(source, 0o755); err != nil {
+		t.Fatal("create source:", err)
+	}
+	original := []byte(`{"Action":"output","Output":"safe witness"}` + "\n")
+	if err := os.WriteFile(filepath.Join(source, "go-test.json"), original, 0o600); err != nil {
+		t.Fatal("write source evidence:", err)
+	}
+	afterPublish := func(published string) error {
+		file, err := os.OpenFile(filepath.Join(published, "go-test.json"), os.O_APPEND|os.O_WRONLY, 0)
+		if err != nil {
+			return err
+		}
+		_, writeErr := file.WriteString("late-write:" + latePath)
+		closeErr := file.Close()
+		return errors.Join(writeErr, closeErr)
+	}
+	counts, err := sanitizeTreeWithHomePrefix(source, destination, os.RemoveAll, openEvidenceInput, homePrefix, nil, afterPublish)
+	if err == nil || counts.AccountHomePrefixResiduals != 1 {
+		t.Fatalf("post-stage-scan verification = (%d, %v), want one residual and refusal", counts.AccountHomePrefixResiduals, err)
+	}
+	if _, err := os.Lstat(destination); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("post-stage-scan residual left a published destination")
 	}
 }
 
@@ -645,7 +681,7 @@ func TestSanitizeTreeFailsClosedWithoutUsableAccountHomePrefix(t *testing.T) {
 			if err := os.Mkdir(source, 0o755); err != nil {
 				t.Fatal("create evidence source")
 			}
-			if _, err := sanitizeTreeWithHomePrefix(source, destination, os.RemoveAll, openEvidenceInput, test.home, nil); err == nil {
+			if _, err := sanitizeTreeWithHomePrefix(source, destination, os.RemoveAll, openEvidenceInput, test.home, nil, nil); err == nil {
 				t.Fatal("sanitizer accepted an unusable account-home prefix")
 			}
 			if _, err := os.Lstat(destination); !errors.Is(err, os.ErrNotExist) {

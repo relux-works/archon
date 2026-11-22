@@ -35,6 +35,7 @@ func checkInlineGoState(body string) error {
 }
 
 type step struct {
+	ID       string            `yaml:"id"`
 	Shell    string            `yaml:"shell"`
 	Continue bool              `yaml:"continue-on-error"`
 	Uses     string            `yaml:"uses"`

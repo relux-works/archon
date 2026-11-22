@@ -30,6 +30,22 @@ func workflowHasArtifactUploads(data []byte) (bool, error) {
 	return false, nil
 }
 
+func countWorkflowArtifactUploads(data []byte) (int, error) {
+	var wf workflow
+	if err := yaml.Unmarshal(data, &wf); err != nil {
+		return 0, err
+	}
+	count := 0
+	for _, job := range wf.Jobs {
+		for _, current := range job.Steps {
+			if isArtifactUploadAction(current.Uses) {
+				count++
+			}
+		}
+	}
+	return count, nil
+}
+
 func checkSanitizedArtifactUploads(data []byte) error {
 	var wf workflow
 	if err := yaml.Unmarshal(data, &wf); err != nil {
@@ -62,6 +78,12 @@ func checkSanitizedArtifactUploads(data []byte) error {
 					want = strings.ReplaceAll(want, "${{ github.run_id }}", "$GITHUB_RUN_ID")
 					want = strings.ReplaceAll(want, "${{ github.run_attempt }}", "$GITHUB_RUN_ATTEMPT")
 					if ok && destination == want {
+						if prior.ID == "" {
+							return fmt.Errorf("%s: sanitizer step has no id", jobName)
+						}
+						if current.If != "always() && steps."+prior.ID+".outcome == 'success'" {
+							return fmt.Errorf("%s: artifact upload is not gated on sanitizer success", jobName)
+						}
 						found = true
 					}
 				}
@@ -83,9 +105,11 @@ func TestCIArtifactUploadsUseSanitizedCopies(t *testing.T) {
 		t.Fatal(err)
 	}
 	for name, pair := range map[string][2]string{
-		"raw-upload-path":   {"path: .temp/public-artifacts-", "path: .temp/ci-evidence-"},
-		"missing-sanitizer": {"go run ./tools/sanitize-ci-evidence", "echo skipped-sanitizer"},
-		"wrong-destination": {"-destination .temp/public-artifacts-", "-destination .temp/ci-evidence-"},
+		"raw-upload-path":                {"path: .temp/public-artifacts-", "path: .temp/ci-evidence-"},
+		"missing-sanitizer":              {"go run ./tools/sanitize-ci-evidence", "echo skipped-sanitizer"},
+		"wrong-destination":              {"-destination .temp/public-artifacts-", "-destination .temp/ci-evidence-"},
+		"missing-sanitizer-success-gate": {"if: always() && steps.sanitize_store_evidence.outcome == 'success'", "if: always()"},
+		"wrong-sanitizer-step-id":        {"steps.sanitize_store_evidence.outcome", "steps.unrelated_step.outcome"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			planted := strings.Replace(string(good), pair[0], pair[1], 1)
@@ -131,6 +155,7 @@ func TestAllWorkflowArtifactUploadsUseSanitizedCopies(t *testing.T) {
 		t.Fatal("read workflow directory:", err)
 	}
 	checked := 0
+	uploads := 0
 	for _, workflow := range workflows {
 		if workflow.IsDir() {
 			continue
@@ -152,12 +177,26 @@ func TestAllWorkflowArtifactUploadsUseSanitizedCopies(t *testing.T) {
 			continue
 		}
 		checked++
+		count, err := countWorkflowArtifactUploads(data)
+		if err != nil {
+			t.Fatalf("count artifact uploads in %s: %v", workflow.Name(), err)
+		}
+		uploads += count
+		if workflow.Name() == "ci.yml" && count != 9 {
+			t.Errorf("ci.yml artifact upload count = %d, want 9", count)
+		}
+		if workflow.Name() == "post-landing-mutation-tests.yml" && count != 1 {
+			t.Errorf("post-landing-mutation-tests.yml artifact upload count = %d, want 1", count)
+		}
 		if err := checkSanitizedArtifactUploads(data); err != nil {
 			t.Errorf("%s: %v", path, err)
 		}
 	}
 	if checked == 0 {
 		t.Fatal("no workflow artifact uploads were checked")
+	}
+	if uploads != 10 {
+		t.Fatalf("all workflow artifact upload count = %d, want 10", uploads)
 	}
 }
 

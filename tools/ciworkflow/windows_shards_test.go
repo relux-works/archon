@@ -63,7 +63,7 @@ func checkWindowsShards(data []byte) error {
 			if strings.Contains(s.Run, "go run ./tools/envprofilerace -lane windows-test -shard ${{ matrix.shard }}") && strings.Contains(s.Run, "-u GIT_CONFIG_COUNT -u GIT_CONFIG_PARAMETERS") && strings.Contains(s.Run, "HOME=\"$(mktemp -d)\"") && s.If == "" && s.Env["CURATOR_CONFORMANCE_ROOT"] == "${{ github.workspace }}/protocol-spec/conformance/v1" {
 				run++
 			}
-			if s.Uses == "actions/upload-artifact@v4" && s.If == "always()" && s.With["name"] == "windows-test-shard-${{ matrix.shard }}" && s.With["path"] == ".temp/public-artifacts-${{ github.run_id }}-${{ github.run_attempt }}-windows-${{ matrix.shard }}/" && s.With["if-no-files-found"] == "error" {
+			if s.Uses == "actions/upload-artifact@v4" && s.If == "always() && steps.sanitize_windows_evidence.outcome == 'success'" && s.With["name"] == "windows-test-shard-${{ matrix.shard }}" && s.With["path"] == ".temp/public-artifacts-${{ github.run_id }}-${{ github.run_attempt }}-windows-${{ matrix.shard }}/" && s.With["if-no-files-found"] == "error" {
 				upload++
 			}
 			if s.With["repository"] == "relux-works/curator-spec" && s.With["ref"] == "${{ env.SPEC_PIN }}" {

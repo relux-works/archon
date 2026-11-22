@@ -28,10 +28,10 @@ func checkStoreCompatibilityWiring(data []byte) error {
 		if strings.Contains(s.Run, "-run '^TestStoreBoundary(Resolve|DryRun|Repair|Status)VectorsDrive'") && strings.Contains(s.Run, "go test -json -count=1") && strings.Contains(s.Run, `test "$replay_rc" = 1`) && strings.Contains(s.Run, `go run ./tools/check-store-compatibility -dir "$evidence" -commit "$GITHUB_SHA"`) && strings.Contains(s.Run, "go test -count=1 ./internal/storecompatibility") && s.Env["CURATOR_CONFORMANCE_ROOT"] == "${{ github.workspace }}/protocol-spec/conformance/v1" {
 			replay++
 		}
-		if s.If == "always()" && s.Shell == "bash" && strings.Contains(s.Run, "go run ./tools/sanitize-ci-evidence -source .temp/store-v1-compatibility -destination .temp/public-artifacts-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-store") {
+		if s.ID == "sanitize_store_evidence" && s.If == "always()" && s.Shell == "bash" && strings.Contains(s.Run, "go run ./tools/sanitize-ci-evidence -source .temp/store-v1-compatibility -destination .temp/public-artifacts-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-store") {
 			sanitize = i + 1
 		}
-		if s.Uses == "actions/upload-artifact@v4" && s.With["name"] == "store-v1-compatibility" && s.With["path"] == ".temp/public-artifacts-${{ github.run_id }}-${{ github.run_attempt }}-store/" && s.With["if-no-files-found"] == "error" && sanitize > 0 && sanitize-1 < i {
+		if s.Uses == "actions/upload-artifact@v4" && s.If == "always() && steps.sanitize_store_evidence.outcome == 'success'" && s.With["name"] == "store-v1-compatibility" && s.With["path"] == ".temp/public-artifacts-${{ github.run_id }}-${{ github.run_attempt }}-store/" && s.With["if-no-files-found"] == "error" && sanitize > 0 && sanitize-1 < i {
 			upload++
 		}
 	}

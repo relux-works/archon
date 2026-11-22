@@ -91,10 +91,10 @@ func openEvidenceInput(root *os.Root, relative string) (evidenceInput, error) {
 }
 
 func sanitizeTree(src, dst string, removeStage func(string) error, openInput evidenceInputOpener) (total Counts, err error) {
-	return sanitizeTreeWithHomePrefix(src, dst, removeStage, openInput, accountHomePrefix(), nil)
+	return sanitizeTreeWithHomePrefix(src, dst, removeStage, openInput, accountHomePrefix(), nil, nil)
 }
 
-func sanitizeTreeWithHomePrefix(src, dst string, removeStage func(string) error, openInput evidenceInputOpener, homePrefix string, afterCopy func(string) error) (total Counts, err error) {
+func sanitizeTreeWithHomePrefix(src, dst string, removeStage func(string) error, openInput evidenceInputOpener, homePrefix string, afterCopy, afterPublish func(string) error) (total Counts, err error) {
 	homePrefix = cleanAccountHomePrefix(homePrefix)
 	if homePrefix == "" {
 		return total, errors.New("resolve account home prefix")
@@ -147,6 +147,14 @@ func sanitizeTreeWithHomePrefix(src, dst string, removeStage func(string) error,
 			return total, errors.New("publish empty evidence copy")
 		}
 		stageOwned = false
+		if afterPublish != nil {
+			if err := afterPublish(destination); err != nil {
+				if removeErr := os.RemoveAll(destination); removeErr != nil {
+					return total, errors.Join(errors.New("finish sanitized evidence destination"), errors.New("remove rejected sanitized evidence destination"))
+				}
+				return total, errors.New("finish sanitized evidence destination")
+			}
+		}
 		residuals, err = verifyNoAccountHomePrefixInTree(destination, homePrefix)
 		total.AccountHomePrefixResiduals = residuals
 		if err != nil {
@@ -222,6 +230,14 @@ func sanitizeTreeWithHomePrefix(src, dst string, removeStage func(string) error,
 		return total, errors.New("publish sanitized evidence copy")
 	}
 	stageOwned = false
+	if afterPublish != nil {
+		if err := afterPublish(destination); err != nil {
+			if removeErr := os.RemoveAll(destination); removeErr != nil {
+				return total, errors.Join(errors.New("finish sanitized evidence destination"), errors.New("remove rejected sanitized evidence destination"))
+			}
+			return total, errors.New("finish sanitized evidence destination")
+		}
+	}
 	residuals, err = verifyNoAccountHomePrefixInTree(destination, homePrefix)
 	total.AccountHomePrefixResiduals = residuals
 	if err != nil {
