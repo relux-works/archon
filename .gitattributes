@@ -2,6 +2,8 @@
 testdata/** -text
 **/testdata/** -text
 
-# Replay source pins use Git blob bytes on every checkout platform.
+# Manifest-pinned source bytes are stable on every checkout platform.
 internal/harnessparity/legacy_fixture_test.go text eol=lf
 internal/harnessparity/launcher_fixture_test.go text eol=lf
+internal/config/launcher_extensions_test.go text eol=lf
+cmd/curator/config_launcher_test.go text eol=lf

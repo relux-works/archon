@@ -64,7 +64,7 @@ func TestMain(m *testing.M) {
 // red. A fully green paired control succeeds; a missing dispatch or unrelated
 // shell/setup error cannot satisfy the intended negative control.
 func TestHarnessCILaneContinuation(t *testing.T) {
-	const parityPattern = `^(TestHomeByteIdentity.*|TestAllAdaptersHaveBaselineCases)$`
+	const parityPattern = `^(TestHomeByteIdentity.*|TestAllAdaptersHaveBaselineCases|TestReplayFixtureSourcePins)$`
 	payload, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "ci.yml"))
 	if err != nil {
 		t.Fatal(err)
@@ -91,11 +91,13 @@ func TestHarnessCILaneContinuation(t *testing.T) {
 	if count != 1 || !strings.Contains(body, "TestNoHarnessBranches") || !strings.Contains(body, parityPattern) {
 		t.Fatal("complete harness CI gate missing")
 	}
-	selected := regexp.MustCompile(parityPattern)
-	for _, name := range []string{"TestHomeByteIdentity", "TestHomeByteIdentityMutationControl", "TestAllAdaptersHaveBaselineCases"} {
-		if !selected.MatchString(name) {
-			t.Fatalf("CI parity selector misses %s", name)
-		}
+	requiredParityTests := []string{"TestHomeByteIdentity", "TestHomeByteIdentityMutationControl", "TestAllAdaptersHaveBaselineCases", "TestReplayFixtureSourcePins"}
+	if !paritySelectorCovers(parityPattern, requiredParityTests) {
+		t.Fatal("CI parity selector misses a required tagged test")
+	}
+	missingSourcePin := strings.Replace(parityPattern, "|TestReplayFixtureSourcePins", "", 1)
+	if missingSourcePin == parityPattern || paritySelectorCovers(missingSourcePin, requiredParityTests) {
+		t.Fatal("missing source-pin selector plant survived")
 	}
 	if strings.Contains(body, "${{") || !strings.Contains(body, "jq -r '.pull_request.base.sha // empty'") || !strings.Contains(body, "jq -r '.before // empty'") || !strings.Contains(body, `HARNESS_PREDECESSOR_SHA="$predecessor_sha" go run`) {
 		t.Fatal("event predecessor must come from the runner payload and pass through the command environment")
@@ -192,4 +194,17 @@ func TestHarnessCILaneContinuation(t *testing.T) {
 		}
 	}
 	t.Run("unsupported-event-has-no-predecessor", func(t *testing.T) { runControl(t, "workflow_dispatch", "", RatchetMissingExit) })
+}
+
+func paritySelectorCovers(pattern string, tests []string) bool {
+	selected, err := regexp.Compile(pattern)
+	if err != nil {
+		return false
+	}
+	for _, test := range tests {
+		if !selected.MatchString(test) {
+			return false
+		}
+	}
+	return true
 }

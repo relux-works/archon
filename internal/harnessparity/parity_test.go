@@ -208,16 +208,23 @@ func TestHomeByteIdentity(t *testing.T) {
 	}
 }
 
-// The actual original manifest passes; one changed provenance byte, still
-// valid JSON, is refused at the manifest path. An absent platform cannot reuse
-// the Linux evidence. Neither control writes or updates an expected fixture.
+// The checked-in platform manifest passes; one changed provenance byte, still
+// valid JSON, is refused at that path. An absent platform cannot reuse the
+// Linux evidence. Neither control writes or updates an expected fixture.
 func testFrozenManifestControl(t *testing.T) {
 	path := filepath.Join("testdata", runtime.GOOS, "manifest.json")
+	verify := verifyManifest
+	missingPlatformCode := "original_platform_manifest_missing"
+	if runtime.GOOS == "windows" {
+		path = filepath.Join("testdata", "windows", "main-267bbf47", "manifest.json")
+		verify = verifyRefreshedManifest
+		missingPlatformCode = "refreshed_platform_manifest_missing"
+	}
 	payload, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := verifyManifest(payload, runtime.GOOS); err != nil {
+	if _, err := verify(payload, runtime.GOOS); err != nil {
 		t.Fatal(err)
 	}
 	marker := []byte(`"launcher_capture_driver_sha256": "`)
@@ -235,10 +242,10 @@ func testFrozenManifestControl(t *testing.T) {
 	if !json.Valid(altered) || bytes.Equal(payload, altered) {
 		t.Fatal("provenance mutation was not applied")
 	}
-	if _, err := verifyManifest(altered, runtime.GOOS); err == nil || err.Error() != path+": frozen_manifest_mismatch" {
+	if _, err := verify(altered, runtime.GOOS); err == nil || err.Error() != path+": frozen_manifest_mismatch" {
 		t.Fatalf("provenance mutation verdict: %v", err)
 	}
-	if _, err := verifyManifest(payload, "unrecorded-platform"); err == nil || !strings.Contains(err.Error(), "original_platform_manifest_missing") {
+	if _, err := verify(payload, "unrecorded-platform"); err == nil || !strings.Contains(err.Error(), missingPlatformCode) {
 		t.Fatalf("missing platform verdict: %v", err)
 	}
 }

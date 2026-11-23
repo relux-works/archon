@@ -35,6 +35,7 @@ func checkInlineGoState(body string) error {
 }
 
 type step struct {
+	Name     string            `yaml:"name"`
 	ID       string            `yaml:"id"`
 	Shell    string            `yaml:"shell"`
 	Continue bool              `yaml:"continue-on-error"`
@@ -70,6 +71,40 @@ func workflowBytes(t *testing.T) []byte {
 	// Mutation controls use LF snippets; Windows Git checkouts may use CRLF.
 	// YAML semantics are identical, so normalize before applying the plants.
 	return []byte(strings.ReplaceAll(string(data), "\r\n", "\n"))
+}
+
+func swapWorkflowSteps(data []byte, jobName, firstName, secondName string) ([]byte, error) {
+	var document yaml.Node
+	if err := yaml.Unmarshal(data, &document); err != nil {
+		return nil, err
+	}
+	if len(document.Content) != 1 {
+		return nil, fmt.Errorf("workflow document root missing")
+	}
+	jobs := workflowMappingValue(document.Content[0], "jobs")
+	job := workflowMappingValue(jobs, jobName)
+	steps := workflowMappingValue(job, "steps")
+	if steps == nil || steps.Kind != yaml.SequenceNode {
+		return nil, fmt.Errorf("workflow job %q has no steps sequence", jobName)
+	}
+	first, second := -1, -1
+	for i, node := range steps.Content {
+		name := workflowMappingValue(node, "name")
+		if name == nil {
+			continue
+		}
+		switch name.Value {
+		case firstName:
+			first = i
+		case secondName:
+			second = i
+		}
+	}
+	if first < 0 || second < 0 {
+		return nil, fmt.Errorf("workflow steps %q and %q missing", firstName, secondName)
+	}
+	steps.Content[first], steps.Content[second] = steps.Content[second], steps.Content[first]
+	return yaml.Marshal(&document)
 }
 
 func checkIsolation(data []byte) error {
@@ -270,6 +305,16 @@ func TestLinuxCIWorkflowRejectsNarrowingPlants(t *testing.T) {
 				t.Fatalf("want %q refusal, got %v", tc.finding, err)
 			}
 		})
+	}
+}
+
+func TestLinuxCIWorkflowRejectsPinnedCheckoutBeforePrivateState(t *testing.T) {
+	mutant, err := swapWorkflowSteps(workflowBytes(t), "test", "Checkout pinned native capture workflow", "Initialize private Go state")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := checkIsolation(mutant); err == nil || !strings.Contains(err.Error(), "private Go state must precede every Go consumer") {
+		t.Fatalf("pinned workflow checkout before private-state initialization was admitted: %v", err)
 	}
 }
 

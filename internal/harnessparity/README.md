@@ -21,10 +21,12 @@ projections and refusal outputs from original code. Invalid configuration stays
 an input: its unchanged bytes are asserted in-process, and its digest is
 recorded without exporting hostile fields as emitted configuration. The six
 original witnesses remain unchanged. The original Codex seed-C corpus and both
-launcher witness source files are digest-pinned by the manifest and execute in
-the unchanged repository suites.
+launcher witness source files (`internal/config/launcher_extensions_test.go`
+and `cmd/curator/config_launcher_test.go`) are digest-pinned by the manifest
+and execute in the unchanged repository suites. Their LF checkout rules keep
+those source bytes stable on Windows.
 
-The active Linux and Darwin evidence has separate manifests under
+The refreshed Linux, Darwin and Windows evidence has separate manifests under
 `testdata/<GOOS>/main-267bbf47/`. A missing platform baseline fails; it is never
 counted as a skipped or equivalent case. The manifests pin the source head,
 capture drivers, sealed artifacts, platform/toolchain, case bytes, repeat

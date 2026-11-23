@@ -83,7 +83,7 @@ func checkPullRequestDefersPostLandingTests(data []byte) error {
 	if !ok {
 		return fmt.Errorf("test job is missing")
 	}
-	wantNeeds := []string{"windows-test-shards", "unix-test-shards", "store-v1-compatibility"}
+	wantNeeds := []string{"windows-test-shards", "unix-test-shards", "store-v1-compatibility", "native-capture-workflow-contract"}
 	needs, err := pullRequestNeedIDs(&testJob.Needs)
 	if err != nil || testJob.Needs.Kind != yaml.SequenceNode || !reflect.DeepEqual(needs, wantNeeds) {
 		return fmt.Errorf("test job has unexpected dependencies: %v", needs)
@@ -766,6 +766,27 @@ func workflowStringNode(value string) *yaml.Node {
 	return &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: value}
 }
 
+func setWorkflowJobNeeds(data []byte, jobName string, needs []string) ([]byte, error) {
+	var document yaml.Node
+	if err := yaml.Unmarshal(data, &document); err != nil {
+		return nil, err
+	}
+	if len(document.Content) != 1 {
+		return nil, fmt.Errorf("workflow document root missing")
+	}
+	jobs := workflowMappingValue(document.Content[0], "jobs")
+	job := workflowMappingValue(jobs, jobName)
+	if job == nil {
+		return nil, fmt.Errorf("workflow job %q missing", jobName)
+	}
+	sequence := &yaml.Node{Kind: yaml.SequenceNode, Tag: "!!seq"}
+	for _, need := range needs {
+		sequence.Content = append(sequence.Content, workflowStringNode(need))
+	}
+	workflowSetMappingValue(job, "needs", sequence)
+	return yaml.Marshal(&document)
+}
+
 // TestPullRequestDefersPostLandingTests keeps the slow mutation and exhaustive
 // set out of the PR package gate. It also pins the PR trigger and the static
 // matrix inputs that may reach commands or environment values.
@@ -826,6 +847,12 @@ func TestPullRequestDefersPostLandingTests(t *testing.T) {
 		name  string
 		plant func([]byte) ([]byte, error)
 	}{
+		{
+			name: "missing_native_capture_contract_dependency",
+			plant: func(data []byte) ([]byte, error) {
+				return setWorkflowJobNeeds(data, "test", []string{"windows-test-shards", "unix-test-shards", "store-v1-compatibility"})
+			},
+		},
 		{
 			name: "restored_pr_job",
 			plant: func(data []byte) ([]byte, error) {

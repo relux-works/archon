@@ -218,6 +218,8 @@ jobs:
           repository: relux-works/curator
           ref: ${{ steps.capture-revision.outputs.sha }}
           path: .temp/capture-source-44ff
+          sparse-checkout: .github/workflows/original-capture-native.yml
+          sparse-checkout-cone-mode: false
 
       - name: Run workflow-bound native capture tests
         env:
@@ -723,17 +725,19 @@ jobs:
         with:
           submodules: true
 
+      - name: Initialize private Go state
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash .github/ci/isolate-go-state.sh
+
       - name: Checkout pinned native capture workflow
         uses: actions/checkout@v4
         with:
           repository: relux-works/curator
           ref: ${{ needs.native-capture-workflow-contract.outputs.capture_revision }}
           path: .temp/capture-source-44ff
-
-      - name: Initialize private Go state
-        if: runner.os == 'Linux'
-        shell: bash
-        run: bash .github/ci/isolate-go-state.sh
+          sparse-checkout: .github/workflows/original-capture-native.yml
+          sparse-checkout-cone-mode: false
 
       - name: Checkout authoritative protocol suite
         uses: actions/checkout@v4
@@ -1006,6 +1010,8 @@ jobs:
           repository: relux-works/curator
           ref: ${{ needs.native-capture-workflow-contract.outputs.capture_revision }}
           path: .temp/capture-source-44ff
+          sparse-checkout: .github/workflows/original-capture-native.yml
+          sparse-checkout-cone-mode: false
 
       - name: Checkout authoritative protocol suite
         uses: actions/checkout@v4
@@ -1212,17 +1218,19 @@ jobs:
         with:
           submodules: true
 
+      - name: Initialize private Go state
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash .github/ci/isolate-go-state.sh
+
       - name: Checkout pinned native capture workflow
         uses: actions/checkout@v4
         with:
           repository: relux-works/curator
           ref: ${{ needs.native-capture-workflow-contract.outputs.capture_revision }}
           path: .temp/capture-source-44ff
-
-      - name: Initialize private Go state
-        if: runner.os == 'Linux'
-        shell: bash
-        run: bash .github/ci/isolate-go-state.sh
+          sparse-checkout: .github/workflows/original-capture-native.yml
+          sparse-checkout-cone-mode: false
 
       - name: Checkout authoritative protocol suite
         uses: actions/checkout@v4
@@ -1549,6 +1557,8 @@ jobs:
           repository: relux-works/curator
           ref: ${{ needs.native-capture-workflow-contract.outputs.capture_revision }}
           path: .temp/capture-source-44ff
+          sparse-checkout: .github/workflows/original-capture-native.yml
+          sparse-checkout-cone-mode: false
 
       # A revision and a pre-materialised root are independent identities.
       # Reject the ambiguous combination before checking out either candidate

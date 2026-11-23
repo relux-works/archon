@@ -36,7 +36,7 @@ func checkEnvprofileRace(data []byte) error {
 	if shards.If != "" || shards.Strategy.FailFast || !reflect.DeepEqual(shards.Strategy.Matrix.Shard, []int{0, 1, 2, 3, 4, 5, 6, 7, 8}) || !reflect.DeepEqual(shards.Strategy.Matrix.OS, race.Strategy.Matrix.OS) || !reflect.DeepEqual(shards.RunsOn, race.RunsOn) {
 		return fmt.Errorf("shards must run every index on both Race platforms with identical routing, on main and PRs")
 	}
-	if !reflect.DeepEqual(race.Needs, []any{"envprofile-race", "store-v1-compatibility"}) || race.If != "${{ !cancelled() }}" {
+	if !reflect.DeepEqual(race.Needs, []any{"envprofile-race", "store-v1-compatibility", "native-capture-workflow-contract"}) || race.If != "${{ !cancelled() }}" {
 		return fmt.Errorf("Race must require the shards and run on dependency failure unless cancelled")
 	}
 	run, upload, download, consume := 0, 0, 0, 0
@@ -71,14 +71,15 @@ func TestEnvprofileRaceWiring(t *testing.T) {
 		t.Fatal(err)
 	}
 	for name, pair := range map[string][2]string{
-		"dropped-shard":        {"shard: [0, 1, 2, 3, 4, 5, 6, 7, 8]", "shard: [0, 1, 2, 3, 4, 5, 6, 7]"},
-		"skipped-failure-gate": {"    if: ${{ !cancelled() }}\n    needs: [envprofile-race, store-v1-compatibility]", "    if: success()\n    needs: [envprofile-race, store-v1-compatibility]"},
-		"no-dependency":        {"needs: [envprofile-race, store-v1-compatibility]", "needs: test"},
-		"only-main":            {"  envprofile-race:\n", "  envprofile-race:\n    if: github.event_name == 'push'\n"},
-		"wrong-platform":       {"pattern: envprofile-race-${{ matrix.os }}-*", "pattern: envprofile-race-ubuntu-latest-*"},
-		"no-consumption":       {"CI_ENVPROFILE_SHARDS: .temp/envprofile-shards", "CI_OTHER_SHARDS: .temp/envprofile-shards"},
-		"lost-selector":        {"./tools/envprofilerace -shard ${{ matrix.shard }}", "./tools/envprofilerace -shard 0"},
-		"lost-upload":          {"name: envprofile-race-${{ matrix.os }}-${{ matrix.shard }}", "name: envprofile-race-${{ matrix.os }}"},
+		"dropped-shard":            {"shard: [0, 1, 2, 3, 4, 5, 6, 7, 8]", "shard: [0, 1, 2, 3, 4, 5, 6, 7]"},
+		"skipped-failure-gate":     {"    if: ${{ !cancelled() }}\n    needs: [envprofile-race, store-v1-compatibility, native-capture-workflow-contract]", "    if: success()\n    needs: [envprofile-race, store-v1-compatibility, native-capture-workflow-contract]"},
+		"no-dependency":            {"needs: [envprofile-race, store-v1-compatibility, native-capture-workflow-contract]", "needs: test"},
+		"missing-capture-contract": {"needs: [envprofile-race, store-v1-compatibility, native-capture-workflow-contract]", "needs: [envprofile-race, store-v1-compatibility]"},
+		"only-main":                {"  envprofile-race:\n", "  envprofile-race:\n    if: github.event_name == 'push'\n"},
+		"wrong-platform":           {"pattern: envprofile-race-${{ matrix.os }}-*", "pattern: envprofile-race-ubuntu-latest-*"},
+		"no-consumption":           {"CI_ENVPROFILE_SHARDS: .temp/envprofile-shards", "CI_OTHER_SHARDS: .temp/envprofile-shards"},
+		"lost-selector":            {"./tools/envprofilerace -shard ${{ matrix.shard }}", "./tools/envprofilerace -shard 0"},
+		"lost-upload":              {"name: envprofile-race-${{ matrix.os }}-${{ matrix.shard }}", "name: envprofile-race-${{ matrix.os }}"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			planted := strings.Replace(string(good), pair[0], pair[1], 1)

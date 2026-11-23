@@ -29,12 +29,15 @@ const provenancePrefix = "HARNESS_PARITY_RUN "
 
 func TestReplayFixtureSourcePins(t *testing.T) {
 	pins := []struct{ path, sha256 string }{
-		{"legacy_fixture_test.go", replayDriverPin},
-		{"launcher_fixture_test.go", replayLauncherDriverPin},
+		{"internal/harnessparity/legacy_fixture_test.go", replayDriverPin},
+		{"internal/harnessparity/launcher_fixture_test.go", replayLauncherDriverPin},
+		{"internal/config/launcher_extensions_test.go", "4390dca8fd9c96a5cd604ad41a706918ffe8393d836abbeb40951989a291e693"},
+		{"cmd/curator/config_launcher_test.go", "5929248e6b69061440efdca4f0c0ee62cbc61aa3e02bcfff281498313fa851d2"},
 	}
 	for _, pin := range pins {
 		t.Run(pin.path, func(t *testing.T) {
-			data, err := os.ReadFile(pin.path)
+			path := filepath.Join("..", "..", filepath.FromSlash(pin.path))
+			data, err := os.ReadFile(path)
 			if err != nil {
 				t.Fatal(err)
 			}
