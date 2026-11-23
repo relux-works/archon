@@ -218,7 +218,9 @@ jobs:
           repository: relux-works/curator
           ref: ${{ steps.capture-revision.outputs.sha }}
           path: .temp/capture-source-44ff
-          sparse-checkout: .github/workflows/original-capture-native.yml
+          sparse-checkout: |
+            .github/workflows/original-capture-native.yml
+            testdata/originalcapture
           sparse-checkout-cone-mode: false
 
       - name: Run workflow-bound native capture tests
@@ -736,7 +738,9 @@ jobs:
           repository: relux-works/curator
           ref: ${{ needs.native-capture-workflow-contract.outputs.capture_revision }}
           path: .temp/capture-source-44ff
-          sparse-checkout: .github/workflows/original-capture-native.yml
+          sparse-checkout: |
+            .github/workflows/original-capture-native.yml
+            testdata/originalcapture
           sparse-checkout-cone-mode: false
 
       - name: Checkout authoritative protocol suite
@@ -1010,7 +1014,9 @@ jobs:
           repository: relux-works/curator
           ref: ${{ needs.native-capture-workflow-contract.outputs.capture_revision }}
           path: .temp/capture-source-44ff
-          sparse-checkout: .github/workflows/original-capture-native.yml
+          sparse-checkout: |
+            .github/workflows/original-capture-native.yml
+            testdata/originalcapture
           sparse-checkout-cone-mode: false
 
       - name: Checkout authoritative protocol suite
@@ -1229,7 +1235,9 @@ jobs:
           repository: relux-works/curator
           ref: ${{ needs.native-capture-workflow-contract.outputs.capture_revision }}
           path: .temp/capture-source-44ff
-          sparse-checkout: .github/workflows/original-capture-native.yml
+          sparse-checkout: |
+            .github/workflows/original-capture-native.yml
+            testdata/originalcapture
           sparse-checkout-cone-mode: false
 
       - name: Checkout authoritative protocol suite
@@ -1557,7 +1565,9 @@ jobs:
           repository: relux-works/curator
           ref: ${{ needs.native-capture-workflow-contract.outputs.capture_revision }}
           path: .temp/capture-source-44ff
-          sparse-checkout: .github/workflows/original-capture-native.yml
+          sparse-checkout: |
+            .github/workflows/original-capture-native.yml
+            testdata/originalcapture
           sparse-checkout-cone-mode: false
 
       # A revision and a pre-materialised root are independent identities.

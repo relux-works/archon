@@ -9,6 +9,8 @@ import (
 )
 
 const pinnedNativeWorkflowFile = ".github/workflows/original-capture-native.yml"
+const pinnedNativeCaptureTestSources = "testdata/originalcapture"
+const pinnedNativeWorkflowSparsePaths = pinnedNativeWorkflowFile + "\n" + pinnedNativeCaptureTestSources
 
 func checkPinnedWorkflowCheckouts(data []byte) error {
 	var workflow struct {
@@ -51,8 +53,8 @@ func checkPinnedWorkflowCheckouts(data []byte) error {
 			}
 			sparse, _ := step.With["sparse-checkout"].(string)
 			coneMode, coneModeIsBool := step.With["sparse-checkout-cone-mode"].(bool)
-			if sparse != pinnedNativeWorkflowFile || !coneModeIsBool || coneMode {
-				return fmt.Errorf("%s: pinned checkout must select only the workflow file with cone mode disabled", jobName)
+			if strings.TrimSpace(sparse) != pinnedNativeWorkflowSparsePaths || !coneModeIsBool || coneMode {
+				return fmt.Errorf("%s: pinned checkout must select exactly the workflow file and required capture test sources %q with cone mode disabled", jobName, pinnedNativeCaptureTestSources)
 			}
 		}
 	}
@@ -69,11 +71,13 @@ func TestPinnedWorkflowCheckoutsAreSparse(t *testing.T) {
 	if err := checkPinnedWorkflowCheckouts(good); err != nil {
 		t.Fatalf("valid sparse workflow checkouts rejected: %v", err)
 	}
+	sparseBlock := "sparse-checkout: |\n            " + pinnedNativeWorkflowFile + "\n            " + pinnedNativeCaptureTestSources
 	for _, test := range []struct {
-		name, old, replacement string
+		name, old, replacement, wantError string
 	}{
-		{"full-repository-checkout", "sparse-checkout: " + pinnedNativeWorkflowFile, "sparse-checkout: ."},
-		{"cone-mode-enabled", "sparse-checkout-cone-mode: false", "sparse-checkout-cone-mode: true"},
+		{"full-repository-checkout", sparseBlock, "sparse-checkout: .", ""},
+		{"missing-capture-test-sources", sparseBlock, "sparse-checkout: |\n            " + pinnedNativeWorkflowFile, "required capture test sources"},
+		{"cone-mode-enabled", "sparse-checkout-cone-mode: false", "sparse-checkout-cone-mode: true", ""},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			mutant := strings.Replace(string(good), test.old, test.replacement, 1)
@@ -82,6 +86,8 @@ func TestPinnedWorkflowCheckoutsAreSparse(t *testing.T) {
 			}
 			if err := checkPinnedWorkflowCheckouts([]byte(mutant)); err == nil {
 				t.Fatal("unsafe pinned-workflow checkout was admitted")
+			} else if test.wantError != "" && !strings.Contains(err.Error(), test.wantError) {
+				t.Fatalf("missing-source refusal was not clear: %v", err)
 			}
 		})
 	}
