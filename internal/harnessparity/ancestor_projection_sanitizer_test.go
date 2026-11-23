@@ -114,6 +114,7 @@ func TestProjectedAdjacentPrivatePathIsRefusedBeforeExport(t *testing.T) {
 	}
 	cmd := exec.CommandContext(ctx, testtoolchain.Go(t), "test", "-count=1", "./"+filepath.ToSlash(packagePath))
 	cmd.Dir = root
+	testtoolchain.InheritHostGOROOTLock(t, cmd)
 	cmd.Env = append(os.Environ(), "FIXTURE_ANCESTOR_PROJECTED_SETTINGS="+string(projected))
 	output, err := cmd.CombinedOutput()
 	if err != nil {

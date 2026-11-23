@@ -3,6 +3,7 @@
 package harnessparity
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -43,6 +44,17 @@ func TestReplayFixtureSourcePins(t *testing.T) {
 			}
 			if !matchesPin(data) {
 				t.Fatal("replay fixture source digest mismatch")
+			}
+			lf := bytes.ReplaceAll(data, []byte("\r\n"), []byte("\n"))
+			if !bytes.Equal(lf, data) {
+				t.Fatal("replay fixture source checkout is not LF-normalized")
+			}
+			crlf := bytes.ReplaceAll(lf, []byte("\n"), []byte("\r\n"))
+			if bytes.Equal(crlf, lf) {
+				t.Fatal("replay fixture source has no LF line endings to convert")
+			}
+			if matchesPin(crlf) {
+				t.Fatal("CRLF-normalized replay fixture source passed the LF blob pin")
 			}
 			mutant := append([]byte(nil), data...)
 			mutant[len(mutant)/2] ^= 1
