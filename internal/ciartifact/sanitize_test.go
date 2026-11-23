@@ -365,7 +365,7 @@ func TestSanitizeGoTestStreamRedactsEscapedPath(t *testing.T) {
 }
 
 func TestSanitizeGoTestStreamRedactsAccountHomePrefixAtAnyPosition(t *testing.T) {
-	homePrefix := testAccountHomePrefix(t)
+	homePrefix := "fixture-run"
 	separator := string(os.PathSeparator)
 
 	tests := []struct {
@@ -375,7 +375,7 @@ func TestSanitizeGoTestStreamRedactsAccountHomePrefixAtAnyPosition(t *testing.T)
 	}{
 		{
 			name:    "after-home-label-colon",
-			output:  "entry={Adapter:codex_cli Home:" + homePrefix + separator + "tmp" + separator + "curator-2" + separator + "TestNativeHome}",
+			output:  "entry={Adapter:codex_cli Home:" + homePrefix + separator + "tmp" + separator + "fixture-run" + separator + "TestNativeHome}",
 			witness: "Home:",
 		},
 		{
