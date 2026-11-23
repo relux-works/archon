@@ -73,7 +73,7 @@ func TestExecutableIdentityResolvesALauncherLink(t *testing.T) {
 			name: "chain of shim symlinks",
 			launch: func(t *testing.T, shim string) string {
 				first := filepath.Join(shim, "curator-1")
-				second := filepath.Join(shim, "curator-2")
+				second := filepath.Join(shim, "fixture-run")
 				linkLauncherForTest(t, installed, first)
 				linkLauncherForTest(t, first, second)
 				return second
