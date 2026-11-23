@@ -1,0 +1,44 @@
+{
+  "case": {
+    "Name": "claude-launcher-old-version-1",
+    "ID": "claude_code",
+    "Operation": "launcher",
+    "State": "old-version-1"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "refusal.txt",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "ZXh0ZW5zaW9uczogcmVxdWlyZXMgbWFuYWdlci1jb25maWcgc2NoZW1hX3ZlcnNpb24gNw==",
+      "sha256": "928546a3e6c5e7084025ddbc06f63d5f3866b5af1a426541caeac7ed6bf3fc4e"
+    },
+    {
+      "path": "retained-input-mode.txt",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "MDY2Ngo=",
+      "sha256": "cb6c0f49e38704f0aa206cc6ded2c28ae14b6d93497a2ffe39dc11efae88949e"
+    },
+    {
+      "path": "retained-input.sha256",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "MWY2MmU1N2M4ZTc5NmVlMjc5ZDViNTkwNTE5YjVmMjdkMDFkOGI0MzFhOTY4N2RiNWMwZGUzNmIzZDNiZjIyMQ==",
+      "sha256": "1e9f5a4dd88f613c04e9ca649b979548d3cdf26006bc6efef4df91381f953882"
+    }
+  ],
+  "refusal": "extensions: requires manager-config schema_version 7",
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}

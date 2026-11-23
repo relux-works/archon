@@ -47,6 +47,9 @@ type baselineManifest struct {
 	CaptureDriverPins           map[string]string `json:"capture_driver_pins,omitempty"`
 	MetadataRole                string            `json:"metadata_role,omitempty"`
 	CaptureCreationPolicy       string            `json:"capture_creation_policy,omitempty"`
+	CaptureRunnerLabel          string            `json:"capture_runner_label,omitempty"`
+	CaptureUmask                string            `json:"capture_umask,omitempty"`
+	CaptureProbeDirectoryMode   string            `json:"capture_probe_directory_mode,omitempty"`
 	CapturePayloadIdentity      string            `json:"capture_payload_identity,omitempty"`
 	CaptureRedactedFields       int               `json:"capture_redacted_fields,omitempty"`
 	CaptureRedactedValues       int               `json:"capture_redacted_values,omitempty"`
@@ -73,8 +76,9 @@ var frozenManifestHashes = map[string]string{
 }
 
 var frozenRefreshedManifestHashes = map[string]string{
-	"linux":  "601d939606c9c6fb441ba0309b13f539e1d84d93e3314a3a7ffa4fccad22648b",
-	"darwin": "aa69ae09bbe74e3d5017e2ace0108f273902cdb3469de126a764926ebb7ada2c",
+	"linux":   "601d939606c9c6fb441ba0309b13f539e1d84d93e3314a3a7ffa4fccad22648b",
+	"darwin":  "aa69ae09bbe74e3d5017e2ace0108f273902cdb3469de126a764926ebb7ada2c",
+	"windows": "d62ca39126e6817897a27549b000820edf6ce7ebc3d18ed65d55c2d78fd5fa3b",
 }
 
 func verifyManifest(payload []byte, platform string) (baselineManifest, error) {

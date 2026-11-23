@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/tar"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -118,6 +119,110 @@ func TestArchivePathsUseAnExplicitAllowlist(t *testing.T) {
 		if _, err := cleanArchiveName(invalid); err == nil {
 			t.Errorf("unsafe archive path %q was accepted", invalid)
 		}
+	}
+}
+
+func TestAllowedGitInvocationHasBoundedShapes(t *testing.T) {
+	root := t.TempDir()
+	bare := filepath.Join(root, "source.git")
+	remote := filepath.Join(root, "remote.git")
+	revision := strings.Repeat("a", 40)
+	for _, row := range []struct {
+		name, bare string
+		args       []string
+	}{
+		{"init", "", []string{"init", "--bare", "--quiet", bare}},
+		{"accepted-remote-fetch", bare, []string{"fetch", "--quiet", "--depth=1", captureSourceRemote, revision}},
+		{"local-fixture-fetch", bare, []string{"fetch", "--quiet", "--depth=1", remote, revision}},
+		{"fetch-head-verification", bare, []string{"rev-parse", "FETCH_HEAD^{commit}"}},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			if !allowedGitInvocation(row.bare, row.args) {
+				t.Fatal("supported Git invocation refused")
+			}
+		})
+	}
+	for _, row := range []struct {
+		name, bare string
+		args       []string
+	}{
+		{"extra-fetch-option", bare, []string{"fetch", "--quiet", "--depth=1", "--upload-pack=sh", captureSourceRemote, revision}},
+		{"unapproved-remote", bare, []string{"fetch", "--quiet", "--depth=1", "https://example.invalid/repo.git", revision}},
+		{"short-revision", bare, []string{"fetch", "--quiet", "--depth=1", captureSourceRemote, "deadbeef"}},
+		{"unknown-subcommand", bare, []string{"config", "--global", "core.editor=sh"}},
+		{"relative-bare-repository", "relative.git", []string{"rev-parse", "FETCH_HEAD^{commit}"}},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			if allowedGitInvocation(row.bare, row.args) {
+				t.Fatal("unlisted Git invocation accepted")
+			}
+		})
+	}
+}
+
+func TestVerifyTestCommandInputsUsePositiveAllowlists(t *testing.T) {
+	for _, executable := range []string{"go"} {
+		if !isAllowedGoExecutable(executable) {
+			t.Errorf("supported Go executable %q refused", executable)
+		}
+	}
+	for _, executable := range []string{"", "./go", filepath.Join(t.TempDir(), "go"), "go;touch marker", "go test"} {
+		if isAllowedGoExecutable(executable) {
+			t.Errorf("unlisted Go executable %q accepted", executable)
+		}
+	}
+	for _, packagePath := range []string{"./internal/harnessparity", "./internal/harnessparity/"} {
+		if !isAllowedVerifyPackage(packagePath) {
+			t.Errorf("supported package %q refused", packagePath)
+		}
+	}
+	for _, packagePath := range []string{"", "-exec=sh", "./internal/other", "./internal/harnessparity/;touch marker"} {
+		if isAllowedVerifyPackage(packagePath) {
+			t.Errorf("unlisted package %q accepted", packagePath)
+		}
+	}
+}
+
+func TestExtractTarPreservesRegularTypeFormsAndRejectsModeOverflow(t *testing.T) {
+	for _, row := range []struct {
+		name     string
+		typeflag byte
+		mode     int64
+		wantErr  bool
+	}{
+		{"ustar-regular", tar.TypeReg, 0o644, false},
+		{"legacy-nul-regular-default-mode", legacyRegularType, 0, false},
+		{"file-type-bits-outside-permissions", tar.TypeReg, 0o100644, true},
+		{"negative-mode", tar.TypeReg, -1, true},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			var archive bytes.Buffer
+			writer := tar.NewWriter(&archive)
+			data := []byte("workflow source\n")
+			if err := writer.WriteHeader(&tar.Header{Name: workflowArchivePath, Typeflag: row.typeflag, Mode: row.mode, Size: int64(len(data))}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := writer.Write(data); err != nil {
+				t.Fatal(err)
+			}
+			if err := writer.Close(); err != nil {
+				t.Fatal(err)
+			}
+			destination := t.TempDir()
+			workflowSeen, _, err := extractTar(bytes.NewReader(archive.Bytes()), destination)
+			if row.wantErr {
+				if err == nil || !strings.Contains(err.Error(), "unsupported archive file mode") {
+					t.Fatalf("invalid archive mode verdict = %v", err)
+				}
+				if _, statErr := os.Lstat(filepath.Join(destination, workflowArchivePath)); !os.IsNotExist(statErr) {
+					t.Fatalf("invalid mode published workflow file: %v", statErr)
+				}
+				return
+			}
+			if err != nil || !workflowSeen {
+				t.Fatalf("supported regular archive form refused: workflow=%t err=%v", workflowSeen, err)
+			}
+		})
 	}
 }
 

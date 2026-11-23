@@ -1,0 +1,43 @@
+{
+  "case": {
+    "Name": "claude-launcher-normal-edit",
+    "ID": "claude_code",
+    "Operation": "launcher",
+    "State": "normal-edit"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "edited-config.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "ewogICJhZGFwdGVyX21vZGUiOiAiY29weSIsCiAgImVudmlyb25tZW50cyI6IHsKICAgICJjcmVkZW50aWFsX3N0b3JlIjogewogICAgICAicCI6IHsKICAgICAgICAiY29kZXhfY2xpIjogImZpbGUiCiAgICAgIH0KICAgIH0KICB9LAogICJleHRlbnNpb25zIjogewogICAgImNsYXVkZV9hdXRoIjogewogICAgICAic3RvcmUiOiB7CiAgICAgICAgImFjY291bnQiOiAib3BlcmF0b3IiLAogICAgICAgICJzZXJ2aWNlIjogImNsYXVkZSIsCiAgICAgICAgInR5cGUiOiAia2V5Y2hhaW4iCiAgICAgIH0sCiAgICAgICJ0eXBlIjogIm9hdXRoIgogICAgfSwKICAgICJwcm94eSI6IHsKICAgICAgInByb2ZpbGUiOiAicHJpdmF0ZSIKICAgIH0KICB9LAogICJwcmVmZXJyZWRfbG9jYWxlIjogImVuIiwKICAicHJvamVjdHMiOiB7CiAgICAic2FtcGxlIjogewogICAgICAicGF0aCI6ICIke0ZJWFRVUkVfUk9PVH1cXHByb2plY3QiCiAgICB9CiAgfSwKICAic2NoZW1hX3ZlcnNpb24iOiA3LAogICJza2lsbHNfcm9vdCI6ICJ4Igp9Cg==",
+      "sha256": "8c6642621d536da89d205f693c56af13dc04944622453e1f908b1c5ed56a7e52"
+    },
+    {
+      "path": "effective.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "eyJhZGFwdGVyX21vZGUiOiJjb3B5IiwiZGVmYXVsdF9hZ2VudHMiOlsiY29kZXhfY2xpIl0sImVudmlyb25tZW50cyI6eyJiYWNrdXBfcmV0ZW50aW9uIjo1LCJjcmVkZW50aWFsX3N0b3JlIjp7InAiOnsiY29kZXhfY2xpIjoiZmlsZSJ9fSwiY3VycmVudF9wcm9maWxlIjpudWxsLCJmb3JtcyI6e30sImluX3BsYWNlX21vZGUiOnt9LCJpc29sYXRpb24iOnt9LCJtY3BfcGFja2FnZV9hbGxvd2xpc3QiOltdLCJvdmVybGF5X2RlZmF1bHRfd2VpZ2h0IjoxMDAwLCJvdmVybGF5cyI6e30sIm92ZXJsYXlzX2FsbG93ZWQiOnRydWUsInBhc3NhYmxlX2Vudl9uYW1lcyI6W10sInBlcm1pc3Npb25zIjp7fSwicHJlY2VkZW5jZSI6eyJwbGFjZW1lbnQiOiJ3aW5uZXItbGFzdCIsIndpbm5lciI6ImhpZ2hlci13ZWlnaHQifSwicHJvdmlkZXJfZGlyZWN0b3JpZXMiOltdLCJyZXF1aXJlX2N1cnJlbnRfcHJvZmlsZSI6bnVsbCwicmVxdWlyZV9zb3VyY2Vfc2lnbmVycyI6dHJ1ZSwic2NvcGVkX2N1cnJlbnQiOnt9LCJzZWNyZXRfbWF0ZXJpYWxfd2FpdmVycyI6W10sInNoYWRvd19hY2tub3dsZWRnZWQiOltdLCJzb3VyY2Vfc2lnbmVycyI6e30sInN5c3RlbV9tb2R1bGVfd2FpdmVycyI6W10sInN5c3RlbV9wcm9tcHRfZmlsZXMiOnt9LCJ0YXJnZXRzIjp7fSwidHJhbnNpdGl2ZV9zeXN0ZW1fbW9kdWxlcyI6ImVycm9yIiwieGRnX3NlZWRfYWxsb3dsaXN0IjpbImdpdCIsImdoIiwic3NoIl19LCJleHRlbnNpb25zIjp7InByb3h5Ijp7InByb2ZpbGUiOiJwcml2YXRlIn0sImNsYXVkZV9hdXRoIjp7InR5cGUiOiJvYXV0aCIsInN0b3JlIjp7InR5cGUiOiJrZXljaGFpbiIsInNlcnZpY2UiOiJjbGF1ZGUiLCJhY2NvdW50Ijoib3BlcmF0b3IifX19fQ==",
+      "sha256": "4f38277b9a4764b0c261fe21088fc9d6f8338badb29b2729eada08552b301261"
+    },
+    {
+      "path": "projection.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "eyJzY2hlbWEiOiJjdXJhdG9yLmxhdW5jaGVyLWNvbmZpZy8xIiwiY29uZmlnX3NjaGVtYSI6NywiY29uZmlnX3BhdGgiOiIke0ZJWFRVUkVfUk9PVH1cXHNlbGVjdGVkLmpzb24iLCJleHRlbnNpb25zIjp7InByb3h5Ijp7InByb2ZpbGUiOiJwcml2YXRlIn0sImNsYXVkZV9hdXRoIjp7InR5cGUiOiJvYXV0aCIsInN0b3JlIjp7InR5cGUiOiJrZXljaGFpbiIsInNlcnZpY2UiOiJjbGF1ZGUiLCJhY2NvdW50Ijoib3BlcmF0b3IifX19fQ==",
+      "sha256": "de68c249d80e793dd0bc7c02487dfa59727cacdf7e80fb08b27680a1049730d9"
+    }
+  ],
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}

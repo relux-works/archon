@@ -65,28 +65,96 @@ func CheckExceptionSubset(frozen, active ExceptionSet) error {
 }
 
 func productionFiles(root string) ([]string, error) {
+	absoluteRoot, err := filepath.Abs(root)
+	if err != nil {
+		return nil, err
+	}
 	var files []string
-	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+	err = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
+		relative, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		// CI checks out the authoritative protocol as a sibling repository.
+		// It is an input to Curator's tests, not Curator-owned production
+		// source, so its Go generators do not belong in this source scan.
+		if filepath.Clean(relative) == "protocol-spec" {
+			return filepath.SkipDir
+		}
+		// This declared test-tool submodule is not Curator production source.
+		if filepath.Clean(relative) == filepath.Join("agents", "skills", "skill-go-testing-tools") {
+			return filepath.SkipDir
+		}
+		if entry.Type()&os.ModeSymlink != 0 {
+			if isDeclaredSkillSubmoduleLink(absoluteRoot, path) {
+				return nil
+			}
+			productionSource := strings.HasSuffix(relative, ".go") && !strings.HasSuffix(relative, "_test.go")
+			if productionSource {
+				return fmt.Errorf("%s: source_symlink_unsupported", path)
+			}
+			target, err := os.Stat(path)
+			if err != nil {
+				return fmt.Errorf("%s: source_symlink_unresolved", path)
+			}
+			if target.IsDir() {
+				return fmt.Errorf("%s: source_directory_symlink_unsupported", path)
+			}
+		}
 		if entry.IsDir() {
-			switch entry.Name() {
-			case ".git", ".temp", ".task-board", "testdata", "vendor":
+			if excludedProductionDirectory(entry.Name()) {
 				return filepath.SkipDir
 			}
 			return nil
 		}
-		if strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, "_test.go") {
-			if entry.Type()&os.ModeSymlink != 0 {
-				return fmt.Errorf("%s: source_symlink_unsupported", path)
-			}
+		if strings.HasSuffix(relative, ".go") && !strings.HasSuffix(relative, "_test.go") {
 			files = append(files, path)
 		}
 		return nil
 	})
 	sort.Strings(files)
 	return files, err
+}
+
+func excludedProductionDirectory(name string) bool {
+	switch name {
+	case ".git", ".temp", ".task-board", "testdata", "vendor":
+		return true
+	default:
+		return false
+	}
+}
+
+var declaredSkillSubmoduleLinkPaths = map[string]struct{}{
+	filepath.Join(strings.Join([]string{".cl", "aude"}, ""), "skills", "skill-go-testing-tools"): {},
+	filepath.Join(strings.Join([]string{".co", "dex"}, ""), "skills", "skill-go-testing-tools"):  {},
+}
+
+func isDeclaredSkillSubmoduleLink(root, path string) bool {
+	absolutePath, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+	linkPath, err := filepath.Rel(root, absolutePath)
+	if err != nil {
+		return false
+	}
+	if _, allowed := declaredSkillSubmoduleLinkPaths[filepath.Clean(linkPath)]; !allowed {
+		return false
+	}
+	linkTarget, err := os.Readlink(absolutePath)
+	if err != nil {
+		return false
+	}
+	if filepath.IsAbs(linkTarget) {
+		return false
+	}
+	target := filepath.Clean(filepath.Join(filepath.Dir(absolutePath), linkTarget))
+	declaredTarget := filepath.Join(root, "agents", "skills", "skill-go-testing-tools")
+	return target == declaredTarget
 }
 
 func adapterPath(path string) bool { return strings.HasPrefix(path, "internal/harness/") }

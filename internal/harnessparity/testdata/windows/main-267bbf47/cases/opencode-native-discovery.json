@@ -1,0 +1,23 @@
+{
+  "case": {
+    "Name": "opencode-native-discovery",
+    "ID": "opencode",
+    "Operation": "native-skills",
+    "State": "empty"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    }
+  ],
+  "notice": "native discovery: no project mirror",
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}

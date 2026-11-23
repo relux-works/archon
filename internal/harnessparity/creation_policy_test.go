@@ -67,6 +67,9 @@ type creationProvenance struct {
 	ProbeActualMode           uint32 `json:"probe_actual_mode"`
 	OriginalPolicyDeclaration string `json:"original_linux_policy,omitempty"`
 	CapturePolicyDeclaration  string `json:"capture_creation_policy,omitempty"`
+	CaptureRunnerLabel        string `json:"capture_runner_label,omitempty"`
+	CaptureUmask              string `json:"capture_umask,omitempty"`
+	CaptureProbeDirectoryMode string `json:"capture_probe_directory_mode,omitempty"`
 	CaptureArch               string `json:"capture_architecture"`
 	CaptureGoVersion          string `json:"capture_go_version"`
 	CapturePayloadIdentity    string `json:"capture_payload_identity"`
@@ -91,7 +94,7 @@ func validateCreationContract(p creationProvenance, osName, arch, goVersion stri
 	if !known {
 		return "harness_parity_native_creation_policy_missing"
 	}
-	if p.OS != osName || p.Arch == "" || p.Arch != arch || p.GoVersion == "" || p.GoVersion != goVersion || p.SourceHead != refreshedSource || p.Driver != replayDriverPin || p.LauncherDriver != replayLauncherDriverPin || p.CaptureDriver != pins.driver || p.CaptureLauncherDriver != pins.launcher || p.CaptureArch != pins.arch || p.CaptureGoVersion != pins.goVersion || p.OriginalPolicyDeclaration != pins.linuxDeclaration || p.CapturePolicyDeclaration != pins.nativeDeclaration || p.Expected != expectedBaselineCases {
+	if p.OS != osName || p.Arch == "" || p.Arch != arch || p.GoVersion == "" || p.GoVersion != goVersion || p.SourceHead != refreshedSource || p.Driver != replayDriverPin || p.LauncherDriver != replayLauncherDriverPin || p.CaptureDriver != pins.driver || p.CaptureLauncherDriver != pins.launcher || p.CaptureArch != pins.arch || p.CaptureGoVersion != pins.goVersion || p.OriginalPolicyDeclaration != pins.linuxDeclaration || p.CapturePolicyDeclaration != pins.nativeDeclaration || p.CaptureRunnerLabel != pins.runnerLabel || p.CaptureUmask != pins.umask || p.CaptureProbeDirectoryMode != pins.probeDirectoryMode || p.Expected != expectedBaselineCases {
 		return provenanceFailure
 	}
 	if p.OS == "darwin" && p.Arch != pins.arch {
@@ -100,7 +103,11 @@ func validateCreationContract(p creationProvenance, osName, arch, goVersion stri
 	if code := validateCapturePayloadIdentity(p.CapturePayloadIdentity, p.CaptureRedactedFields, p.CaptureRedactedValues); code != "" {
 		return code
 	}
-	if p.EffectiveUmask != "0077" || p.ProbeRequestedMode != 0777 || p.ProbeActualMode != 0700 {
+	if p.OS == "windows" {
+		if p.EffectiveUmask != "not-applicable" || p.ProbeRequestedMode != 0 || p.ProbeActualMode != 0 {
+			return creationFailure
+		}
+	} else if p.EffectiveUmask != "0077" || p.ProbeRequestedMode != 0777 || p.ProbeActualMode != 0700 {
 		return creationFailure
 	}
 	return ""
@@ -133,7 +140,41 @@ func emitCreationProvenance(dir string) bool {
 	return err == nil
 }
 
+func parityModuleCachePath(goPath, home string) (string, error) {
+	if goPath == "" {
+		if home == "" {
+			return "", fmt.Errorf("original host home is unavailable")
+		}
+		goPath = filepath.Join(home, "go")
+	}
+	first := strings.Split(goPath, string(os.PathListSeparator))[0]
+	if first == "" || !filepath.IsAbs(first) {
+		return "", fmt.Errorf("original Go module cache root is not absolute")
+	}
+	return filepath.Join(first, "pkg", "mod"), nil
+}
+
+func pinParityModuleCache() error {
+	if os.Getenv("GOMODCACHE") != "" {
+		return nil
+	}
+	goPath := os.Getenv("GOPATH")
+	home, err := os.UserHomeDir()
+	if err != nil && goPath == "" {
+		return fmt.Errorf("resolve original host home for Go module cache: %w", err)
+	}
+	cache, err := parityModuleCachePath(goPath, home)
+	if err != nil {
+		return err
+	}
+	return os.Setenv("GOMODCACHE", cache)
+}
+
 func runParityProcess(m *testing.M) int {
+	if err := pinParityModuleCache(); err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, creationFailure)
+		return creationFailureExit
+	}
 	selectCreationMask(os.Getenv("HARNESS_PARITY_POLICY_CONTROL"))
 	dir, err := os.MkdirTemp("", "parity-creation-")
 	if err != nil {
@@ -141,7 +182,11 @@ func runParityProcess(m *testing.M) int {
 		return creationFailureExit
 	}
 	// Keep the separate private receipt for the caller's evidence collector.
-	processProvenance = creationProvenance{OS: runtime.GOOS, Arch: runtime.GOARCH, GoVersion: runtime.Version(), SourceHead: refreshedSource, Expected: expectedBaselineCases, ProbeRequestedMode: 0777}
+	requestedMode := uint32(0777)
+	if runtime.GOOS == "windows" {
+		requestedMode = 0
+	}
+	processProvenance = creationProvenance{OS: runtime.GOOS, Arch: runtime.GOARCH, GoVersion: runtime.Version(), SourceHead: refreshedSource, Expected: expectedBaselineCases, ProbeRequestedMode: requestedMode}
 	if runtime.GOOS == "linux" {
 		processProvenance.OriginalPolicyDeclaration = "declared by run.sh, not attested"
 		processProvenance.CapturePayloadIdentity = "original capture"
@@ -155,6 +200,7 @@ func runParityProcess(m *testing.M) int {
 		processProvenance.LauncherDriver = hashBytes(launcher)
 	}
 	manifestBytes, manifestErr := os.ReadFile(filepath.Join("testdata", runtime.GOOS, "main-267bbf47", "manifest.json"))
+	var windowsC3Err error
 	if manifestErr == nil {
 		if manifest, err := verifyRefreshedManifest(manifestBytes, runtime.GOOS); err == nil {
 			processProvenance.CaptureDriver = manifest.CaptureDriverSHA256
@@ -162,27 +208,45 @@ func runParityProcess(m *testing.M) int {
 			processProvenance.CaptureArch = manifest.Architecture
 			processProvenance.CaptureGoVersion = manifest.GoVersion
 			processProvenance.CapturePolicyDeclaration = manifest.CaptureCreationPolicy
+			processProvenance.CaptureRunnerLabel = manifest.CaptureRunnerLabel
+			processProvenance.CaptureUmask = manifest.CaptureUmask
+			processProvenance.CaptureProbeDirectoryMode = manifest.CaptureProbeDirectoryMode
 			if runtime.GOOS != "linux" {
 				processProvenance.CapturePayloadIdentity = manifest.CapturePayloadIdentity
 			}
 			processProvenance.CaptureRedactedFields = manifest.CaptureRedactedFields
 			processProvenance.CaptureRedactedValues = manifest.CaptureRedactedValues
+			if runtime.GOOS == "windows" {
+				c3, err := os.ReadFile(filepath.Join("testdata", "windows", "main-267bbf47", "old-new-windows.tsv"))
+				if err != nil {
+					windowsC3Err = err
+				} else {
+					windowsC3Err = validateWindowsC3Table(c3, manifest)
+				}
+			}
 		}
 	}
-	mode, mask, probeErr := measureCreationPolicy(dir)
-	if runtime.GOOS == "windows" {
-		mask = "not-applicable"
+	var mode uint32
+	mask := "not-applicable"
+	var probeErr error
+	if runtime.GOOS != "windows" {
+		mode, mask, probeErr = measureCreationPolicy(dir)
+		processProvenance.ProbeRequestedMode = 0777
 	}
 	processProvenance.ProbeActualMode, processProvenance.EffectiveUmask = mode, mask
-	if _, known := refreshedCapturePolicies[runtime.GOOS]; !known {
+	if windowsC3Err != nil {
+		processProvenance.Code = provenanceFailure
+	} else if _, known := refreshedCapturePolicies[runtime.GOOS]; !known {
 		processProvenance.Code = "harness_parity_native_creation_policy_missing"
 	} else if probeErr != nil {
 		processProvenance.Code = creationFailure
 	} else {
 		processProvenance.Code = validateCreationProvenance(processProvenance)
 	}
-	if control := os.Getenv("HARNESS_PARITY_POLICY_CONTROL"); control != "" && control != "0077" && control != "0022" {
-		processProvenance.Code = creationFailure
+	if control := os.Getenv("HARNESS_PARITY_POLICY_CONTROL"); control != "" {
+		if runtime.GOOS == "windows" && control != "not-applicable" || runtime.GOOS != "windows" && control != "0077" && control != "0022" {
+			processProvenance.Code = creationFailure
+		}
 	}
 	if processProvenance.Code != "" {
 		_ = emitCreationProvenance(dir)
@@ -283,11 +347,17 @@ func testCreationProvenanceControls(t *testing.T) {
 	if code := validateCreationProvenance(processProvenance); code != "" {
 		t.Fatal(code)
 	}
-	for _, mutate := range []func(*creationProvenance){
+	mutations := []func(*creationProvenance){
 		func(p *creationProvenance) { p.OS = "" }, func(p *creationProvenance) { p.Arch = "" }, func(p *creationProvenance) { p.GoVersion = "" }, func(p *creationProvenance) { p.SourceHead = "" }, func(p *creationProvenance) { p.Driver = "" }, func(p *creationProvenance) { p.LauncherDriver = "" }, func(p *creationProvenance) { p.CaptureDriver = "" }, func(p *creationProvenance) { p.CaptureLauncherDriver = "" }, func(p *creationProvenance) { p.OriginalPolicyDeclaration = "attested" }, func(p *creationProvenance) { p.EffectiveUmask = "0022" },
-		func(p *creationProvenance) { p.CaptureArch = "" }, func(p *creationProvenance) { p.CaptureGoVersion = "" }, func(p *creationProvenance) { p.CapturePolicyDeclaration = "attested" },
+		func(p *creationProvenance) { p.CaptureArch = "not-the-pinned-architecture" }, func(p *creationProvenance) { p.CaptureGoVersion = "" }, func(p *creationProvenance) { p.CapturePolicyDeclaration = "attested" },
+		func(p *creationProvenance) { p.CaptureRunnerLabel = "changed-runner" },
+		func(p *creationProvenance) { p.CaptureUmask = "0077" }, func(p *creationProvenance) { p.CaptureProbeDirectoryMode = "0700" },
 		func(p *creationProvenance) { p.CapturePayloadIdentity = "" },
-	} {
+	}
+	if runtime.GOOS != "windows" {
+		mutations = append(mutations, func(p *creationProvenance) { p.CaptureArch = "" })
+	}
+	for _, mutate := range mutations {
 		before := processProvenance.Invocations
 		altered := processProvenance
 		mutate(&altered)

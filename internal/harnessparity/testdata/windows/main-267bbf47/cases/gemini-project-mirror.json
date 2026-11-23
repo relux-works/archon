@@ -1,0 +1,51 @@
+{
+  "case": {
+    "Name": "gemini-project-mirror",
+    "ID": "gemini",
+    "Operation": "project-skills",
+    "State": "empty"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".gemini",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".gemini/skills",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".gemini/skills/.csk-managed.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "ewogICJlbnRyaWVzIjogWwogICAgImZpeHR1cmUtc2tpbGwiCiAgXSwKICAic2NoZW1hX3ZlcnNpb24iOiAxCn0K",
+      "sha256": "8de98ab30b90d880c6fc7b6e6c41c1e55ed73b3225d86b2a6fbab2b3967d3fb8"
+    },
+    {
+      "path": ".gemini/skills/fixture-skill",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".gemini/skills/fixture-skill/SKILL.md",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "IyBGaXh0dXJlIHNraWxsCg==",
+      "sha256": "38a67f9d623c1012c1b983718b7a6a5a3d6fdf4797418893af0584740b0e7f17"
+    }
+  ],
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}

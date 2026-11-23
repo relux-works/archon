@@ -1,0 +1,265 @@
+{
+  "case": {
+    "Name": "pi-empty",
+    "ID": "pi",
+    "Operation": "managed",
+    "State": "empty"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".agent-context",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".agent-context/system-prompt.md",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\manager\\profiles\\sample\\rendered\\pi\\.agent-context\\system-prompt.md",
+      "sha256": "b5466fb5f4ace502cb28ec469fc94071f0f37a4a55aaa4e145b84ee288d9c918"
+    },
+    {
+      "path": ".agent-environment.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "ewogICJ2ZXJzaW9uIjogMywKICAiaGFzaF92ZXJzaW9uIjogMiwKICAicHJvZmlsZSI6IHsKICAgICJuYW1lIjogInNhbXBsZSIsCiAgICAicm9vdCI6ICJzYW1wbGUiLAogICAgImtpbmQiOiAicGF0aCIsCiAgICAibG9ja19zaGEyNTYiOiAiNmQ3YzE4MzJkYzY2MTNiMTA2MDY4MGJkYjI4YjVmMmEzN2EyYjQ2MjFhY2U3MTQ5NDZjYzI4ZWI0MDIyZmM1MCIsCiAgICAic291cmNlX3BhdGgiOiAiJHtGSVhUVVJFX1JPT1R9XFxjb250ZXh0LXNvdXJjZSIKICB9LAogICJtZW1iZXJzIjogWwogICAgewogICAgICAibmFtZSI6ICJzYW1wbGUiLAogICAgICAidmVyc2lvbiI6ICIxLjAuMCIsCiAgICAgICJzdGF0ZV9zaGEyNTYiOiAiNWMwM2FiM2JmNmQxZjJhODQ1MTJiOGVmYzYxM2RjMmYzNzExMWQwMDEwMTE3MTJkZGNiOTBlMDc2N2IzMjNiYiIsCiAgICAgICJ3ZWlnaHQiOiAxMDAsCiAgICAgICJvdmVybGF5IjogZmFsc2UKICAgIH0KICBdLAogICJwcmVjZWRlbmNlIjogewogICAgIndpbm5lciI6ICJoaWdoZXItd2VpZ2h0IiwKICAgICJwbGFjZW1lbnQiOiAid2lubmVyLWxhc3QiCiAgfSwKICAibW9kZSI6ICJtYW5hZ2VkLWhvbWUiLAogICJzdXJmYWNlcyI6IHsKICAgICJyb290LWNvbnRleHQiOiB7CiAgICAgICJwYXRocyI6IFsKICAgICAgICAiQUdFTlRTLm1kIgogICAgICBdLAogICAgICAiZm9ybSI6ICJtb25vbGl0aGljIiwKICAgICAgImNvbnRlbnRfc2hhMjU2IjogInNoYTI1NjphNTYyZTg4YzllMDllZTgxNGQxNTE0YTI0YWIyYjE5M2NiZmEwOTZiNjQ0NmViZWQ0YWNmZWJiNGQwZTg3MjdkIiwKICAgICAgImNvcGllcyI6IFtdCiAgICB9LAogICAgInNraWxscyI6IHsKICAgICAgInBhdGhzIjogWwogICAgICAgICJza2lsbHMvZml4dHVyZS1za2lsbCIKICAgICAgXSwKICAgICAgImNvbnRlbnRfc2hhMjU2IjogInNoYTI1NjpmYWYwNjEyMmIyN2IzOWQ4NzFiM2M4YjNlZDBjNGVmNWY1ZTNiODJjMTA5OGZiZDkxZjg0NDk1YTE4NjhjYjE1IiwKICAgICAgImNvcGllcyI6IFtdCiAgICB9LAogICAgInN5c3RlbS1wcm9tcHQiOiB7CiAgICAgICJwYXRocyI6IFsKICAgICAgICAiLmFnZW50LWNvbnRleHQvc3lzdGVtLXByb21wdC5tZCIKICAgICAgXSwKICAgICAgImNvbnRlbnRfc2hhMjU2IjogInNoYTI1Njo5OTQ2NjkwOTdiZjc2NzFiN2EzODdkMzQyZTFjNzI2MDExZTAwODc1MGRhMDY5ZjgwZTc0NzAxNjJhZjZkNzE0IiwKICAgICAgImNvcGllcyI6IFtdCiAgICB9CiAgfSwKICAicGFzc3Rocm91Z2giOiBbCiAgICB7CiAgICAgICJwYXRoIjogImF1dGguanNvbiIsCiAgICAgICJpc29sYXRpb24iOiAic2hhcmVkIiwKICAgICAgInN0cmF0ZWd5IjogImZpbGUtbGluayIsCiAgICAgICJzb3VyY2Vfcm9sZSI6ICJuYXRpdmUiLAogICAgICAiYmFja2VuZCI6ICJmaWxlIiwKICAgICAgImJhY2tlbmRfdmVyc2lvbiI6ICIwLjg0LjIiLAogICAgICAicHJvdmVuYW5jZSI6ICJwcm92aXNpb25lZCIKICAgIH0KICBdLAogICJzZWVkcyI6IFtdCn0K",
+      "sha256": "c0ae562d5cbb18f388dee31cc7f7325f6cbb4cd1a449d4d9fc264f4c3e308b44"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\manager\\profiles\\sample\\rendered\\pi\\AGENTS.md",
+      "sha256": "e91f6aa9a32e2ecc7cc1144a4ba3769391e8ce5efffb3c14698834f04dc6d9fa"
+    },
+    {
+      "path": "auth.json",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\native\\pi\\agent\\auth.json",
+      "sha256": "1229d6ace3f442879581ec2fc2b1234988d74a021ead5f5a25375035b47623d8"
+    },
+    {
+      "path": "skills",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "skills/fixture-skill",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\manager\\contexts\\skill-context\\core-3.1-v1\\v2\\7f915da7aa2894b626e673b83e932fb9849b249285bc3804566befabf4b1fb6c",
+      "sha256": "fd3f862dccdc9af5d70ac43c027cbc39818026e0973ba3a3ada247826fdcd664"
+    }
+  ],
+  "rendered": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".agent-context",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".agent-context/system-prompt.md",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Rml4dHVyZSBzeXN0ZW0gY29udGV4dC4K",
+      "sha256": "9b6d7336bc604997c72c3b0fc3fd233378afff39219af3387a84a2472de214f6"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "PCEtLQpjdXJhdG9yLXJvb3QtY29udGV4dC12Mgpyb290OiBzYW1wbGUgMS4wLjAgc3RhdGUgc2hhMjU2OjVjMDNhYjNiZjZkMWYyYTg0NTEyYjhlZmM2MTNkYzJmMzcxMTFkMDAxMDExNzEyZGRjYjkwZTA3NjdiMzIzYmIKbWVtYmVyOiBzYW1wbGUgMS4wLjAgc3RhdGUgc2hhMjU2OjVjMDNhYjNiZjZkMWYyYTg0NTEyYjhlZmM2MTNkYzJmMzcxMTFkMDAxMDExNzEyZGRjYjkwZTA3NjdiMzIzYmIgd2VpZ2h0IDEwMApwcmVjZWRlbmNlOiB3aW5uZXI9aGlnaGVyLXdlaWdodCBwbGFjZW1lbnQ9d2lubmVyLWxhc3QKbG9jazogc2hhMjU2OjZkN2MxODMyZGM2NjEzYjEwNjA2ODBiZGIyOGI1ZjJhMzdhMmI0NjIxYWNlNzE0OTQ2Y2MyOGViNDAyMmZjNTAKZ2VuZXJhdGVkOiBDdXJhdG9yIFByb3RvY29sIGVudmlyb25tZW50cyByZXZpc2lvbiAxIChodHRwczovL2dpdGh1Yi5jb20vcmVsdXgtd29ya3MvY3VyYXRvci1zcGVjKQpub3RpY2U6IGdlbmVyYXRlZCBmaWxlOyBkaXJlY3QgZWRpdHMgYXJlIHVuc3VwcG9ydGVkIGFuZCBhcmUgZGV0ZWN0ZWQgYXMgZHJpZnQ7IHVwZGF0ZSB0aGUgc291cmNlIHByb2ZpbGUgcmVwb3NpdG9yeSBvciBpdHMgY29tcG9zZWQgcHJvZmlsZXMgaW5zdGVhZAotLT4KCi0tLQoKIyMgQ29udGV4dDogc2FtcGxlIDEuMC4wCgpGaXh0dXJlIHJvb3QgY29udGV4dC4K",
+      "sha256": "58cb7c1136f35c4da6e3d3acab87209b30ab70afe0224e6faa6e8141ddf6bbe6"
+    }
+  ],
+  "document": "eyJlbnYiOnsiUElfQ09ESU5HX0FHRU5UX0RJUiI6IiR7RklYVFVSRV9ST09UfVxcbWFuYWdlclxcZW52aXJvbm1lbnRzXFxzYW1wbGVcXHBpIn0sImVudmlyb25tZW50IjoicGkiLCJmcmFnbWVudCI6ImxhdW5jaC1lbnYtZnJhZ21lbnQtdjIiLCJwZXJtaXNzaW9ucyI6eyJsb2NrZWQiOmZhbHNlLCJtb2RlIjoibmF0aXZlIiwic291cmNlIjoiZGVmYXVsdCJ9LCJwcmVjZWRlbmNlIjp7InBsYWNlbWVudCI6Indpbm5lci1sYXN0Iiwid2lubmVyIjoiaGlnaGVyLXdlaWdodCJ9LCJwcm9maWxlIjp7ImxvY2tfc2hhMjU2IjoiNmQ3YzE4MzJkYzY2MTNiMTA2MDY4MGJkYjI4YjVmMmEzN2EyYjQ2MjFhY2U3MTQ5NDZjYzI4ZWI0MDIyZmM1MCIsIm5hbWUiOiJzYW1wbGUifSwic3lzdGVtX3Byb21wdCI6eyJjaGFubmVscyI6W3siYXJndW1lbnQiOiJwYXRoIiwiZmxhZyI6Ii0tYXBwZW5kLXN5c3RlbS1wcm9tcHQiLCJraW5kIjoiZmxhZyIsInNlbWFudGljcyI6ImFwcGVuZCJ9LHsiZmlsZW5hbWUiOiJBUFBFTkRfU1lTVEVNLm1kIiwia2luZCI6ImZpbGUiLCJzZW1hbnRpY3MiOiJhcHBlbmQifSx7ImZpbGVuYW1lIjoiU1lTVEVNLm1kIiwia2luZCI6ImZpbGUiLCJzZW1hbnRpY3MiOiJyZXBsYWNlIn1dLCJwYXRoIjoiJHtGSVhUVVJFX1JPT1R9XFxtYW5hZ2VyXFxlbnZpcm9ubWVudHNcXHNhbXBsZVxccGlcXC5hZ2VudC1jb250ZXh0XFxzeXN0ZW0tcHJvbXB0Lm1kIn19Cg==",
+  "notice": "Managed home provisioned at ${FIXTURE_ROOT}\\manager\\environments\\sample\\pi.\nThe tool treats this home as its own state root: sessions, trust records, and approvals accrue here, not in the native home.\nFirst-run steps the seeds do not cover: No trust wall; authentication is shared from the native home.",
+  "warnings": [
+    "environment_tool_version_unverified: pi detected release unknown, recorded 0.84.2",
+    "environment_tool_version_unverified: pi detected release unknown, recorded 0.84.2"
+  ],
+  "executed": true,
+  "native_preserved": false,
+  "project_preserved": true,
+  "native_before": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code/.credentials.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "codex_cli",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "codex_cli/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "muse",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "muse/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "opencode",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/agent",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/agent/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    }
+  ],
+  "native_after": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code/.credentials.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "codex_cli",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "codex_cli/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "muse",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "muse/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "opencode",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/.agent-environment.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "ewogICJ2ZXJzaW9uIjogMywKICAiaGFzaF92ZXJzaW9uIjogMiwKICAicHJvZmlsZSI6IHsKICAgICJuYW1lIjogInNhbXBsZSIsCiAgICAicm9vdCI6ICJzYW1wbGUiLAogICAgImtpbmQiOiAicGF0aCIsCiAgICAibG9ja19zaGEyNTYiOiAiNmQ3YzE4MzJkYzY2MTNiMTA2MDY4MGJkYjI4YjVmMmEzN2EyYjQ2MjFhY2U3MTQ5NDZjYzI4ZWI0MDIyZmM1MCIsCiAgICAic291cmNlX3BhdGgiOiAiJHtGSVhUVVJFX1JPT1R9XFxjb250ZXh0LXNvdXJjZSIKICB9LAogICJtZW1iZXJzIjogWwogICAgewogICAgICAibmFtZSI6ICJzYW1wbGUiLAogICAgICAidmVyc2lvbiI6ICIxLjAuMCIsCiAgICAgICJzdGF0ZV9zaGEyNTYiOiAiNWMwM2FiM2JmNmQxZjJhODQ1MTJiOGVmYzYxM2RjMmYzNzExMWQwMDEwMTE3MTJkZGNiOTBlMDc2N2IzMjNiYiIsCiAgICAgICJ3ZWlnaHQiOiAxMDAsCiAgICAgICJvdmVybGF5IjogZmFsc2UKICAgIH0KICBdLAogICJwcmVjZWRlbmNlIjogewogICAgIndpbm5lciI6ICJoaWdoZXItd2VpZ2h0IiwKICAgICJwbGFjZW1lbnQiOiAid2lubmVyLWxhc3QiCiAgfSwKICAibW9kZSI6ICJsaW5rZWQiLAogICJzdXJmYWNlcyI6IHsKICAgICJyb290LWNvbnRleHQiOiB7CiAgICAgICJwYXRocyI6IFsKICAgICAgICAiQUdFTlRTLm1kIgogICAgICBdLAogICAgICAiZm9ybSI6ICJtb25vbGl0aGljIiwKICAgICAgImNvbnRlbnRfc2hhMjU2IjogInNoYTI1NjphNTYyZTg4YzllMDllZTgxNGQxNTE0YTI0YWIyYjE5M2NiZmEwOTZiNjQ0NmViZWQ0YWNmZWJiNGQwZTg3MjdkIiwKICAgICAgImNvcGllcyI6IFtdCiAgICB9LAogICAgInNraWxscyI6IHsKICAgICAgInBhdGhzIjogWwogICAgICAgICJza2lsbHMvZml4dHVyZS1za2lsbCIKICAgICAgXSwKICAgICAgImNvbnRlbnRfc2hhMjU2IjogInNoYTI1NjpmYWYwNjEyMmIyN2IzOWQ4NzFiM2M4YjNlZDBjNGVmNWY1ZTNiODJjMTA5OGZiZDkxZjg0NDk1YTE4NjhjYjE1IiwKICAgICAgImNvcGllcyI6IFtdCiAgICB9CiAgfQp9Cg==",
+      "sha256": "ef4f354d0ded966de833af73159d106a02dc2b82d72904e6b10b47e889266432"
+    },
+    {
+      "path": "pi/AGENTS.md",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\manager\\profiles\\sample\\rendered\\pi\\AGENTS.md",
+      "sha256": "e91f6aa9a32e2ecc7cc1144a4ba3769391e8ce5efffb3c14698834f04dc6d9fa"
+    },
+    {
+      "path": "pi/agent",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/agent/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "pi/skills",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/skills/fixture-skill",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\manager\\contexts\\skill-context\\core-3.1-v1\\v2\\7f915da7aa2894b626e673b83e932fb9849b249285bc3804566befabf4b1fb6c",
+      "sha256": "fd3f862dccdc9af5d70ac43c027cbc39818026e0973ba3a3ada247826fdcd664"
+    }
+  ],
+  "project_before": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    }
+  ],
+  "project_after": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    }
+  ]
+}

@@ -1,0 +1,303 @@
+{
+  "case": {
+    "Name": "claude_code-mcp",
+    "ID": "claude_code",
+    "Operation": "managed",
+    "State": "user-settings"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".agent-context",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".agent-context/mcp",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".agent-context/mcp/claude_code.json",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\manager\\profiles\\sample\\rendered\\claude_code\\.agent-context\\mcp\\claude_code.json",
+      "sha256": "aa6d8627dfa08999432bd0becf85c4466386a581eb9fc7715409043bbc01a314"
+    },
+    {
+      "path": ".agent-context/system-prompt.md",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\manager\\profiles\\sample\\rendered\\claude_code\\.agent-context\\system-prompt.md",
+      "sha256": "d02861b7e726aeddb5ae6a741d085634f544777e79b82f7700ecf3f6d0151bd4"
+    },
+    {
+      "path": ".agent-environment.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "ewogICJ2ZXJzaW9uIjogMywKICAiaGFzaF92ZXJzaW9uIjogMiwKICAicHJvZmlsZSI6IHsKICAgICJuYW1lIjogInNhbXBsZSIsCiAgICAicm9vdCI6ICJzYW1wbGUiLAogICAgImtpbmQiOiAicGF0aCIsCiAgICAibG9ja19zaGEyNTYiOiAiNmQ3YzE4MzJkYzY2MTNiMTA2MDY4MGJkYjI4YjVmMmEzN2EyYjQ2MjFhY2U3MTQ5NDZjYzI4ZWI0MDIyZmM1MCIsCiAgICAic291cmNlX3BhdGgiOiAiJHtGSVhUVVJFX1JPT1R9XFxjb250ZXh0LXNvdXJjZSIKICB9LAogICJtZW1iZXJzIjogWwogICAgewogICAgICAibmFtZSI6ICJzYW1wbGUiLAogICAgICAidmVyc2lvbiI6ICIxLjAuMCIsCiAgICAgICJzdGF0ZV9zaGEyNTYiOiAiNWMwM2FiM2JmNmQxZjJhODQ1MTJiOGVmYzYxM2RjMmYzNzExMWQwMDEwMTE3MTJkZGNiOTBlMDc2N2IzMjNiYiIsCiAgICAgICJ3ZWlnaHQiOiAxMDAsCiAgICAgICJvdmVybGF5IjogZmFsc2UKICAgIH0KICBdLAogICJwcmVjZWRlbmNlIjogewogICAgIndpbm5lciI6ICJoaWdoZXItd2VpZ2h0IiwKICAgICJwbGFjZW1lbnQiOiAid2lubmVyLWxhc3QiCiAgfSwKICAibW9kZSI6ICJtYW5hZ2VkLWhvbWUiLAogICJzdXJmYWNlcyI6IHsKICAgICJtY3AiOiB7CiAgICAgICJwYXRocyI6IFsKICAgICAgICAiLmFnZW50LWNvbnRleHQvbWNwL2NsYXVkZV9jb2RlLmpzb24iCiAgICAgIF0sCiAgICAgICJjb250ZW50X3NoYTI1NiI6ICJzaGEyNTY6NDNkY2E4YzBmNjYyOTEwMjZhYjFlMTZlMTJjMjNlMmFkN2MzZWY4YTgzOWQ4NjUyOTk3OWIyNTBjNDU4ZjQ3ZiIsCiAgICAgICJjb3BpZXMiOiBbXQogICAgfSwKICAgICJyb290LWNvbnRleHQiOiB7CiAgICAgICJwYXRocyI6IFsKICAgICAgICAiQ0xBVURFLm1kIgogICAgICBdLAogICAgICAiZm9ybSI6ICJtb25vbGl0aGljIiwKICAgICAgImNvbnRlbnRfc2hhMjU2IjogInNoYTI1NjozOGMxNmQ3NDAxNmNiNWNkZGZmMzg4YTkzNGExYzVhM2RiMmE1NjIzM2IwOGFlODUzOWNlZTg0NmJmMmZmODJjIiwKICAgICAgImNvcGllcyI6IFsKICAgICAgICB7CiAgICAgICAgICAicGF0aCI6ICJDTEFVREUubWQiLAogICAgICAgICAgInJlYXNvbiI6ICJjbGF1ZGUtY29kZS1yb290LWNvbnRleHQiCiAgICAgICAgfQogICAgICBdCiAgICB9LAogICAgInNraWxscyI6IHsKICAgICAgInBhdGhzIjogWwogICAgICAgICJza2lsbHMvZml4dHVyZS1za2lsbCIKICAgICAgXSwKICAgICAgImNvbnRlbnRfc2hhMjU2IjogInNoYTI1NjpmYWYwNjEyMmIyN2IzOWQ4NzFiM2M4YjNlZDBjNGVmNWY1ZTNiODJjMTA5OGZiZDkxZjg0NDk1YTE4NjhjYjE1IiwKICAgICAgImNvcGllcyI6IFtdCiAgICB9LAogICAgInN5c3RlbS1wcm9tcHQiOiB7CiAgICAgICJwYXRocyI6IFsKICAgICAgICAiLmFnZW50LWNvbnRleHQvc3lzdGVtLXByb21wdC5tZCIKICAgICAgXSwKICAgICAgImNvbnRlbnRfc2hhMjU2IjogInNoYTI1Njo5OTQ2NjkwOTdiZjc2NzFiN2EzODdkMzQyZTFjNzI2MDExZTAwODc1MGRhMDY5ZjgwZTc0NzAxNjJhZjZkNzE0IiwKICAgICAgImNvcGllcyI6IFtdCiAgICB9CiAgfSwKICAicGFzc3Rocm91Z2giOiBbXSwKICAic2VlZHMiOiBbCiAgICAiLmNsYXVkZS5qc29uIiwKICAgICJzZXR0aW5ncy5qc29uIgogIF0sCiAgInNlZWRlZF9wcm9qZWN0cyI6IFsKICAgICIke0ZJWFRVUkVfUk9PVH1cXHByb2plY3QiCiAgXQp9Cg==",
+      "sha256": "9d52487b96d802803538b951b7a290f10a2566b81cca286789a2472d0ea12f61"
+    },
+    {
+      "path": ".claude.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "eyJoYXNDb21wbGV0ZWRPbmJvYXJkaW5nIjp0cnVlLCJwcm9qZWN0cyI6eyIke0ZJWFRVUkVfUk9PVH1cXHByb2plY3QiOnsiaGFzVHJ1c3REaWFsb2dBY2NlcHRlZCI6dHJ1ZX19fQo=",
+      "sha256": "a99c101e059bfc6ece8d044eb3e2d810377ec703947c0c18ac9262d94f118c05"
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "PCEtLQpjdXJhdG9yLXJvb3QtY29udGV4dC12Mgpyb290OiBzYW1wbGUgMS4wLjAgc3RhdGUgc2hhMjU2OjVjMDNhYjNiZjZkMWYyYTg0NTEyYjhlZmM2MTNkYzJmMzcxMTFkMDAxMDExNzEyZGRjYjkwZTA3NjdiMzIzYmIKbWVtYmVyOiBzYW1wbGUgMS4wLjAgc3RhdGUgc2hhMjU2OjVjMDNhYjNiZjZkMWYyYTg0NTEyYjhlZmM2MTNkYzJmMzcxMTFkMDAxMDExNzEyZGRjYjkwZTA3NjdiMzIzYmIgd2VpZ2h0IDEwMApwcmVjZWRlbmNlOiB3aW5uZXI9aGlnaGVyLXdlaWdodCBwbGFjZW1lbnQ9d2lubmVyLWxhc3QKbG9jazogc2hhMjU2OjZkN2MxODMyZGM2NjEzYjEwNjA2ODBiZGIyOGI1ZjJhMzdhMmI0NjIxYWNlNzE0OTQ2Y2MyOGViNDAyMmZjNTAKZ2VuZXJhdGVkOiBDdXJhdG9yIFByb3RvY29sIGVudmlyb25tZW50cyByZXZpc2lvbiAxIChodHRwczovL2dpdGh1Yi5jb20vcmVsdXgtd29ya3MvY3VyYXRvci1zcGVjKQpub3RpY2U6IGdlbmVyYXRlZCBmaWxlOyBkaXJlY3QgZWRpdHMgYXJlIHVuc3VwcG9ydGVkIGFuZCBhcmUgZGV0ZWN0ZWQgYXMgZHJpZnQ7IHVwZGF0ZSB0aGUgc291cmNlIHByb2ZpbGUgcmVwb3NpdG9yeSBvciBpdHMgY29tcG9zZWQgcHJvZmlsZXMgaW5zdGVhZAotLT4KCi0tLQoKIyMgQ29udGV4dDogc2FtcGxlIDEuMC4wCgpGaXh0dXJlIHJvb3QgY29udGV4dC4K",
+      "sha256": "58cb7c1136f35c4da6e3d3acab87209b30ab70afe0224e6faa6e8141ddf6bbe6"
+    },
+    {
+      "path": "settings.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "eyJjbGF1ZGVNZEV4Y2x1ZGVzIjpbIiR7RklYVFVSRV9ST09UfS9vcGVyYXRvci8uY2xhdWRlL0NMQVVERS5tZCIsIiR7RklYVFVSRV9ST09UfS9vcGVyYXRvci8uY2xhdWRlL3J1bGVzLyoqIiwiJHtGSVhUVVJFX1JPT1RfQU5DRVNUT1JTfSJdfQo=",
+      "sha256": "69f6b15e5203662b8760655b31ed765779dfafcd6dd8351ece7bda694232ef2a"
+    },
+    {
+      "path": "skills",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "skills/fixture-skill",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\manager\\contexts\\skill-context\\core-3.1-v1\\v2\\7f915da7aa2894b626e673b83e932fb9849b249285bc3804566befabf4b1fb6c",
+      "sha256": "fd3f862dccdc9af5d70ac43c027cbc39818026e0973ba3a3ada247826fdcd664"
+    }
+  ],
+  "rendered": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".agent-context",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".agent-context/mcp",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".agent-context/mcp/claude_code.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "eyJtY3BTZXJ2ZXJzIjp7ImZpeHR1cmUtc2VydmVyIjp7ImFyZ3MiOlsiLS1pbmVydCJdLCJjb21tYW5kIjoiZml4dHVyZS1uZXZlci1sYXVuY2hlZCIsInR5cGUiOiJzdGRpbyJ9fX0K",
+      "sha256": "5229c122b61ccb3fab323a60cb38ca6b98964ab9e947464ade1809f9b9c73bc3"
+    },
+    {
+      "path": ".agent-context/system-prompt.md",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Rml4dHVyZSBzeXN0ZW0gY29udGV4dC4K",
+      "sha256": "9b6d7336bc604997c72c3b0fc3fd233378afff39219af3387a84a2472de214f6"
+    }
+  ],
+  "document": "eyJlbnYiOnsiQ0xBVURFX0NPTkZJR19ESVIiOiIke0ZJWFRVUkVfUk9PVH1cXG1hbmFnZXJcXGVudmlyb25tZW50c1xcc2FtcGxlXFxjbGF1ZGVfY29kZSJ9LCJlbnZpcm9ubWVudCI6ImNsYXVkZV9jb2RlIiwiZnJhZ21lbnQiOiJsYXVuY2gtZW52LWZyYWdtZW50LXYyIiwibWNwIjp7ImNoYW5uZWxzIjpbeyJhcmd1bWVudCI6InBhdGgiLCJmbGFnIjoiLS1tY3AtY29uZmlnIiwia2luZCI6ImZsYWciLCJ3aXRoIjpbIi0tc3RyaWN0LW1jcC1jb25maWciXX1dLCJlbnZfbmFtZXMiOltdLCJwYXRoIjoiJHtGSVhUVVJFX1JPT1R9XFxtYW5hZ2VyXFxlbnZpcm9ubWVudHNcXHNhbXBsZVxcY2xhdWRlX2NvZGVcXC5hZ2VudC1jb250ZXh0XFxtY3BcXGNsYXVkZV9jb2RlLmpzb24ifSwicGVybWlzc2lvbnMiOnsibG9ja2VkIjpmYWxzZSwibW9kZSI6Im5hdGl2ZSIsInNvdXJjZSI6ImRlZmF1bHQifSwicHJlY2VkZW5jZSI6eyJwbGFjZW1lbnQiOiJ3aW5uZXItbGFzdCIsIndpbm5lciI6ImhpZ2hlci13ZWlnaHQifSwicHJvZmlsZSI6eyJsb2NrX3NoYTI1NiI6IjZkN2MxODMyZGM2NjEzYjEwNjA2ODBiZGIyOGI1ZjJhMzdhMmI0NjIxYWNlNzE0OTQ2Y2MyOGViNDAyMmZjNTAiLCJuYW1lIjoic2FtcGxlIn0sInN5c3RlbV9wcm9tcHQiOnsiY2hhbm5lbHMiOlt7ImFyZ3VtZW50IjoicGF0aCIsImZsYWciOiItLWFwcGVuZC1zeXN0ZW0tcHJvbXB0LWZpbGUiLCJraW5kIjoiZmxhZyIsInNlbWFudGljcyI6ImFwcGVuZCJ9LHsiYXJndW1lbnQiOiJwYXRoIiwiZmxhZyI6Ii0tc3lzdGVtLXByb21wdC1maWxlIiwia2luZCI6ImZsYWciLCJzZW1hbnRpY3MiOiJyZXBsYWNlIn1dLCJwYXRoIjoiJHtGSVhUVVJFX1JPT1R9XFxtYW5hZ2VyXFxlbnZpcm9ubWVudHNcXHNhbXBsZVxcY2xhdWRlX2NvZGVcXC5hZ2VudC1jb250ZXh0XFxzeXN0ZW0tcHJvbXB0Lm1kIn19Cg==",
+  "notice": "Managed home provisioned at ${FIXTURE_ROOT}\\manager\\environments\\sample\\claude_code.\nThe tool treats this home as its own state root: sessions, trust records, and approvals accrue here, not in the native home.\nFirst-run steps the seeds do not cover: Log in inside this home on first use; accept the project trust dialog on the first interactive launch; approve MCP servers when prompted.",
+  "warnings": [
+    "environment_tool_version_unverified: claude_code detected release unknown, recorded 2.1.261",
+    "environment_tool_version_unverified: claude_code detected release unknown, recorded 2.1.261"
+  ],
+  "executed": true,
+  "native_preserved": false,
+  "project_preserved": true,
+  "native_before": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code/.credentials.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "claude_code/settings.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "eyJmaXh0dXJlVW5rbm93biI6dHJ1ZX0K",
+      "sha256": "8ca3925ffc9ec0164978c426c22521a7f0dd661607671181314ea4ae599c3dd1"
+    },
+    {
+      "path": "codex_cli",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "codex_cli/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "muse",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "muse/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "opencode",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/agent",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/agent/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    }
+  ],
+  "native_after": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code/.agent-environment.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "ewogICJ2ZXJzaW9uIjogMywKICAiaGFzaF92ZXJzaW9uIjogMiwKICAicHJvZmlsZSI6IHsKICAgICJuYW1lIjogInNhbXBsZSIsCiAgICAicm9vdCI6ICJzYW1wbGUiLAogICAgImtpbmQiOiAicGF0aCIsCiAgICAibG9ja19zaGEyNTYiOiAiNmQ3YzE4MzJkYzY2MTNiMTA2MDY4MGJkYjI4YjVmMmEzN2EyYjQ2MjFhY2U3MTQ5NDZjYzI4ZWI0MDIyZmM1MCIsCiAgICAic291cmNlX3BhdGgiOiAiJHtGSVhUVVJFX1JPT1R9XFxjb250ZXh0LXNvdXJjZSIKICB9LAogICJtZW1iZXJzIjogWwogICAgewogICAgICAibmFtZSI6ICJzYW1wbGUiLAogICAgICAidmVyc2lvbiI6ICIxLjAuMCIsCiAgICAgICJzdGF0ZV9zaGEyNTYiOiAiNWMwM2FiM2JmNmQxZjJhODQ1MTJiOGVmYzYxM2RjMmYzNzExMWQwMDEwMTE3MTJkZGNiOTBlMDc2N2IzMjNiYiIsCiAgICAgICJ3ZWlnaHQiOiAxMDAsCiAgICAgICJvdmVybGF5IjogZmFsc2UKICAgIH0KICBdLAogICJwcmVjZWRlbmNlIjogewogICAgIndpbm5lciI6ICJoaWdoZXItd2VpZ2h0IiwKICAgICJwbGFjZW1lbnQiOiAid2lubmVyLWxhc3QiCiAgfSwKICAibW9kZSI6ICJsaW5rZWQiLAogICJzdXJmYWNlcyI6IHsKICAgICJyb290LWNvbnRleHQiOiB7CiAgICAgICJwYXRocyI6IFsKICAgICAgICAiQ0xBVURFLm1kIgogICAgICBdLAogICAgICAiZm9ybSI6ICJtb25vbGl0aGljIiwKICAgICAgImNvbnRlbnRfc2hhMjU2IjogInNoYTI1NjozOGMxNmQ3NDAxNmNiNWNkZGZmMzg4YTkzNGExYzVhM2RiMmE1NjIzM2IwOGFlODUzOWNlZTg0NmJmMmZmODJjIiwKICAgICAgImNvcGllcyI6IFsKICAgICAgICB7CiAgICAgICAgICAicGF0aCI6ICJDTEFVREUubWQiLAogICAgICAgICAgInJlYXNvbiI6ICJjbGF1ZGUtY29kZS1yb290LWNvbnRleHQiCiAgICAgICAgfQogICAgICBdCiAgICB9LAogICAgInNraWxscyI6IHsKICAgICAgInBhdGhzIjogWwogICAgICAgICJza2lsbHMvZml4dHVyZS1za2lsbCIKICAgICAgXSwKICAgICAgImNvbnRlbnRfc2hhMjU2IjogInNoYTI1NjpmYWYwNjEyMmIyN2IzOWQ4NzFiM2M4YjNlZDBjNGVmNWY1ZTNiODJjMTA5OGZiZDkxZjg0NDk1YTE4NjhjYjE1IiwKICAgICAgImNvcGllcyI6IFtdCiAgICB9CiAgfQp9Cg==",
+      "sha256": "efb9de75be6e6b6aaeebf4495c123969285e5e19f4f69d4bfce046e00cb20463"
+    },
+    {
+      "path": "claude_code/.credentials.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "claude_code/CLAUDE.md",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "PCEtLQpjdXJhdG9yLXJvb3QtY29udGV4dC12Mgpyb290OiBzYW1wbGUgMS4wLjAgc3RhdGUgc2hhMjU2OjVjMDNhYjNiZjZkMWYyYTg0NTEyYjhlZmM2MTNkYzJmMzcxMTFkMDAxMDExNzEyZGRjYjkwZTA3NjdiMzIzYmIKbWVtYmVyOiBzYW1wbGUgMS4wLjAgc3RhdGUgc2hhMjU2OjVjMDNhYjNiZjZkMWYyYTg0NTEyYjhlZmM2MTNkYzJmMzcxMTFkMDAxMDExNzEyZGRjYjkwZTA3NjdiMzIzYmIgd2VpZ2h0IDEwMApwcmVjZWRlbmNlOiB3aW5uZXI9aGlnaGVyLXdlaWdodCBwbGFjZW1lbnQ9d2lubmVyLWxhc3QKbG9jazogc2hhMjU2OjZkN2MxODMyZGM2NjEzYjEwNjA2ODBiZGIyOGI1ZjJhMzdhMmI0NjIxYWNlNzE0OTQ2Y2MyOGViNDAyMmZjNTAKZ2VuZXJhdGVkOiBDdXJhdG9yIFByb3RvY29sIGVudmlyb25tZW50cyByZXZpc2lvbiAxIChodHRwczovL2dpdGh1Yi5jb20vcmVsdXgtd29ya3MvY3VyYXRvci1zcGVjKQpub3RpY2U6IGdlbmVyYXRlZCBmaWxlOyBkaXJlY3QgZWRpdHMgYXJlIHVuc3VwcG9ydGVkIGFuZCBhcmUgZGV0ZWN0ZWQgYXMgZHJpZnQ7IHVwZGF0ZSB0aGUgc291cmNlIHByb2ZpbGUgcmVwb3NpdG9yeSBvciBpdHMgY29tcG9zZWQgcHJvZmlsZXMgaW5zdGVhZAotLT4KCi0tLQoKIyMgQ29udGV4dDogc2FtcGxlIDEuMC4wCgpGaXh0dXJlIHJvb3QgY29udGV4dC4K",
+      "sha256": "58cb7c1136f35c4da6e3d3acab87209b30ab70afe0224e6faa6e8141ddf6bbe6"
+    },
+    {
+      "path": "claude_code/settings.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "eyJmaXh0dXJlVW5rbm93biI6dHJ1ZX0K",
+      "sha256": "8ca3925ffc9ec0164978c426c22521a7f0dd661607671181314ea4ae599c3dd1"
+    },
+    {
+      "path": "claude_code/skills",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code/skills/fixture-skill",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\manager\\contexts\\skill-context\\core-3.1-v1\\v2\\7f915da7aa2894b626e673b83e932fb9849b249285bc3804566befabf4b1fb6c",
+      "sha256": "fd3f862dccdc9af5d70ac43c027cbc39818026e0973ba3a3ada247826fdcd664"
+    },
+    {
+      "path": "codex_cli",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "codex_cli/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "muse",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "muse/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "opencode",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/agent",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/agent/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    }
+  ],
+  "project_before": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    }
+  ],
+  "project_after": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    }
+  ]
+}

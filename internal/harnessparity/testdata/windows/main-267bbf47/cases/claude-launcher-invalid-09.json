@@ -1,0 +1,44 @@
+{
+  "case": {
+    "Name": "claude-launcher-invalid-09",
+    "ID": "claude_code",
+    "Operation": "launcher",
+    "State": "invalid-09"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "refusal.txt",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "ZXh0ZW5zaW9uczogaW52YWxpZCBsYXVuY2hlciBzZWxlY3Rpb24=",
+      "sha256": "bf2b8e7ef7c57c763b1e8a03f24d04eadc15e4f82d658150cbde3d1466aaf608"
+    },
+    {
+      "path": "retained-input-mode.txt",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "MDY2Ngo=",
+      "sha256": "cb6c0f49e38704f0aa206cc6ded2c28ae14b6d93497a2ffe39dc11efae88949e"
+    },
+    {
+      "path": "retained-input.sha256",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "OGM1MGY1OTUzMTk5ZGU4ZGU5NjU2M2E3Yzk1MmUzYmNlZDJlZjNhZTEyY2Y2OWVjZDdlZTNjM2QwMWRjZTljMw==",
+      "sha256": "e8def6022b0bda11defa3eb0a21d9e6a18a8d02237e941556cfabdb08adad6d7"
+    }
+  ],
+  "refusal": "extensions: invalid launcher selection",
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}

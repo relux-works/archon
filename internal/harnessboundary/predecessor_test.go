@@ -156,12 +156,14 @@ func testRatchetCLIInputs(t *testing.T) {
 		})
 	}
 	for _, row := range []struct {
-		name, claimed, base string
-		want                int
+		name, claimed, base, bootstrapSource, bootstrapDigest string
+		want                                                  int
+		refusal                                               string
 	}{
-		{"CI-valid-prior", f.prior, f.prior, 0},
-		{"CI-head-source", f.head, f.prior, RatchetMissingExit},
-		{"CI-explicit-first-bootstrap", f.absent, f.absent, 0},
+		{"CI-valid-prior", f.prior, f.prior, "", "", 0, ""},
+		{"CI-head-source", f.head, f.prior, "", "", RatchetMissingExit, RatchetMissingInput},
+		{"CI-explicit-first-bootstrap", f.absent, f.absent, "", "", 0, ""},
+		{"CI-stale-first-bootstrap-tuple", f.absent, f.absent, "643e727edd2db21307ca6d8c0332935e33d50ac8", "d400920c0956af1ad90b9e964828c6c9dea2fbe8786b3064d133d825e945f0e9", 24, RatchetBindingMismatch},
 	} {
 		t.Run(row.name, func(t *testing.T) {
 			event := targetEvent{Repository: eventRepository{FullName: TargetRepository}}
@@ -177,12 +179,22 @@ func testRatchetCLIInputs(t *testing.T) {
 			env := map[string]string{"GITHUB_ACTIONS": "true", "GITHUB_EVENT_NAME": "pull_request", "GITHUB_REPOSITORY": TargetRepository, "GITHUB_REF": "refs/pull/1/merge", "GITHUB_SHA": f.head, "GITHUB_EVENT_PATH": path, "HARNESS_PREDECESSOR_SHA": row.claimed}
 			before := sourceState(t, f.root)
 			var out, diagnostics bytes.Buffer
-			code := RunRatchetCLI(context.Background(), []string{"--ci", "--bootstrap-source", OriginalSourceHead, "--bootstrap-frozen-digest", FrozenExceptionDigest}, f.root, func(k string) string { return env[k] }, &out, &diagnostics)
+			bootstrapSource, bootstrapDigest := row.bootstrapSource, row.bootstrapDigest
+			if bootstrapSource == "" {
+				bootstrapSource = OriginalSourceHead
+			}
+			if bootstrapDigest == "" {
+				bootstrapDigest = FrozenExceptionDigest
+			}
+			code := RunRatchetCLI(context.Background(), []string{"--ci", "--bootstrap-source", bootstrapSource, "--bootstrap-frozen-digest", bootstrapDigest}, f.root, func(k string) string { return env[k] }, &out, &diagnostics)
 			if code != row.want {
 				t.Fatalf("CI code=%d diagnostics=%s", code, diagnostics.String())
 			}
-			if code != 0 && (strings.Contains(out.String(), "=accepted") || !strings.Contains(diagnostics.String(), RatchetMissingInput)) {
-				t.Fatal("head-source refusal was not the intended missing input")
+			if row.refusal != "" && !strings.Contains(diagnostics.String(), row.refusal) {
+				t.Fatalf("CI refusal did not name %s: %s", row.refusal, diagnostics.String())
+			}
+			if code != 0 && strings.Contains(out.String(), "=accepted") {
+				t.Fatal("CI refusal emitted acceptance")
 			}
 			if sourceState(t, f.root) != before {
 				t.Fatal("CI changed source state")

@@ -1,0 +1,44 @@
+{
+  "case": {
+    "Name": "claude-launcher-invalid-06",
+    "ID": "claude_code",
+    "Operation": "launcher",
+    "State": "invalid-06"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "refusal.txt",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "bWFsZm9ybWVkIEpTT04gaW4gY29uZmlnICR7RklYVFVSRV9ST09UfVxzZWxlY3RlZC5qc29u",
+      "sha256": "19d70de0d13cdfa4d4371bfb5acd789dc39af7b72f0746c64eba38c2e7aa5a23"
+    },
+    {
+      "path": "retained-input-mode.txt",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "MDY2Ngo=",
+      "sha256": "cb6c0f49e38704f0aa206cc6ded2c28ae14b6d93497a2ffe39dc11efae88949e"
+    },
+    {
+      "path": "retained-input.sha256",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "ZDNhZjQ5NTdlMDQyYzQzZmNlMmJkMWY1NWExM2JhYTRiOGJlYjAwZGQ1ZGY2OTNhZDFkNTg3YjNhZmQxZTBiNw==",
+      "sha256": "90df12c28c7d28baed7c9157a3b9d7e66b907c89466cb8a9dfd57da96884b2c8"
+    }
+  ],
+  "refusal": "malformed JSON in config ${FIXTURE_ROOT}\\selected.json",
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}

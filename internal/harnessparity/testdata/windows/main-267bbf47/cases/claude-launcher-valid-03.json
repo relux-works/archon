@@ -1,0 +1,29 @@
+{
+  "case": {
+    "Name": "claude-launcher-valid-03",
+    "ID": "claude_code",
+    "Operation": "launcher",
+    "State": "valid-03"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "projection.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "eyJzY2hlbWEiOiJjdXJhdG9yLmxhdW5jaGVyLWNvbmZpZy8xIiwiY29uZmlnX3NjaGVtYSI6NywiY29uZmlnX3BhdGgiOiIke0ZJWFRVUkVfUk9PVH1cXHNlbGVjdGVkLmpzb24iLCJleHRlbnNpb25zIjp7ImNsYXVkZV9hdXRoIjp7InR5cGUiOiJvYXV0aCIsInN0b3JlIjp7InR5cGUiOiJrZXljaGFpbiIsInNlcnZpY2UiOiJzIiwiYWNjb3VudCI6ImEifX19fQ==",
+      "sha256": "4da9eca94471a21e7382cccf64b0513efc9b672eb183e6e08af03c9f71a444cf"
+    }
+  ],
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": null,
+  "native_after": null,
+  "project_before": null,
+  "project_after": null
+}

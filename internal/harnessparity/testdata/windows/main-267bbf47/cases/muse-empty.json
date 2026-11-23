@@ -1,0 +1,256 @@
+{
+  "case": {
+    "Name": "muse-empty",
+    "ID": "muse",
+    "Operation": "managed",
+    "State": "empty"
+  },
+  "tree": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": ".agent-environment.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "ewogICJ2ZXJzaW9uIjogMywKICAiaGFzaF92ZXJzaW9uIjogMiwKICAicHJvZmlsZSI6IHsKICAgICJuYW1lIjogInNhbXBsZSIsCiAgICAicm9vdCI6ICJzYW1wbGUiLAogICAgImtpbmQiOiAicGF0aCIsCiAgICAibG9ja19zaGEyNTYiOiAiNmQ3YzE4MzJkYzY2MTNiMTA2MDY4MGJkYjI4YjVmMmEzN2EyYjQ2MjFhY2U3MTQ5NDZjYzI4ZWI0MDIyZmM1MCIsCiAgICAic291cmNlX3BhdGgiOiAiJHtGSVhUVVJFX1JPT1R9XFxjb250ZXh0LXNvdXJjZSIKICB9LAogICJtZW1iZXJzIjogWwogICAgewogICAgICAibmFtZSI6ICJzYW1wbGUiLAogICAgICAidmVyc2lvbiI6ICIxLjAuMCIsCiAgICAgICJzdGF0ZV9zaGEyNTYiOiAiNWMwM2FiM2JmNmQxZjJhODQ1MTJiOGVmYzYxM2RjMmYzNzExMWQwMDEwMTE3MTJkZGNiOTBlMDc2N2IzMjNiYiIsCiAgICAgICJ3ZWlnaHQiOiAxMDAsCiAgICAgICJvdmVybGF5IjogZmFsc2UKICAgIH0KICBdLAogICJwcmVjZWRlbmNlIjogewogICAgIndpbm5lciI6ICJoaWdoZXItd2VpZ2h0IiwKICAgICJwbGFjZW1lbnQiOiAid2lubmVyLWxhc3QiCiAgfSwKICAibW9kZSI6ICJtYW5hZ2VkLWhvbWUiLAogICJzdXJmYWNlcyI6IHsKICAgICJyb290LWNvbnRleHQiOiB7CiAgICAgICJwYXRocyI6IFsKICAgICAgICAiY29uZmlnL211c2UvQUdFTlRTLm1kIgogICAgICBdLAogICAgICAiZm9ybSI6ICJtb25vbGl0aGljIiwKICAgICAgImNvbnRlbnRfc2hhMjU2IjogInNoYTI1NjpjOWZjYjE1YTA1MGVhNmY1OWMyYTA3NDkyYTA3YTM3MmM0ZjNkMDgxYmVlZTA4MmRiZWY4MDgzMzUyNzRjZTFjIiwKICAgICAgImNvcGllcyI6IFtdCiAgICB9LAogICAgInNraWxscyI6IHsKICAgICAgInBhdGhzIjogWwogICAgICAgICJkYXRhL211c2Uvc2tpbGxzL2ZpeHR1cmUtc2tpbGwiCiAgICAgIF0sCiAgICAgICJjb250ZW50X3NoYTI1NiI6ICJzaGEyNTY6NzAwYWJmNjY2ZjcyMjY0OGIwODBjYzZhMzI2MzYzOTk1MjRmODEzYThmMjc5YWQzZTMyZGE3ODY5MGI1MjUxMSIsCiAgICAgICJjb3BpZXMiOiBbXQogICAgfQogIH0sCiAgInBhc3N0aHJvdWdoIjogWwogICAgewogICAgICAicGF0aCI6ICJjb25maWcvbXVzZS9hdXRoLmpzb24iLAogICAgICAiaXNvbGF0aW9uIjogInNoYXJlZCIsCiAgICAgICJzdHJhdGVneSI6ICJmaWxlLWxpbmsiLAogICAgICAic291cmNlX3JvbGUiOiAibmF0aXZlIiwKICAgICAgImJhY2tlbmQiOiAiZmlsZSIsCiAgICAgICJiYWNrZW5kX3ZlcnNpb24iOiAiMS40LjciLAogICAgICAicHJvdmVuYW5jZSI6ICJwcm92aXNpb25lZCIKICAgIH0KICBdLAogICJzZWVkcyI6IFtdCn0K",
+      "sha256": "9e2c5af3b0a5b980f0aa2056c4ce7a2964baddd29a8971c85a99720f50afd810"
+    },
+    {
+      "path": "cache",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "config",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "config/muse",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "config/muse/AGENTS.md",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\manager\\profiles\\sample\\rendered\\muse\\config\\muse\\AGENTS.md",
+      "sha256": "de9871137b00831ff81fa368c5a9366a148262121d987949ac6da945764dfcc6"
+    },
+    {
+      "path": "config/muse/auth.json",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\native\\muse\\auth.json",
+      "sha256": "0b6087ac482b43d68eec542f1067962e52b0dbc3c1f3dcadae0b0648ab92a180"
+    },
+    {
+      "path": "data",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "data/muse",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "data/muse/skills",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "data/muse/skills/fixture-skill",
+      "kind": "link",
+      "mode": 438,
+      "link": "${FIXTURE_ROOT}\\manager\\contexts\\skill-context\\core-3.1-v1\\v2\\7f915da7aa2894b626e673b83e932fb9849b249285bc3804566befabf4b1fb6c",
+      "sha256": "fd3f862dccdc9af5d70ac43c027cbc39818026e0973ba3a3ada247826fdcd664"
+    },
+    {
+      "path": "state",
+      "kind": "directory",
+      "mode": 511
+    }
+  ],
+  "rendered": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "config",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "config/muse",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "config/muse/AGENTS.md",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "PCEtLQpjdXJhdG9yLXJvb3QtY29udGV4dC12Mgpyb290OiBzYW1wbGUgMS4wLjAgc3RhdGUgc2hhMjU2OjVjMDNhYjNiZjZkMWYyYTg0NTEyYjhlZmM2MTNkYzJmMzcxMTFkMDAxMDExNzEyZGRjYjkwZTA3NjdiMzIzYmIKbWVtYmVyOiBzYW1wbGUgMS4wLjAgc3RhdGUgc2hhMjU2OjVjMDNhYjNiZjZkMWYyYTg0NTEyYjhlZmM2MTNkYzJmMzcxMTFkMDAxMDExNzEyZGRjYjkwZTA3NjdiMzIzYmIgd2VpZ2h0IDEwMApwcmVjZWRlbmNlOiB3aW5uZXI9aGlnaGVyLXdlaWdodCBwbGFjZW1lbnQ9d2lubmVyLWxhc3QKbG9jazogc2hhMjU2OjZkN2MxODMyZGM2NjEzYjEwNjA2ODBiZGIyOGI1ZjJhMzdhMmI0NjIxYWNlNzE0OTQ2Y2MyOGViNDAyMmZjNTAKZ2VuZXJhdGVkOiBDdXJhdG9yIFByb3RvY29sIGVudmlyb25tZW50cyByZXZpc2lvbiAxIChodHRwczovL2dpdGh1Yi5jb20vcmVsdXgtd29ya3MvY3VyYXRvci1zcGVjKQpub3RpY2U6IGdlbmVyYXRlZCBmaWxlOyBkaXJlY3QgZWRpdHMgYXJlIHVuc3VwcG9ydGVkIGFuZCBhcmUgZGV0ZWN0ZWQgYXMgZHJpZnQ7IHVwZGF0ZSB0aGUgc291cmNlIHByb2ZpbGUgcmVwb3NpdG9yeSBvciBpdHMgY29tcG9zZWQgcHJvZmlsZXMgaW5zdGVhZAotLT4KCi0tLQoKIyMgQ29udGV4dDogc2FtcGxlIDEuMC4wCgpGaXh0dXJlIHJvb3QgY29udGV4dC4K",
+      "sha256": "58cb7c1136f35c4da6e3d3acab87209b30ab70afe0224e6faa6e8141ddf6bbe6"
+    }
+  ],
+  "document": "eyJjcmVkZW50aWFsX3N0b3JlIjp7InNlbGVjdGlvbiI6ImZpbGUifSwiZW52Ijp7IlRCSF9DUkVERU5USUFMX0JBQ0tFTkQiOiJmaWxlIiwiWERHX0NBQ0hFX0hPTUUiOiIke0ZJWFRVUkVfUk9PVH1cXG1hbmFnZXJcXGVudmlyb25tZW50c1xcc2FtcGxlXFxtdXNlXFxjYWNoZSIsIlhER19DT05GSUdfSE9NRSI6IiR7RklYVFVSRV9ST09UfVxcbWFuYWdlclxcZW52aXJvbm1lbnRzXFxzYW1wbGVcXG11c2VcXGNvbmZpZyIsIlhER19EQVRBX0hPTUUiOiIke0ZJWFRVUkVfUk9PVH1cXG1hbmFnZXJcXGVudmlyb25tZW50c1xcc2FtcGxlXFxtdXNlXFxkYXRhIiwiWERHX1NUQVRFX0hPTUUiOiIke0ZJWFRVUkVfUk9PVH1cXG1hbmFnZXJcXGVudmlyb25tZW50c1xcc2FtcGxlXFxtdXNlXFxzdGF0ZSJ9LCJlbnZpcm9ubWVudCI6Im11c2UiLCJmcmFnbWVudCI6ImxhdW5jaC1lbnYtZnJhZ21lbnQtdjQiLCJwZXJtaXNzaW9ucyI6eyJsb2NrZWQiOmZhbHNlLCJtb2RlIjoibmF0aXZlIiwic291cmNlIjoiZGVmYXVsdCJ9LCJwcmVjZWRlbmNlIjp7InBsYWNlbWVudCI6Indpbm5lci1sYXN0Iiwid2lubmVyIjoiaGlnaGVyLXdlaWdodCJ9LCJwcm9maWxlIjp7ImxvY2tfc2hhMjU2IjoiNmQ3YzE4MzJkYzY2MTNiMTA2MDY4MGJkYjI4YjVmMmEzN2EyYjQ2MjFhY2U3MTQ5NDZjYzI4ZWI0MDIyZmM1MCIsIm5hbWUiOiJzYW1wbGUifSwicm9vdF9jb250ZXh0Ijp7ImV4Y2x1c2l2ZSI6dHJ1ZX19Cg==",
+  "notice": "Managed home provisioned at ${FIXTURE_ROOT}\\manager\\environments\\sample\\muse.\nThe tool treats this home as its own state root: sessions, trust records, and approvals accrue here, not in the native home.\nFirst-run steps the seeds do not cover: Muse first-run seed coverage and credential refresh semantics are unverified; foreign personal context remains ambient.",
+  "warnings": [
+    "managed Muse maps configured native (including unset) to effective file storage; the stored selector is unchanged; refresh remains unqualified",
+    "environment_tool_version_unverified: muse detected release unknown, recorded 1.4.7",
+    "environment_tool_version_unverified: muse detected release unknown, recorded 1.4.7"
+  ],
+  "executed": true,
+  "native_preserved": true,
+  "project_preserved": true,
+  "native_before": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code/.credentials.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "codex_cli",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "codex_cli/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "muse",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "muse/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "opencode",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/agent",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/agent/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    }
+  ],
+  "native_after": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "claude_code/.credentials.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "codex_cli",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "codex_cli/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "muse",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "muse/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    },
+    {
+      "path": "opencode",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/agent",
+      "kind": "directory",
+      "mode": 511
+    },
+    {
+      "path": "pi/agent/auth.json",
+      "kind": "file",
+      "mode": 438,
+      "bytes": "Zml4dHVyZS1vbmx5Cg==",
+      "sha256": "db64e55296d3cb3c38619dae7b7cce54bb74a83956423be38443258ebb0724da"
+    }
+  ],
+  "project_before": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    }
+  ],
+  "project_after": [
+    {
+      "path": ".",
+      "kind": "directory",
+      "mode": 511
+    }
+  ]
+}

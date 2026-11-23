@@ -5,6 +5,7 @@ package harnessparity
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -23,6 +24,7 @@ func validateCapturePayloadIdentity(identity string, fields, values int) string 
 
 type capturePolicyPins struct {
 	driver, launcher, arch, goVersion, linuxDeclaration, nativeDeclaration string
+	runnerLabel, umask, probeDirectoryMode                                 string
 }
 
 // Linux 07 and Darwin bind their admitted captures. Historical Linux bytes
@@ -55,13 +57,20 @@ var refreshedCapturePolicies = map[string]capturePolicyPins{
 		arch:     "arm64", goVersion: "go1.25.5",
 		nativeDeclaration: "umask 0077 and probe directory mode 0700 recorded in export seal",
 	},
+	"windows": {
+		driver:    "b96b012122f3ecb70537e2f64ca5fefbbdf6225123ce11f3ff7d6fc038c3a6eb",
+		launcher:  "deaefe19fadacd5d449176bfab0aa60d029c842f14c5070fbea7e9f0e539e983",
+		goVersion: "go1.25.5", runnerLabel: "windows-latest",
+		nativeDeclaration: "umask not-applicable and probe directory mode not-applicable recorded in export seal",
+		umask:             "not-applicable", probeDirectoryMode: "not-applicable",
+	},
 }
 
-// Valid Linux and Darwin records pass their respective pure contracts; this
-// does not execute Darwin on Linux. Missing, contradictory and cross-platform
-// evidence is refused before any legacy call; Windows has no implicit fallback.
+// Valid Linux, Darwin and Windows records pass their pure contracts; this does
+// not execute another platform on the current host. Missing, contradictory and
+// unsupported-platform evidence is refused before any legacy call.
 func testNativeCreationContract(t *testing.T) {
-	for _, osName := range []string{"linux", "darwin"} {
+	for _, osName := range []string{"linux", "darwin", "windows"} {
 		t.Run(osName, func(t *testing.T) {
 			// Every admitted raw case and pinned corpus is readable and intact.
 			// Loading a captured case is not a native replay on this host.
@@ -79,20 +88,31 @@ func testNativeCreationContract(t *testing.T) {
 				}
 			})
 			pins := refreshedCapturePolicies[osName]
-			p := creationProvenance{OS: osName, Arch: pins.arch, GoVersion: "go1.25.5", SourceHead: refreshedSource, Driver: replayDriverPin, LauncherDriver: replayLauncherDriverPin, CaptureDriver: pins.driver, CaptureLauncherDriver: pins.launcher, CaptureArch: pins.arch, CaptureGoVersion: pins.goVersion, OriginalPolicyDeclaration: pins.linuxDeclaration, CapturePolicyDeclaration: pins.nativeDeclaration, Expected: 47, EffectiveUmask: "0077", ProbeRequestedMode: 0777, ProbeActualMode: 0700}
+			arch := pins.arch
+			umask, requestedMode, actualMode := "0077", uint32(0777), uint32(0700)
+			if arch == "" {
+				arch = runtime.GOARCH
+			}
+			if osName == "windows" {
+				umask, requestedMode, actualMode = "not-applicable", 0, 0
+			}
+			p := creationProvenance{OS: osName, Arch: arch, GoVersion: "go1.25.5", SourceHead: refreshedSource, Driver: replayDriverPin, CaptureDriver: pins.driver, LauncherDriver: replayLauncherDriverPin, CaptureLauncherDriver: pins.launcher, CaptureArch: pins.arch, CaptureGoVersion: pins.goVersion, OriginalPolicyDeclaration: pins.linuxDeclaration, CapturePolicyDeclaration: pins.nativeDeclaration, CaptureRunnerLabel: pins.runnerLabel, CaptureUmask: pins.umask, CaptureProbeDirectoryMode: pins.probeDirectoryMode, Expected: 47, EffectiveUmask: umask, ProbeRequestedMode: requestedMode, ProbeActualMode: actualMode}
 			p.CapturePayloadIdentity = "original capture"
-			if code := validateCreationContract(p, osName, pins.arch, p.GoVersion); code != "" {
+			if code := validateCreationContract(p, osName, arch, p.GoVersion); code != "" {
 				t.Fatal(code)
 			}
-			for _, change := range []struct {
+			changes := []struct {
 				name   string
 				mutate func(*creationProvenance)
 				code   string
 			}{
-				{"capture-architecture-missing", func(p *creationProvenance) { p.CaptureArch = "" }, provenanceFailure},
 				{"capture-toolchain-missing", func(p *creationProvenance) { p.CaptureGoVersion = "" }, provenanceFailure},
+				{"capture-architecture-substitution", func(p *creationProvenance) { p.CaptureArch = "not-the-pinned-architecture" }, provenanceFailure},
 				{"driver-substitution", func(p *creationProvenance) { p.CaptureDriver = "not-the-pinned-driver" }, provenanceFailure},
 				{"declaration-substitution", func(p *creationProvenance) { p.CapturePolicyDeclaration = "attested" }, provenanceFailure},
+				{"runner-label-substitution", func(p *creationProvenance) { p.CaptureRunnerLabel = "windows-2022" }, provenanceFailure},
+				{"capture-umask-substitution", func(p *creationProvenance) { p.CaptureUmask = "0077" }, provenanceFailure},
+				{"capture-probe-mode-substitution", func(p *creationProvenance) { p.CaptureProbeDirectoryMode = "0700" }, provenanceFailure},
 				{"identity-missing", func(p *creationProvenance) { p.CapturePayloadIdentity = "" }, provenanceFailure},
 				{"transformed-output", func(p *creationProvenance) {
 					p.CapturePayloadIdentity = "transformed by capture sanitizer"
@@ -102,13 +122,21 @@ func testNativeCreationContract(t *testing.T) {
 				{"undeclared-transformation", func(p *creationProvenance) { p.CaptureRedactedValues = 1 }, provenanceFailure},
 				{"mode-mismatch", func(p *creationProvenance) { p.ProbeActualMode = 0755 }, creationFailure},
 				{"policy-mismatch", func(p *creationProvenance) { p.EffectiveUmask = "0022" }, creationFailure},
-				{"windows-fallback", func(p *creationProvenance) { p.OS = "windows" }, "harness_parity_native_creation_policy_missing"},
-			} {
+				{"unsupported-platform", func(p *creationProvenance) { p.OS = "plan9" }, "harness_parity_native_creation_policy_missing"},
+			}
+			if pins.arch != "" {
+				changes = append(changes, struct {
+					name   string
+					mutate func(*creationProvenance)
+					code   string
+				}{"capture-architecture-missing", func(p *creationProvenance) { p.CaptureArch = "" }, provenanceFailure})
+			}
+			for _, change := range changes {
 				t.Run(change.name, func(t *testing.T) {
 					before := processProvenance.Invocations
 					altered := p
 					change.mutate(&altered)
-					if code := validateCreationContract(altered, osName, pins.arch, p.GoVersion); code != change.code || processProvenance.Invocations != before {
+					if code := validateCreationContract(altered, osName, arch, p.GoVersion); code != change.code || processProvenance.Invocations != before {
 						t.Fatalf("wrong refusal or legacy call: %s", code)
 					}
 				})

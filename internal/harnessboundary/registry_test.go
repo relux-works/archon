@@ -103,7 +103,9 @@ func (falseCapability) Capabilities() harnessapi.CapabilitySet {
 
 func TestStagedOperationsAndCapabilities(t *testing.T) {
 	var positive effectSpy
-	positive.observe(harnessapi.HomeLayout{}, nil)
+	if err := positive.observe(harnessapi.HomeLayout{}, nil); err != nil {
+		t.Fatalf("positive effect observation failed: %v", err)
+	}
 	if positive.count != 1 {
 		t.Fatal("effect spy positive control is disconnected")
 	}

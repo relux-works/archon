@@ -100,6 +100,10 @@ func TestHarnessCILaneContinuation(t *testing.T) {
 	if strings.Contains(body, "${{") || !strings.Contains(body, "jq -r '.pull_request.base.sha // empty'") || !strings.Contains(body, "jq -r '.before // empty'") || !strings.Contains(body, `HARNESS_PREDECESSOR_SHA="$predecessor_sha" go run`) {
 		t.Fatal("event predecessor must come from the runner payload and pass through the command environment")
 	}
+	bootstrapArgs := "--bootstrap-source " + baselineHead + " --bootstrap-frozen-digest " + frozenDigest
+	if strings.Count(body, bootstrapArgs) != 1 || strings.Count(body, "--bootstrap-source ") != 1 || strings.Count(body, "--bootstrap-frozen-digest ") != 1 {
+		t.Fatal("CI bootstrap must bind exactly the committed source and frozen exception digest")
+	}
 	executable, err := os.Executable()
 	if err != nil {
 		t.Fatal(err)

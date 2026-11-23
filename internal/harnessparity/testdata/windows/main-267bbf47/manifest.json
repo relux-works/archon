@@ -1,0 +1,305 @@
+{
+  "source_head": "267bbf477354f4f3d35c9530ec8da0503cd86b8a",
+  "subject": "unchanged legacy implementation",
+  "platform": "windows",
+  "go_version": "go1.25.5",
+  "capture_driver_sha256": "b96b012122f3ecb70537e2f64ca5fefbbdf6225123ce11f3ff7d6fc038c3a6eb",
+  "launcher_capture_driver_sha256": "deaefe19fadacd5d449176bfab0aa60d029c842f14c5070fbea7e9f0e539e983",
+  "capture_source_head": "44ff5d16c7dc6d2382981b83e14b0efd9ffddb85",
+  "capture_source_tree": "d72b3900459be99d1b407ef74c4cb3b9db942097",
+  "capture_workflow_head": "44ff5d16c7dc6d2382981b83e14b0efd9ffddb85",
+  "capture_workflow_tree": "d72b3900459be99d1b407ef74c4cb3b9db942097",
+  "capture_workflow_sha256": "948e0cfe0ea0b5f6434b26a9ed64e5c1a6ebd7b9e1acb7035902adee29af1b1a",
+  "capture_artifact_sha256": "2b3427c41ffa245be17cd88eba23f813c874f54fee044dba5f1e3d029135ad6c",
+  "capture_seal_sha256": "16cd0f3f48f2e0ef9ed78982745c6b23a40fc1ad8cc46cf4f629cc11aec94956",
+  "capture_outputs_manifest_sha256": "c7d23d51b4773d20df6b5227ac5c9ff236e7a0f37f0787ea711f1b4205d97f65",
+  "capture_outputs_manifest_bytes": "eyJzY2hlbWEiOiJjYXB0dXJlLW1hbmlmZXN0L3YyIiwibGVnYWN5X2Jhc2UiOiIyNjdiYmY0NzczNTRmNGYzZDM1Yzk1MzBlYzhkYTA1MDNjZDg2YjhhIiwiZmlsZXMiOlt7InBhdGgiOiJjbGF1ZGUtbGF1bmNoZXItY2xpLWFyZ3VtZW50cy5qc29uIiwiYnl0ZXMiOjg5MCwic2hhMjU2IjoiZWU5ZWM0YmRlNzhhYzViNDM5MzNhZTdiOWJhMDA0OTY0ODk4MWIwYzJmMGY3ODZkNTBkNzk2ZTZiMTFlYjI5NCJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1jbGktZWRpdHMuanNvbiIsImJ5dGVzIjoxODYwLCJzaGEyNTYiOiI3N2Q0YWQyMzQxMjUyMWY4NjQzYTE5ZTVmMjIxOGJmMGNjZWU3ZDIyNjIzYmZiM2NhOGYyNDE4NmRjOTBmNWVjIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWNsaS1yZWZ1c2FsLmpzb24iLCJieXRlcyI6ODk0LCJzaGEyNTYiOiI4NzI5ZDVmM2UwODE3Y2M2M2Q2NzJkYTQzZGVmZDg5YmU5YzBiZDMwMDkwNmJjZmI3MTYwYzUxNjM5YTNkNGFiIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDAuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiI3NDE2Yzc1Y2VlNWQ3ZDg5NmFhNzc5Mjg0ZjQ2M2U5NGUwZjkyMGVjYmYzOWZhNjNhMGE0ODMxMjVlYzg5NjA1In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDEuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiI5MDdiZDYwMzQyYzQyMmEzYTU2ZjIzNTkxNDA3YjcyYWYyYjZmMzE3ODEwZWEwOTk2N2EwMmFiZTNiMjZiOWM5In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDIuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiJiYzE0ZGQ5ZGQwZDFhZTQxMzdiNTlhMGZiOGI2ZGIwZGE5NjRjMjRkNTBkYzc2NDY3YTA0MDA4MDVjOTNlNTNmIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDMuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiIxYzU3MzkzMjk1OWZiMzE3NzZmZGM4MGE4ZmY2OGIyNmIwZjExOTA4MGY0YTBlNDg0NmZhYWEwODdmNTY3MDgwIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDQuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiI0Yzk0MjM0NTA5ZDZlM2U4MGY5NTUxMTM1N2Q2NjE4NDJlMDE1Mzk1MTI1MGMyNTMyZmUwODVmOWFkNDU5ZjU3In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDUuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiIwZjViZWYwMDAxNzFkY2UxNzUyZTA1YzNkNDkzYjMyOTM3MmZlMzM0NjRhNWYyNzZhZTExMTE3MWFlNTg3NGRlIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDYuanNvbiIsImJ5dGVzIjoxMjI5LCJzaGEyNTYiOiJiMzk4MGQ5ZTg2MGJlM2EzYTY2ZmEzZDVlYzU3ZTJiNTc0NzYzM2I0YTFmNTkwMDM4NmJkZWNiYjM0YjIzNTBhIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDcuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiJkNDU1OGU1MTE3MTAxZjVjMmU0Mjc2MzQ4OWRiNjJkN2VmNmZmZTU1YWYxZjMwY2Y5ZmI0NGQ3YjVjOGJhNjE1In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDguanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiIxNjlkYzE3OGFhNTRjYjRmNmE1MjRmMzc1YTQzNDZhMTQxNmJhNDNjMjBlMjEwNGFjOTJmNjBkY2NiNjc0MGJmIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMDkuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiJlMmYzZmI0YTc0OGQyMzIyYmFiMDUwYjk3ODFiZmFmZTRlYjZhMTg4YmFlN2EwMWFkZDBlNTYwMjg2NzQ5M2UwIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMTAuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiJmMzJkZDUyMjg1ZWZhZTdhZjFmODNhNjBmZmU1ZmUyYWJiZDJiYWE3ZjNlZmQxOTY1MTZiZTkwZTBjYzZlM2FjIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMTEuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiJhNWI0ODM1ZmFmM2FhZmQwYmM0MWRkZjJjYjlhY2FlNGM3YzIwNDQwNzQzZTkwODg3MTRhNzllMjdjYzc3Yjc4In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMTIuanNvbiIsImJ5dGVzIjoxMTkyLCJzaGEyNTYiOiJlYWVlMTdlMWQ2YzExYzQxZjVhZTZhNzZiMTc2YTYzNGYzNDMwMGRlNzczOTM0YjQ3MWJmOGIxMjBkMTJmZWU1In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLWludmFsaWQtMTMuanNvbiIsImJ5dGVzIjoxMjI5LCJzaGEyNTYiOiIwNDIzZTYyZGEyMGVhY2JkOTk3ZjU1MzIzNjU4ZDUxZGY0MjgyZDliNjUwYWNlMjM2ODlhNGFiZTM2ZTUxY2Y2In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLW5vcm1hbC1lZGl0Lmpzb24iLCJieXRlcyI6MzE4Nywic2hhMjU2IjoiMjZmODBiYmJmZmQyYTFjOTRlZDkyMDBmNzJjZWM0MmFhZjJmYmI5NjQ1OWQyYWRjZDA4YjgyYWJkM2E0MWZjMCJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1vbGQtdmVyc2lvbi0xLmpzb24iLCJieXRlcyI6MTIzMiwic2hhMjU2IjoiNmFkYjU4ZGIwMWI0NjBjYjU1OTM5OTMwMTU4NmM0OTNjMmFlMTA2YTkxN2NlMDkxMjYwY2JkMzA5ZDRhNzk3NiJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1vbGQtdmVyc2lvbi0yLmpzb24iLCJieXRlcyI6MTIzMiwic2hhMjU2IjoiOTlhMjBhMjdiNzZkNjE5ODVmMTc1Y2UyMDc1MmJhNmJjNzY5MjdiMmM3MzhjMTRiMTNmOGQ4N2Y1YjlkOTFhMCJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1vbGQtdmVyc2lvbi0zLmpzb24iLCJieXRlcyI6MTIzMiwic2hhMjU2IjoiMjkyZDFmZjk3YTQ4ZWYwOTViZTlkYjYyMTRiZDVjYzM1YTgxYjEzYzAzOTdiYjY2MWM5MzViYzFiNWRiZjU3NiJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1vbGQtdmVyc2lvbi01Lmpzb24iLCJieXRlcyI6MTIzMiwic2hhMjU2IjoiMWJjZDAyYjI2YmM1YTg1YTkwNTE4NGU3N2FlOWEyMDk5ZDc3OWM1OGJjMjgyMWI2MTEwNWM5ZGJiNWRmY2E5MiJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1vbGQtdmVyc2lvbi02Lmpzb24iLCJieXRlcyI6MTMxMCwic2hhMjU2IjoiZmI2ZjE0YTA2N2NhNzI4MWQxYzAzY2U2OGQ3OGE5ZDZiMTI0NDI3M2JhZWNmMzdjNzI5NDFjMjM3MzAwYTE1ZSJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci1zeXN0ZW0tYXV0aG9yaXR5Lmpzb24iLCJieXRlcyI6MTMwMywic2hhMjU2IjoiYTQzOTE3Y2YxNWM5ZDkwODRjOWRhMDBkMzQ3NmI1M2Q1ODA0MDJjYjcxNDNhMWMxMDNhNDczMjFlMjQ2MjI2NiJ9LHsicGF0aCI6ImNsYXVkZS1sYXVuY2hlci10eXBlZC1wcm9qZWN0aW9uLmpzb24iLCJieXRlcyI6OTQ1LCJzaGEyNTYiOiJiYTZlZTE2MjY4ZTM5ZTdlNzE0Yzk3MjdhYWE5ZTNkODQ1NTI0NzQ0MTZlZjM3NWJlNDk3NGNjMGQ5ZTkxNjViIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLXZhbGlkLTAwLmpzb24iLCJieXRlcyI6NzU3LCJzaGEyNTYiOiJiMzk4MzIyYThhMTdhOTQ0YTkzYWRlYTk0MmNmNDNlYjkyZjhjNDIyYTNmMjQ4ZGQ4ZjhjYmNkOGVjNGIxNWMwIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLXZhbGlkLTAxLmpzb24iLCJieXRlcyI6NzU3LCJzaGEyNTYiOiJlZGRiOGMwZGUyMzQzZDc0ZWI4ZDBhN2M4OTlkOGQxNGRmMWYwNzdmMWQ0YTFkODM5NGIwNDBhYzM5MDBhYThjIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLXZhbGlkLTAyLmpzb24iLCJieXRlcyI6Nzk3LCJzaGEyNTYiOiI2MDc4OWM2ZjUzMjFmMmM3YWU1NTg4ZGNjNjdhYzlmZjM4Nzc2MzhiY2VhMGIwY2JmZTIwZTc3NjY1NmZhNmYwIn0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLXZhbGlkLTAzLmpzb24iLCJieXRlcyI6ODczLCJzaGEyNTYiOiJkNjU3MTdiMDEzOGE2ZjYyYWEwNGVlNjg0ZDUyOGFhYWU0YjBlZjE1OGQ1ZjdjNzljOGIzZTU0MWU0OGU0ZTM3In0seyJwYXRoIjoiY2xhdWRlLWxhdW5jaGVyLXZhbGlkLTA0Lmpzb24iLCJieXRlcyI6OTI5LCJzaGEyNTYiOiJhNGE0MGMxMTYyYjMwMjA4Zjg5OWM3ZjA3NWZjZDczZTliZDkzMDg5MDdhYTQ4YTJmZDY4Y2IxYWZkZjM3NGJlIn0seyJwYXRoIjoiY2xhdWRlX2NvZGUtZW1wdHkuanNvbiIsImJ5dGVzIjoxNDg4MCwic2hhMjU2IjoiNTA1ZTFhNmMzOTM0MmI4ZWU1ZmJjNDdjOTg5YTc5MjFhMWNhMzQ2Njg4YzNiYzVmYjQzMmU1ZGNmMGFjMDYxZCJ9LHsicGF0aCI6ImNsYXVkZV9jb2RlLW1jcC5qc29uIiwiYnl0ZXMiOjE1MzQ4LCJzaGEyNTYiOiJlZTVlOGFlMWU1NDkzNWQ1NmQ3Njg1MDBiN2FkNjJiN2Y2YzkzMzY1NDk1ZmRkZjBmNmNmNmUwYWRkYTlkMWQ2In0seyJwYXRoIjoiY29kZXhfY2xpLWN1cnJlbnQuanNvbiIsImJ5dGVzIjoxMjk0Nywic2hhMjU2IjoiZDFhNWM2ZTNlMmZlNzUyZWIwODE4YTYyMGM2NDg4MTM3Mjg0ZDQxZjg5MWY4OWU3NDFlNzZkNWYxZjdkOTU0ZCJ9LHsicGF0aCI6ImNvZGV4X2NsaS1lbXB0eS5qc29uIiwiYnl0ZXMiOjEzNDE3LCJzaGEyNTYiOiI4ZGZlNGQxNzY4NjU5ODc5Mjg5NzFhN2MxMGE5ZmU0NjIwZjhkZDVmNjhlOWM2ZTkyYjlkMGM5MDllZjY1YzQwIn0seyJwYXRoIjoiY29kZXhfY2xpLW1hbGZvcm1lZC1zdGF0ZS5qc29uIiwiYnl0ZXMiOjk1MjcsInNoYTI1NiI6ImQ4ZmQ0N2Y1YjY1M2IxMGNhNDQzMGY2YjI0MTY2MTM2Y2ZlNmU1NWQ3ZDBkZTY0MmY5MzFhY2M2NzFmOWI0YzcifSx7InBhdGgiOiJjb2RleF9jbGktbWlzc2luZy1zdGF0ZS5qc29uIiwiYnl0ZXMiOjkyNzIsInNoYTI1NiI6ImU3NDEyZWFjZGNmNjBhNzc2MGQ2ZTNmYTdmMTMzMDA3YTZiZjgwYTE3N2YxNThhOGYyMzQwMThmMzU5MmFlYjcifSx7InBhdGgiOiJjb2RleF9jbGktbW9kaWZpZWQuanNvbiIsImJ5dGVzIjoxMTEyMCwic2hhMjU2IjoiYTI4ZWI2MTk0ZWM0Njk5ODQ1NDc4NWUzMzkxNDhlNDU1YzM1MDhlN2RkYmNkODYyNjAyMTM0MGIzYTA3NDk5ZCJ9LHsicGF0aCI6ImNvZGV4X2NsaS1uYXRpdmUtcGFyZW50Lmpzb24iLCJieXRlcyI6MTM4ODcsInNoYTI1NiI6IjIwMWUwYWRhOTdiZjgwMWY0YmNmY2UyOWQzMjA4YzM1NDJhZTc0YmM1YWNlN2QyZWJkZWNhYTM3YjkxYTg5MjQifSx7InBhdGgiOiJjb2RleF9jbGktdW5yZWFkYWJsZS1zdGF0ZS5qc29uIiwiYnl0ZXMiOjk0NDYsInNoYTI1NiI6ImNmNjM4NWVhNTIyOTYwYmNhNGI5YTFjNGFhZjRhZTJhYWEwYzMxNzQ5OTIzZTI5NWExZDYyNzkzZWI0YWQ2NWIifSx7InBhdGgiOiJjb2RleF9jbGktdXNlci1zZXR0aW5ncy5qc29uIiwiYnl0ZXMiOjE0NTY3LCJzaGEyNTYiOiI4OWE3OTdmZDcwNTg3NWE5OWQ1NmQzOGJkYmJhYTcxOWYzNDk5MGY1MmUzMGFiOTNjYmMzYjdlNzFlOWJhOTRmIn0seyJwYXRoIjoiY3Vyc29yLXByb2plY3QtbWlycm9yLmpzb24iLCJieXRlcyI6MTIwNSwic2hhMjU2IjoiNDg5NWYwYmNiNmQwMGRmYTY5NWQ1MWNhNGZiOTc4M2E0YjAxYjIyZjE1ODhjMjFmMTczNzRkYTcxYTNkYmVhZSJ9LHsicGF0aCI6ImdlbWluaS1wcm9qZWN0LW1pcnJvci5qc29uIiwiYnl0ZXMiOjEyMDksInNoYTI1NiI6Ijg4MDIxMzQ2NzBiOWM0NzhiMzk3YWZlYjBkMjMyZmJjMzRhODdkNGJiM2IwY2Q1Y2E2MjgyYjQ5NDU3ZTNiYWYifSx7InBhdGgiOiJtdXNlLWVtcHR5Lmpzb24iLCJieXRlcyI6OTg4Nywic2hhMjU2IjoiMDU3NzJhOTVkOGFjMGNiZGRjMGMzODJjZDA0MThiNGYzZWNmMjQwNDRkMjIwMTRjMjlmZTNkZmYzYzA3ZGU0ZiJ9LHsicGF0aCI6Im9wZW5jb2RlLWVtcHR5Lmpzb24iLCJieXRlcyI6OTkzNiwic2hhMjU2IjoiNWU1ZTAzNjU1ODBmZDg3YTFkMzliYjI1ZDk0YmJmYWYwNGRhY2RjZmI4YWY3ZWQxYzFhNGU3Njc1MDNhZTNiYSJ9LHsicGF0aCI6Im9wZW5jb2RlLW5hdGl2ZS1kaXNjb3ZlcnkuanNvbiIsImJ5dGVzIjo0NTksInNoYTI1NiI6Ijc4ZGE3YjI1ODgwMTllYjViZTJmZTY2MzVhYzdmOWY2YjZjMzFiOWZlZGQzYzczZGNmNDE2NzM4MTBkNTg0NWMifSx7InBhdGgiOiJwaS1lbXB0eS5qc29uIiwiYnl0ZXMiOjEyMTE2LCJzaGEyNTYiOiI3MGQ2Y2IwNmUxMTg4YWM0YjE3YTA2NTk5ZWYxMWI3YTJkOGJhMjUxNjc4NDY5Yjk4ZDMyZDczMDI3ZDUwZGY3In0seyJwYXRoIjoid2luZHN1cmYtbmF0aXZlLWRpc2NvdmVyeS5qc29uIiwiYnl0ZXMiOjQ1OSwic2hhMjU2IjoiMTIzNTAwMWY1ZjBhYWI0YjQxYzJiNjA5MTg5MWI5OGE2MjYyNGI5NTE1N2FkYmE4NTMwMGJlMjMzMWMwZTNhYyJ9XX0K",
+  "capture_repeat_manifest_sha256": "9cadc6f24a23439c8d05fe498768a2d8bffffc73b212206c5661dbdba7aea8c2",
+  "capture_repeat_manifest_bytes": "eyJzY2hlbWEiOiJjYXB0dXJlLW1hbmlmZXN0L3YyIiwibGVnYWN5X2Jhc2UiOiIyNjdiYmY0NzczNTRmNGYzZDM1Yzk1MzBlYzhkYTA1MDNjZDg2YjhhIiwiZmlsZXMiOlt7InBhdGgiOiJmaXJzdC5qc29uIiwiYnl0ZXMiOjE1NzU2LCJzaGEyNTYiOiJiNTlmYjk3YjlkOGYyOGZmZDU1ZjIyNTVmY2I3NGU5OTQyMDBhODU2NTY3ODk4Yzc3OTRhNWUzZGViZGRhZDBiIn0seyJwYXRoIjoic2Vjb25kLmpzb24iLCJieXRlcyI6MTU3NTcsInNoYTI1NiI6IjNkZGNmYjhiM2YzYzBmYzU2ODBjZjUyMjAxNjVlNTJhZGJhZDY2MTIwMDQzYTQ4NjA2NTQ5MjFiMTBlYzVlYzkifV19Cg==",
+  "capture_repeat_root_binding": "t.TempDir -> filepath.EvalSymlinks",
+  "capture_repeat_result_sha256": "505e1a6c39342b8ee5fbc47c989a7921a1ca346688c3bc5fb432e5dcf0ac061d",
+  "capture_driver_pins": {
+    "testdata/originalcapture/ancestor_projection_test.go": "03e153275c7ca9a7a83ade0705ae9d4aac8e4ee3d30a36e381b8f97dbaf1851f",
+    "testdata/originalcapture/capture_homes_test.go": "35457d6728df2436292d85702621318d33b420b7d8aafd891cc96421be8d293b",
+    "testdata/originalcapture/capture_launchers_test.go": "e202ab658c45b6ebaba731c2a72eda82de4cb94583b251d0f73054361e124518",
+    "testdata/originalcapture/controls_test.go": "2928b6a0001dccfd39f430caa93ced8528b23653f4b3542103639eef09b908e4",
+    "testdata/originalcapture/launcher_fixture_test.go": "deaefe19fadacd5d449176bfab0aa60d029c842f14c5070fbea7e9f0e539e983",
+    "testdata/originalcapture/legacy_fixture_test.go": "b96b012122f3ecb70537e2f64ca5fefbbdf6225123ce11f3ff7d6fc038c3a6eb"
+  },
+  "metadata_role": "consumer provenance index for immutable producer capture",
+  "capture_creation_policy": "umask not-applicable and probe directory mode not-applicable recorded in export seal",
+  "capture_payload_identity": "original capture",
+  "capture_redacted_fields": 0,
+  "capture_redacted_values": 0,
+  "root_parameter": "${FIXTURE_ROOT}; exact disposable fixture-root substitution plus the accepted Claude ancestor exclusion projection",
+  "clock": "fixed fixture Git author/committer dates 2000-01-01T00:00:00Z; no wall-clock field emitted by selected operations",
+  "capture_runner_label": "windows-latest",
+  "capture_umask": "not-applicable",
+  "capture_probe_directory_mode": "not-applicable",
+  "cases": [
+    {
+      "name": "claude-launcher-cli-arguments",
+      "sha256": "ee9ec4bde78ac5b43933ae7b9ba0049648981b0c2f0f786d50d796e6b11eb294",
+      "bytes": 890
+    },
+    {
+      "name": "claude-launcher-cli-edits",
+      "sha256": "77d4ad23412521f8643a19e5f2218bf0ccee7d22623bfb3ca8f24186dc90f5ec",
+      "bytes": 1860
+    },
+    {
+      "name": "claude-launcher-cli-refusal",
+      "sha256": "8729d5f3e0817cc63d672da43defd89be9c0bd300906bcfb7160c51639a3d4ab",
+      "bytes": 894
+    },
+    {
+      "name": "claude-launcher-invalid-00",
+      "sha256": "7416c75cee5d7d896aa779284f463e94e0f920ecbf39fa63a0a483125ec89605",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-01",
+      "sha256": "907bd60342c422a3a56f23591407b72af2b6f317810ea09967a02abe3b26b9c9",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-02",
+      "sha256": "bc14dd9dd0d1ae4137b59a0fb8b6db0da964c24d50dc76467a0400805c93e53f",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-03",
+      "sha256": "1c573932959fb31776fdc80a8ff68b26b0f119080f4a0e4846faaa087f567080",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-04",
+      "sha256": "4c94234509d6e3e80f95511357d661842e0153951250c2532fe085f9ad459f57",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-05",
+      "sha256": "0f5bef000171dce1752e05c3d493b329372fe33464a5f276ae111171ae5874de",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-06",
+      "sha256": "b3980d9e860be3a3a66fa3d5ec57e2b5747633b4a1f5900386bdecbb34b2350a",
+      "bytes": 1229
+    },
+    {
+      "name": "claude-launcher-invalid-07",
+      "sha256": "d4558e5117101f5c2e42763489db62d7ef6ffe55af1f30cf9fb44d7b5c8ba615",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-08",
+      "sha256": "169dc178aa54cb4f6a524f375a4346a1416ba43c20e2104ac92f60dccb6740bf",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-09",
+      "sha256": "e2f3fb4a748d2322bab050b9781bfafe4eb6a188bae7a01add0e5602867493e0",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-10",
+      "sha256": "f32dd52285efae7af1f83a60ffe5fe2abbd2baa7f3efd196516be90e0cc6e3ac",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-11",
+      "sha256": "a5b4835faf3aafd0bc41ddf2cb9acae4c7c20440743e9088714a79e27cc77b78",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-12",
+      "sha256": "eaee17e1d6c11c41f5ae6a76b176a634f34300de773934b471bf8b120d12fee5",
+      "bytes": 1192
+    },
+    {
+      "name": "claude-launcher-invalid-13",
+      "sha256": "0423e62da20eacbd997f55323658d51df4282d9b650ace23689a4abe36e51cf6",
+      "bytes": 1229
+    },
+    {
+      "name": "claude-launcher-normal-edit",
+      "sha256": "26f80bbbffd2a1c94ed9200f72cec42aaf2fbb96459d2adcd08b82abd3a41fc0",
+      "bytes": 3187
+    },
+    {
+      "name": "claude-launcher-old-version-1",
+      "sha256": "6adb58db01b460cb559399301586c493c2ae106a917ce091260cbd309d4a7976",
+      "bytes": 1232
+    },
+    {
+      "name": "claude-launcher-old-version-2",
+      "sha256": "99a20a27b76d61985f175ce20752ba6bc76927b2c738c14b13f8d87f5b9d91a0",
+      "bytes": 1232
+    },
+    {
+      "name": "claude-launcher-old-version-3",
+      "sha256": "292d1ff97a48ef095be9db6214bd5cc35a81b13c0397bb661c935bc1b5dbf576",
+      "bytes": 1232
+    },
+    {
+      "name": "claude-launcher-old-version-5",
+      "sha256": "1bcd02b26bc5a85a905184e77ae9a2099d779c58bc2821b61105c9dbb5dfca92",
+      "bytes": 1232
+    },
+    {
+      "name": "claude-launcher-old-version-6",
+      "sha256": "fb6f14a067ca7281d1c03ce68d78a9d6b1244273baecf37c72941c237300a15e",
+      "bytes": 1310
+    },
+    {
+      "name": "claude-launcher-system-authority",
+      "sha256": "a43917cf15c9d9084c9da00d3476b53d580402cb7143a1c103a47321e2462266",
+      "bytes": 1303
+    },
+    {
+      "name": "claude-launcher-typed-projection",
+      "sha256": "ba6ee16268e39e7e714c9727aaa9e3d84552474416ef375be4974cc0d9e9165b",
+      "bytes": 945
+    },
+    {
+      "name": "claude-launcher-valid-00",
+      "sha256": "b398322a8a17a944a93adea942cf43eb92f8c422a3f248dd8f8cbcd8ec4b15c0",
+      "bytes": 757
+    },
+    {
+      "name": "claude-launcher-valid-01",
+      "sha256": "eddb8c0de2343d74eb8d0a7c899d8d14df1f077f1d4a1d8394b040ac3900aa8c",
+      "bytes": 757
+    },
+    {
+      "name": "claude-launcher-valid-02",
+      "sha256": "60789c6f5321f2c7ae5588dcc67ac9ff3877638bcea0b0cbfe20e776656fa6f0",
+      "bytes": 797
+    },
+    {
+      "name": "claude-launcher-valid-03",
+      "sha256": "d65717b0138a6f62aa04ee684d528aaae4b0ef158d5f7c79c8b3e541e48e4e37",
+      "bytes": 873
+    },
+    {
+      "name": "claude-launcher-valid-04",
+      "sha256": "a4a40c1162b30208f899c7f075fcd73e9bd9308907aa48a2fd68cb1afdf374be",
+      "bytes": 929
+    },
+    {
+      "name": "claude_code-empty",
+      "sha256": "505e1a6c39342b8ee5fbc47c989a7921a1ca346688c3bc5fb432e5dcf0ac061d",
+      "bytes": 14880
+    },
+    {
+      "name": "claude_code-mcp",
+      "sha256": "ee5e8ae1e54935d56d768500b7ad62b7f6c93365495fddf0f6cf6e0adda9d1d6",
+      "bytes": 15348
+    },
+    {
+      "name": "codex_cli-current",
+      "sha256": "d1a5c6e3e2fe752eb0818a620c6488137284d41f891f89e741e76d5f1f7d954d",
+      "bytes": 12947
+    },
+    {
+      "name": "codex_cli-empty",
+      "sha256": "8dfe4d176865987928971a7c10a9fe4620f8dd5f68e9c6e92b9d0c909ef65c40",
+      "bytes": 13417
+    },
+    {
+      "name": "codex_cli-malformed-state",
+      "sha256": "d8fd47f5b653b10ca4430f6b24166136cfe6e55d7d0de642f931acc671f9b4c7",
+      "bytes": 9527
+    },
+    {
+      "name": "codex_cli-missing-state",
+      "sha256": "e7412eacdcf60a7760d6e3fa7f133007a6bf80a177f158a8f234018f3592aeb7",
+      "bytes": 9272
+    },
+    {
+      "name": "codex_cli-modified",
+      "sha256": "a28eb6194ec46998454785e339148e455c3508e7ddbcd8626021340b3a07499d",
+      "bytes": 11120
+    },
+    {
+      "name": "codex_cli-native-parent",
+      "sha256": "201e0ada97bf801f4bcfce29d3208c3542ae74bc5ace7d2ebdecaa37b91a8924",
+      "bytes": 13887
+    },
+    {
+      "name": "codex_cli-unreadable-state",
+      "sha256": "cf6385ea522960bca4b9a1c4aaf4ae2aaa0c31749923e295a1d62793eb4ad65b",
+      "bytes": 9446
+    },
+    {
+      "name": "codex_cli-user-settings",
+      "sha256": "89a797fd705875a99d56d38bdbbaa719f34990f52e30ab93cbc3b7e71e9ba94f",
+      "bytes": 14567
+    },
+    {
+      "name": "cursor-project-mirror",
+      "sha256": "4895f0bcb6d00dfa695d51ca4fb9783a4b01b22f1588c21f17374da71a3dbeae",
+      "bytes": 1205
+    },
+    {
+      "name": "gemini-project-mirror",
+      "sha256": "8802134670b9c478b397afeb0d232fbc34a87d4bb3b0cd5ca6282b49457e3baf",
+      "bytes": 1209
+    },
+    {
+      "name": "muse-empty",
+      "sha256": "05772a95d8ac0cbddc0c382cd0418b4f3ecf24044d22014c29fe3dff3c07de4f",
+      "bytes": 9887
+    },
+    {
+      "name": "opencode-empty",
+      "sha256": "5e5e0365580fd87a1d39bb25d94bbfaf04dacdcfb8af7ed1c1a4e767503ae3ba",
+      "bytes": 9936
+    },
+    {
+      "name": "opencode-native-discovery",
+      "sha256": "78da7b2588019eb5be2fe6635ac7f9f6b6c31b9fedd3c73dcf41673810d5845c",
+      "bytes": 459
+    },
+    {
+      "name": "pi-empty",
+      "sha256": "70d6cb06e1188ac4b17a06599ef11b7a2d8ba251678469b98d32d73027d50df7",
+      "bytes": 12116
+    },
+    {
+      "name": "windsurf-native-discovery",
+      "sha256": "1235001f5f0aab4b41c2b6091891b98a62624b95157adba85300be2331c0e3ac",
+      "bytes": 459
+    }
+  ],
+  "repeat_observations": [
+    {
+      "name": "first.json",
+      "sha256": "b59fb97b9d8f28ffd55f2255fcb74e994200a856567898c7794a5e3debddad0b",
+      "bytes": 15756
+    },
+    {
+      "name": "second.json",
+      "sha256": "3ddcfb8b3f3c0fc5680cf5220165e52adbad66120043a4860654921b10ec5ec9",
+      "bytes": 15757
+    }
+  ],
+  "corpora": [
+    {
+      "path": "internal/envprofile/testdata/codex-seed-c-v1/cases.json",
+      "sha256": "a76f34c25a4c7363aab753ef39d4530f4134de4519699cb9adfbf6e6c51f9553",
+      "bytes": 18061
+    },
+    {
+      "path": "internal/config/launcher_extensions_test.go",
+      "sha256": "4390dca8fd9c96a5cd604ad41a706918ffe8393d836abbeb40951989a291e693",
+      "bytes": 6242
+    },
+    {
+      "path": "cmd/curator/config_launcher_test.go",
+      "sha256": "5929248e6b69061440efdca4f0c0ee62cbc61aa3e02bcfff281498313fa851d2",
+      "bytes": 3598
+    }
+  ]
+}

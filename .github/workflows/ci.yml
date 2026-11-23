@@ -226,7 +226,8 @@ jobs:
             --required TestNativeCaptureUploadRequiresSuccessfulCaptureAndSanitizer \
             --required TestNativeCaptureFailureNamesPassThroughSanitizer \
             --required TestNativeCapturePrivateLogCannotReachOutput \
-            --required TestNativeCaptureWorkflowGoProgramAcceptsCRLF
+            --required TestNativeCaptureWorkflowGoProgramAcceptsCRLF \
+            --required TestFixtureAncestorAdjacentPrivatePathSanitizerRefuses
 
   default-build-transport:
     name: Default build transport (hosted Linux)
@@ -827,7 +828,7 @@ jobs:
               predecessor_sha="$(jq -r '.before // empty' "$GITHUB_EVENT_PATH" 2>/dev/null)" || predecessor_sha=""
               ;;
           esac
-          HARNESS_PREDECESSOR_SHA="$predecessor_sha" go run ./internal/harnessboundary/cmd/harnessgate --ci --bootstrap-source 643e727edd2db21307ca6d8c0332935e33d50ac8 --bootstrap-frozen-digest d400920c0956af1ad90b9e964828c6c9dea2fbe8786b3064d133d825e945f0e9 || predecessor_status=$?
+          HARNESS_PREDECESSOR_SHA="$predecessor_sha" go run ./internal/harnessboundary/cmd/harnessgate --ci --bootstrap-source 267bbf477354f4f3d35c9530ec8da0503cd86b8a --bootstrap-frozen-digest a186ea55e67809751365ae5d5d08e9af47af3d16fc629b682e1ee544cc03ae1c || predecessor_status=$?
           go test -count=1 ./internal/harnessboundary ./internal/harnessprobe -run '^(TestNoHarnessBranches|TestAdapterEffectBoundary|TestAdapterSurfaceOwnership|TestAPIVersionRefusal|TestRegisteredProbePolicies|TestProbeEnvironmentPassThrough|TestProbeSpecRefusal)$' || boundary_status=$?
           GOFLAGS="${GOFLAGS:+$GOFLAGS }-tags=harness_parity" go test -count=1 ./internal/harnessparity -run '^(TestHomeByteIdentity.*|TestAllAdaptersHaveBaselineCases)$' || parity_status=$?
           if [ "$predecessor_status" -ne 0 ]; then exit "$predecessor_status"; fi
@@ -1354,6 +1355,7 @@ jobs:
       - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.12.2
+          args: --build-tags=harness_parity
           skip-cache: ${{ runner.environment == 'self-hosted' && runner.os == 'Linux' }}
 
       # The routing tests evaluate the workflow expression subset with Node.

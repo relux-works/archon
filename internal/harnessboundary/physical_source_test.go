@@ -1,9 +1,97 @@
 package harnessboundary
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestProductionSourceScanBoundaries(t *testing.T) {
+	t.Run("external-protocol-checkout-is-outside-project-scan", func(t *testing.T) {
+		root := t.TempDir()
+		plant(t, root, "internal/shared/clean.go", "package shared\nfunc ordinary() {}\n")
+		plant(t, root, "protocol-spec/tools/generate.go", "package main\nfunc selected(id string) bool { return id == \"claude_code\" }\n")
+		if findings := scan(t, root); len(findings) != 0 {
+			t.Fatalf("external authoritative checkout entered the Curator source scan: %v", findings)
+		}
+		owned := "internal/shared/plant.go"
+		plant(t, root, owned, "package shared\nfunc selected(id string) bool { return id == \"claude_code\" }\n")
+		requireFinding(t, scan(t, root), owned, 2)
+	})
+	t.Run("agent-skill-links-are-outside-project-source-scan", func(t *testing.T) {
+		root := t.TempDir()
+		target := filepath.Join(root, "agents", "skills", "skill-go-testing-tools")
+		plant(t, target, "hidden/adapter.go", "package hidden\nfunc selected(id string) bool { return id == \"claude_code\" }\n")
+		for _, toolDir := range []string{".claude", ".codex"} {
+			link := filepath.Join(root, toolDir, "skills", "skill-go-testing-tools")
+			if err := os.MkdirAll(filepath.Dir(link), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			relativeTarget, err := filepath.Rel(filepath.Dir(link), target)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(relativeTarget, link); err != nil {
+				t.Skipf("host cannot create symlink controls: %v", err)
+			}
+		}
+		if files, err := productionFiles(root); err != nil || len(files) != 0 {
+			t.Fatalf("agent skill link entered product source scan: files=%v err=%v", files, err)
+		}
+	})
+	t.Run("production-source-symlink-is-refused", func(t *testing.T) {
+		root := t.TempDir()
+		target := filepath.Join(t.TempDir(), "target.go")
+		if err := os.WriteFile(target, []byte("package shared\nfunc selected(id string) bool { return id == \"claude_code\" }\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		link := filepath.Join(root, "internal", "shared", "alias.go")
+		if err := os.MkdirAll(filepath.Dir(link), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Symlink(target, link); err != nil {
+			t.Skipf("host cannot create symlink controls: %v", err)
+		}
+		if _, err := productionFiles(root); err == nil || !strings.Contains(err.Error(), "source_symlink_unsupported") {
+			t.Fatalf("production source symlink verdict: %v", err)
+		}
+	})
+	t.Run("directory-symlink-is-refused", func(t *testing.T) {
+		root := t.TempDir()
+		target := t.TempDir()
+		plant(t, target, "hidden/plant.go", "package shared\nfunc selected(id string) bool { return id == \"claude_code\" }\n")
+		link := filepath.Join(root, "internal", "shared", "hidden")
+		if err := os.MkdirAll(filepath.Dir(link), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Symlink(target, link); err != nil {
+			t.Skipf("host cannot create symlink controls: %v", err)
+		}
+		if _, err := productionFiles(root); err == nil || !strings.Contains(err.Error(), "source_directory_symlink_unsupported") {
+			t.Fatalf("production directory symlink verdict: %v", err)
+		}
+	})
+	t.Run("production-path-cannot-alias-declared-skill-submodule", func(t *testing.T) {
+		root := t.TempDir()
+		target := filepath.Join(root, "agents", "skills", "skill-go-testing-tools")
+		plant(t, target, "hidden/adapter.go", "package hidden\nfunc selected(id string) bool { return id == \"claude_code\" }\n")
+		link := filepath.Join(root, "internal", "harnessvalue")
+		if err := os.MkdirAll(filepath.Dir(link), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		relativeTarget, err := filepath.Rel(filepath.Dir(link), target)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Symlink(relativeTarget, link); err != nil {
+			t.Skipf("host cannot create symlink controls: %v", err)
+		}
+		if _, err := productionFiles(root); err == nil || !strings.Contains(err.Error(), "source_directory_symlink_unsupported") {
+			t.Fatalf("production path aliasing the skill submodule escaped the scan: %v", err)
+		}
+	})
+}
 
 // Source directives may change compiler diagnostics, never the physical path,
 // line or line hash used by this source boundary. The generic control remains

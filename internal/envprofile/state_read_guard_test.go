@@ -194,6 +194,9 @@ func reviewedManagerReadExceptions() map[string]string {
 		"internal/yarnmodernsource/capture.go:reconcileCapturedAuthorities",
 		"internal/yarnmodernsource/materialize.go:cleanAbsentAbsolute",
 	)
+	allow("Checks the caller-selected capture-source destination after fetching and validating staged bytes; absence selects first publication, an existing tree must match exactly, and all other Lstat failures abort publication.",
+		"internal/harnessparity/cmd/capture-source/main.go:materialize",
+	)
 	allow("Reads kernel-owned /proc, not manager state; status, stat or exe can disappear between enumeration and read when a process exits. "+
 		"Strict scans skip vanished PIDs or stat-proven zombies/kernel threads and reject unexplained missing images; native scans preserve readable paths/inodes and independently probe removal candidates, "+
 		"so ENOENT alone never authorizes collection or supplies a manager-state default.",

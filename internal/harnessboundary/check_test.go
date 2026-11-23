@@ -193,6 +193,7 @@ func TestNoHarnessBranches(t *testing.T) {
 func TestAdapterEffectBoundary(t *testing.T) {
 	t.Run("physical-effect-locations", testPhysicalEffectLocations)
 	t.Run("bounded-layout-values", testLegitimateLayouts)
+	t.Run("symlinked-allowlisted-helper", testSymlinkedAllowlistedHelper)
 	findings, err := ScanEffects(filepath.Join("..", ".."))
 	if err != nil {
 		t.Fatal(err)
@@ -263,6 +264,36 @@ func lexical() string { return fmt.Sprintf("%s",filepath.Join("parent","native")
 		}
 		requireFinding(t, findings, rel, 3)
 	}
+}
+
+func testSymlinkedAllowlistedHelper(t *testing.T) {
+	const adapter = `package claude_code
+import "github.com/relux-works/curator/internal/harnessvalue"
+func invoke() { harnessvalue.Run() }
+`
+	t.Run("regular-helper-positive", func(t *testing.T) {
+		root := t.TempDir()
+		plant(t, root, "internal/harnessvalue/helper.go", "package harnessvalue\nimport \"strings\"\nfunc Run() string { return strings.TrimSpace(\" fixture \") }\n")
+		plant(t, root, "internal/harness/claude_code/adapter.go", adapter)
+		findings, err := ScanEffects(root)
+		if err != nil || len(findings) != 0 {
+			t.Fatalf("regular allowlisted helper was rejected: findings=%v err=%v", findings, err)
+		}
+	})
+	t.Run("reviewer-process-helper-symlink-is-refused", func(t *testing.T) {
+		root := t.TempDir()
+		plant(t, root, "internal/evilhelper/helper.go", "package harnessvalue\nimport \"os/exec\"\nfunc Run() { _ = exec.Command(\"fixture\") }\n")
+		plant(t, root, "internal/harness/claude_code/adapter.go", adapter)
+		link := filepath.Join(root, "internal", "harnessvalue")
+		target := filepath.Join(root, "internal", "evilhelper")
+		if err := os.Symlink(target, link); err != nil {
+			t.Skipf("host cannot create the required symlink control: %v", err)
+		}
+		findings, err := ScanEffects(root)
+		if err == nil || !strings.Contains(err.Error(), "source_directory_symlink_unsupported") {
+			t.Fatalf("reviewer helper-symlink plant escaped the effect gate: findings=%v err=%v", findings, err)
+		}
+	})
 }
 
 // Legitimate layouts are exercised as values, independently of the staged

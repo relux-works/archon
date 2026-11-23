@@ -1,3 +1,4 @@
+// Package main implements the capture-source command used by the native capture workflow.
 package main
 
 import (
@@ -24,6 +25,7 @@ const (
 	captureSourceRemote = "https://github.com/relux-works/curator.git"
 	workflowArchivePath = ".github/workflows/original-capture-native.yml"
 	fixtureArchiveRoot  = "testdata/originalcapture/"
+	legacyRegularType   = byte(0) // Legacy tar TypeRegA spelling remains accepted.
 )
 
 func main() {
@@ -80,7 +82,7 @@ func runMaterialize(args []string) error {
 	return nil
 }
 
-func materialize(ctx context.Context, remote, revision, destination string) error {
+func materialize(ctx context.Context, remote, revision, destination string) (resultErr error) {
 	if !isFullCommitSHA(revision) {
 		return errors.New("revision must be a full 40-character lowercase commit SHA")
 	}
@@ -96,7 +98,11 @@ func materialize(ctx context.Context, remote, revision, destination string) erro
 	if err != nil {
 		return fmt.Errorf("create staging directory: %w", err)
 	}
-	defer os.RemoveAll(stage)
+	defer func() {
+		if cleanupErr := os.RemoveAll(stage); cleanupErr != nil {
+			resultErr = errors.Join(resultErr, fmt.Errorf("remove capture source staging directory: %w", cleanupErr))
+		}
+	}()
 
 	bareRepo := filepath.Join(stage, "source.git")
 	if _, err := runGit(ctx, "", "init", "--bare", "--quiet", bareRepo); err != nil {
@@ -146,7 +152,11 @@ func verifyFetchedCommit(ctx context.Context, bareRepo, expected string) error {
 }
 
 func extractRequestedArchive(ctx context.Context, bareRepo, revision, destination string) error {
+	if !filepath.IsAbs(bareRepo) || !isFullCommitSHA(revision) || !filepath.IsAbs(destination) {
+		return errors.New("capture archive inputs are invalid")
+	}
 	args := []string{"archive", "--format=tar", revision, workflowArchivePath, fixtureArchiveRoot}
+	// #nosec G204 -- git is fixed; revision is a full SHA and archive paths are constants.
 	cmd := exec.CommandContext(ctx, "git", append([]string{"--git-dir=" + bareRepo}, args...)...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -213,21 +223,25 @@ func extractTar(reader io.Reader, destination string) (bool, int, error) {
 			if err := os.MkdirAll(fullPath, 0o755); err != nil {
 				return false, 0, fmt.Errorf("create archive directory %q: %w", name, err)
 			}
-		case tar.TypeReg, tar.TypeRegA:
+		case tar.TypeReg, legacyRegularType:
 			if !isAllowedArchiveFile(name) {
 				return false, 0, fmt.Errorf("unexpected archive file %q", name)
 			}
 			if header.Size < 0 {
 				return false, 0, fmt.Errorf("negative size for archive file %q", name)
 			}
+			if header.Mode < 0 || header.Mode > 0o777 {
+				return false, 0, fmt.Errorf("unsupported archive file mode %d for %q", header.Mode, name)
+			}
 			if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
 				return false, 0, fmt.Errorf("create parent for archive file %q: %w", name, err)
 			}
-			mode := fs.FileMode(header.Mode) & 0o777
+			// #nosec G115 -- the signed archive mode was bounded to permission bits above.
+			mode := fs.FileMode(header.Mode)
 			if mode == 0 {
 				mode = 0o644
 			}
-			file, err := os.OpenFile(fullPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode)
+			file, err := os.OpenFile(fullPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode) // #nosec G304 -- cleanArchiveName and the positive archive path allowlist confine this to the fresh extraction root.
 			if err != nil {
 				return false, 0, fmt.Errorf("create archive file %q: %w", name, err)
 			}
@@ -355,7 +369,7 @@ func snapshotTree(root string) (map[string]treeEntry, error) {
 			if !info.Mode().IsRegular() {
 				return fmt.Errorf("unsupported file type in tree at %s", filepath.ToSlash(relative))
 			}
-			item.data, err = os.ReadFile(name)
+			item.data, err = os.ReadFile(name) // #nosec G304 -- name is a regular entry from the non-following walk rooted at the selected tree; symlinks are rejected above.
 			if err != nil {
 				return err
 			}
@@ -370,11 +384,15 @@ func snapshotTree(root string) (map[string]treeEntry, error) {
 }
 
 func runGit(ctx context.Context, bareRepo string, args ...string) (string, error) {
+	if !allowedGitInvocation(bareRepo, args) {
+		return "", errors.New("git invocation is not allowed")
+	}
 	argv := make([]string, 0, len(args)+1)
 	if bareRepo != "" {
 		argv = append(argv, "--git-dir="+bareRepo)
 	}
 	argv = append(argv, args...)
+	// #nosec G204 -- allowedGitInvocation admits only fixed Git operations and validated repository, remote, and revision inputs.
 	cmd := exec.CommandContext(ctx, "git", argv...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -385,12 +403,24 @@ func runGit(ctx context.Context, bareRepo string, args ...string) (string, error
 	return strings.TrimSpace(stdout.String()), nil
 }
 
+func allowedGitInvocation(bareRepo string, args []string) bool {
+	if len(args) == 4 && bareRepo == "" && args[0] == "init" && args[1] == "--bare" && args[2] == "--quiet" {
+		return filepath.IsAbs(args[3])
+	}
+	if len(args) == 5 && filepath.IsAbs(bareRepo) && args[0] == "fetch" && args[1] == "--quiet" && args[2] == "--depth=1" {
+		return (isAllowedCaptureRemote(args[3]) || filepath.IsAbs(args[3])) && isFullCommitSHA(args[4])
+	}
+	return len(args) == 2 && filepath.IsAbs(bareRepo) && args[0] == "rev-parse" && args[1] == "FETCH_HEAD^{commit}"
+}
+
 func isFullCommitSHA(value string) bool {
 	if len(value) != 40 || strings.ToLower(value) != value {
 		return false
 	}
 	for _, char := range value {
-		if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f')) {
+		decimal := char >= '0' && char <= '9'
+		lowerHex := char >= 'a' && char <= 'f'
+		if !decimal && !lowerHex {
 			return false
 		}
 	}
@@ -421,8 +451,8 @@ func runVerifyTests(args []string) error {
 	if len(required) == 0 {
 		return errors.New("at least one --required test name is needed")
 	}
-	if *packagePath == "" {
-		return errors.New("package is required")
+	if !isAllowedVerifyPackage(*packagePath) {
+		return errors.New("package must be the native capture parity test package")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
 	defer cancel()
@@ -444,12 +474,16 @@ func (values *stringList) Set(value string) error {
 }
 
 func verifyGoTests(ctx context.Context, goBinary, packagePath string, required []string, output io.Writer) error {
-	if strings.TrimSpace(goBinary) == "" {
-		return errors.New("Go executable is required")
+	if !isAllowedGoExecutable(goBinary) {
+		return errors.New("go executable must be go or an absolute path")
+	}
+	if !isAllowedVerifyPackage(packagePath) {
+		return errors.New("package must be the native capture parity test package")
 	}
 	if len(required) == 0 {
 		return errors.New("at least one required test name is needed")
 	}
+	// #nosec G204 -- executable and package are allowlisted; all other arguments are fixed, and no shell is invoked.
 	cmd := exec.CommandContext(ctx, goBinary, "test", "-json", "-count=1", packagePath)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -471,6 +505,14 @@ func verifyGoTests(ctx context.Context, goBinary, packagePath string, required [
 		return fmt.Errorf("go test failed: %w", waitErr)
 	}
 	return nil
+}
+
+func isAllowedGoExecutable(value string) bool {
+	return value == "go"
+}
+
+func isAllowedVerifyPackage(value string) bool {
+	return value == "./internal/harnessparity" || value == "./internal/harnessparity/"
 }
 
 func verifyTestEvents(reader io.Reader, required []string, output io.Writer) error {
