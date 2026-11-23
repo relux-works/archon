@@ -864,7 +864,8 @@ func checkPRDefersPostLandingTests(data []byte) error {
 	if !ok {
 		return fmt.Errorf("test job is missing")
 	}
-	wantNeeds := []string{"windows-test-shards", "unix-test-shards", "store-v1-compatibility"}
+	// The workflow-bound contract must pass before Test uses its pinned native-capture sources.
+	wantNeeds := []string{"windows-test-shards", "unix-test-shards", "store-v1-compatibility", "native-capture-workflow-contract"}
 	needs, err := pullRequestNeedIDs(&testJob.Needs)
 	if err != nil || testJob.Needs.Kind != yaml.SequenceNode || !reflect.DeepEqual(needs, wantNeeds) {
 		return fmt.Errorf("test job has unexpected dependencies: %v", needs)
@@ -1874,6 +1875,17 @@ func TestPullRequestWorkflowDefersMutationAndExhaustiveSuites(t *testing.T) {
 				t.Fatal("pull-request deferred-suite violation admitted")
 			}
 		})
+	}
+}
+
+func TestPullRequestWorkflowRejectsUnexpectedTestDependency(t *testing.T) {
+	good := mutationInventoryWorkflowBytes(t)
+	mutant, err := appendWorkflowJobNeed(good, "test", "unexpected-prerequisite")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := checkPRDefersPostLandingTests(mutant); err == nil || !strings.Contains(err.Error(), "test job has unexpected dependencies") {
+		t.Fatalf("unexpected dependency was not refused explicitly: %v", err)
 	}
 }
 
