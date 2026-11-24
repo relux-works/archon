@@ -117,6 +117,19 @@ func TestAdapterSurfaceOwnership(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		capabilityNames := map[harnessapi.Capability]string{
+			harnessapi.ManagedHome:          "ManagedHome",
+			harnessapi.InstructionOutput:    "InstructionOutput",
+			harnessapi.SkillProjection:      "SkillProjection",
+			harnessapi.NativeSkillDiscovery: "NativeSkillDiscovery",
+			harnessapi.MCPInspection:        "MCPInspection",
+			harnessapi.NativeMCPWrite:       "NativeMCPWrite",
+			harnessapi.ProjectContextOutput: "ProjectContextOutput",
+			harnessapi.HomeLease:            "HomeLease",
+			harnessapi.CredentialMetadata:   "CredentialMetadata",
+			harnessapi.TrustObservation:     "TrustObservation",
+			harnessapi.ReleaseProbing:       "ReleaseProbing",
+		}
 		for _, capability := range adapter.Capabilities().Values() {
 			name, known := capabilityNames[capability]
 			if !known || len(ownership.CapabilityMethods[name]) == 0 {

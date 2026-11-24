@@ -89,7 +89,7 @@ func stagedCapabilities(adapter harnessapi.Adapter) error {
 				return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
 			}
 		case harnessapi.MCPInspection, harnessapi.NativeMCPWrite:
-			channel, err := adapter.MCP(harnessapi.Context{}, harnessapi.ProjectScope)
+			channel, err := adapter.MCP(harnessapi.Context{}, harnessapi.UserScope)
 			if err != nil || !channel.Inspect() {
 				return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
 			}
@@ -112,15 +112,56 @@ func stagedCapabilities(adapter harnessapi.Adapter) error {
 	if effects.count != 0 {
 		return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
 	}
-	_, err := adapter.ReleaseProbe(harnessapi.Context{})
-	if adapter.Capabilities().Has(harnessapi.ReleaseProbing) {
-		if err != nil {
+	expectedEffects := 0
+	if capabilities.Has(harnessapi.NativeSkillDiscovery) || capabilities.Has(harnessapi.SkillProjection) {
+		value, err := adapter.Skills(harnessapi.Context{}, harnessapi.ProjectScope)
+		if !declaredResult(value, err, true, &effects) {
 			return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
 		}
-	} else if code(err) != harnessapi.CapabilityUnsupported {
+		expectedEffects++
+	} else {
+		value, err := adapter.Skills(harnessapi.Context{}, harnessapi.ProjectScope)
+		if !declaredResult(value, err, false, &effects) {
+			return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
+		}
+	}
+	if capabilities.Has(harnessapi.MCPInspection) || capabilities.Has(harnessapi.NativeMCPWrite) {
+		value, err := adapter.MCP(harnessapi.Context{}, harnessapi.UserScope)
+		if !declaredResult(value, err, true, &effects) {
+			return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
+		}
+		expectedEffects++
+	} else {
+		value, err := adapter.MCP(harnessapi.Context{}, harnessapi.UserScope)
+		if !declaredResult(value, err, false, &effects) {
+			return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
+		}
+	}
+	value, err := adapter.ReleaseProbe(harnessapi.Context{})
+	if capabilities.Has(harnessapi.ReleaseProbing) {
+		if err != nil || reflect.ValueOf(value).IsZero() {
+			return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
+		}
+		effects.observe(value, nil)
+		expectedEffects++
+	} else if code(err) != harnessapi.CapabilityUnsupported || !reflect.ValueOf(value).IsZero() {
+		return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
+	}
+	if effects.count != expectedEffects {
 		return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
 	}
 	return nil
+}
+
+func declaredResult(value any, err error, declared bool, effects *effectSpy) bool {
+	if declared {
+		if err != nil || reflect.ValueOf(value).IsZero() {
+			return false
+		}
+		effects.observe(value, nil)
+		return true
+	}
+	return code(err) == harnessapi.OperationNotPorted && reflect.ValueOf(value).IsZero()
 }
 
 type falseCapability struct{ harnessapi.Adapter }

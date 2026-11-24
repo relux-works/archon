@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/relux-works/curator/internal/envregistry"
 	"github.com/relux-works/curator/internal/harnessapi"
 	"github.com/relux-works/curator/internal/harnessregistry"
 	"github.com/relux-works/curator/internal/identifiers"
@@ -78,7 +79,20 @@ func oneSkillPath(agent string, paths harnessapi.NamedPaths) string {
 // NativeDiscoveryAgents discover the canonical .agents/skills directory
 // natively and receive no project-level mirror; global installs mirror into
 // the home-level .agents/skills for them (Spec §10.2).
-var NativeDiscoveryAgents = map[string]bool{"windsurf": true, "opencode": true}
+var NativeDiscoveryAgents = nativeDiscoveryAgents()
+
+func nativeDiscoveryAgents() map[string]bool {
+	agents := map[string]bool{}
+	for _, adapter := range envregistry.Registry {
+		if adapter.SkillsDir == "" {
+			agents[adapter.ID] = true
+		}
+	}
+	for _, id := range harnessregistry.IDsWithCapability(harnessapi.NativeSkillDiscovery) {
+		agents[string(id)] = true
+	}
+	return agents
+}
 
 // NativeDiscoveryHomePath is the home-relative mirror for native-discovery
 // agents in the global scope.

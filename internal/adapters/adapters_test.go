@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/curator/internal/harnessvalue"
 	"github.com/relux-works/curator/internal/staging"
 	"github.com/relux-works/curator/internal/stateread"
 )
@@ -379,6 +381,39 @@ func TestWindsurfNativeDiscoveryLegacyContract(t *testing.T) {
 	}
 	if _, found := find(globalMirror.Plan(), filepath.Join(userHome, ".agents", "skills", "skill-a")); !found {
 		t.Fatal("global native-discovery mirror is missing")
+	}
+}
+
+func TestRegisteredSkillRoutingFallbackAndPathExpansion(t *testing.T) {
+	if _, ported, err := registeredSkills("cursor", harnessapi.ProjectScope); err != nil || !ported {
+		t.Fatalf("registered Cursor adapter did not select its registry declaration: ported=%t err=%v", ported, err)
+	}
+	if _, ported, err := registeredSkills("claude_code", harnessapi.ProjectScope); err != nil || ported {
+		t.Fatalf("unported adapter did not select the explicit legacy fallback: ported=%t err=%v", ported, err)
+	}
+	if _, ported, err := registeredSkills("unknown", harnessapi.ProjectScope); err != nil || ported {
+		t.Fatalf("unknown adapter changed the legacy empty result: ported=%t err=%v", ported, err)
+	}
+	if _, _, err := registeredSkills("cursor", "unsupported"); err == nil || err.Error() != "harness_scope_unsupported" {
+		t.Fatalf("registry context error was masked: %v", err)
+	}
+
+	var relative []harnessvalue.RelativePath
+	for _, name := range []string{".agents/skills", "shared/skills"} {
+		path, err := harnessvalue.NewRelativePath(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		relative = append(relative, path)
+	}
+	paths, err := harnessapi.NewNamedPaths(relative)
+	if err != nil {
+		t.Fatal(err)
+	}
+	roots := map[string]string{}
+	addSkillRoots(roots, "adapter", t.TempDir(), paths)
+	if len(roots) != 2 || roots["adapter"] == "" || roots["adapter#1"] == "" {
+		t.Fatalf("named skill roots were not preserved: %v", roots)
 	}
 }
 

@@ -24,6 +24,24 @@ func newEnv(t *testing.T) Env {
 	return Env{ProjectRoot: t.TempDir(), UserHome: t.TempDir()}
 }
 
+func configuredServers(t *testing.T, env Env, agent string) map[string]any {
+	t.Helper()
+	servers, err := ConfiguredServers(env, agent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return servers
+}
+
+func projectOnlyServers(t *testing.T, env Env, agent string) map[string]bool {
+	t.Helper()
+	servers, err := ProjectOnlyServers(env, agent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return servers
+}
+
 func req(name, requiredIn string) map[string]map[string]skillspec.McpServer {
 	return map[string]map[string]skillspec.McpServer{
 		"skill-x": {name: {Name: name, Hint: "connect " + name, RequiredIn: requiredIn}},
@@ -55,7 +73,7 @@ func TestSurfacesPerAgent(t *testing.T) {
 		{"cursor", nil},
 	}
 	for _, tc := range cases {
-		configured := ConfiguredServers(env, tc.agent)
+		configured := configuredServers(t, env, tc.agent)
 		for _, name := range tc.want {
 			if _, present := configured[name]; !present {
 				t.Errorf("%s: missing %s (got %v)", tc.agent, name, configured)
@@ -74,15 +92,30 @@ func TestWindsurfMCPUsesHomeConfigurationOnly(t *testing.T) {
 	write(t, env.ProjectRoot, ".codeium/windsurf/mcp_config.json", `{"mcpServers": {"project-only": {}}}`)
 	write(t, env.UserHome, ".codeium/windsurf/mcp_config.json", `{"mcpServers": {"home-only": {}}}`)
 
-	configured := ConfiguredServers(env, "windsurf")
+	configured := configuredServers(t, env, "windsurf")
 	if _, present := configured["home-only"]; !present {
 		t.Fatalf("home server missing: %v", configured)
 	}
 	if _, present := configured["project-only"]; present {
 		t.Fatalf("project config was read for a home-only surface: %v", configured)
 	}
-	if projectOnly := ProjectOnlyServers(env, "windsurf"); len(projectOnly) != 0 {
+	if projectOnly := projectOnlyServers(t, env, "windsurf"); len(projectOnly) != 0 {
 		t.Fatalf("home-only server was classified as project-only: %v", projectOnly)
+	}
+}
+
+func TestMCPSourceFallbackIsNarrow(t *testing.T) {
+	fallback := []string{"legacy.json"}
+	paths, err := mcpSources("cursor", "user", fallback)
+	if err != nil || len(paths) != 1 || paths[0] != fallback[0] {
+		t.Fatalf("explicit not-ported fallback: paths=%v err=%v", paths, err)
+	}
+	paths, err = mcpSources("unregistered", "user", fallback)
+	if err != nil || len(paths) != 1 || paths[0] != fallback[0] {
+		t.Fatalf("unknown adapter legacy result: paths=%v err=%v", paths, err)
+	}
+	if _, err := mcpSources("cursor", "unsupported", fallback); err == nil || err.Error() != "harness_scope_unsupported" {
+		t.Fatalf("registry context refusal was masked by fallback: %v", err)
 	}
 }
 
@@ -90,7 +123,7 @@ func TestClaudeDisabledServersDoNotCount(t *testing.T) {
 	env := newEnv(t)
 	write(t, env.ProjectRoot, ".mcp.json", `{"mcpServers": {"alpha": {}, "beta": {}}}`)
 	write(t, env.ProjectRoot, ".claude/settings.json", `{"disabledMcpjsonServers": ["alpha"]}`)
-	configured := ConfiguredServers(env, "claude_code")
+	configured := configuredServers(t, env, "claude_code")
 	if _, present := configured["alpha"]; present {
 		t.Fatal("disabled server counted as configured")
 	}
@@ -173,7 +206,7 @@ func TestProjectOnlyPendingWarning(t *testing.T) {
 func TestMalformedConfigCountsAsEmpty(t *testing.T) {
 	env := newEnv(t)
 	write(t, env.ProjectRoot, ".mcp.json", `{broken`)
-	if servers := ConfiguredServers(env, "claude_code"); len(servers) != 0 {
+	if servers := configuredServers(t, env, "claude_code"); len(servers) != 0 {
 		t.Fatalf("malformed config produced servers: %v", servers)
 	}
 }
@@ -183,20 +216,20 @@ func TestCursorProjectAndHomeMCPInspection(t *testing.T) {
 	write(t, env.ProjectRoot, ".cursor/mcp.json", `{"mcpServers": {"project": {}, "shared": {}}}`)
 	write(t, env.UserHome, ".cursor/mcp.json", `{"mcpServers": {"user": {}, "shared": {}}}`)
 
-	servers := ConfiguredServers(env, "cursor")
+	servers := configuredServers(t, env, "cursor")
 	for _, name := range []string{"project", "user", "shared"} {
 		if _, present := servers[name]; !present {
 			t.Errorf("Cursor MCP source missing %q: %v", name, servers)
 		}
 	}
-	projectOnly := ProjectOnlyServers(env, "cursor")
+	projectOnly := projectOnlyServers(t, env, "cursor")
 	if !projectOnly["project"] || projectOnly["shared"] || projectOnly["user"] {
 		t.Fatalf("project-only Cursor MCP servers = %v", projectOnly)
 	}
 
 	malformed := newEnv(t)
 	write(t, malformed.ProjectRoot, ".cursor/mcp.json", `{broken`)
-	if got := ConfiguredServers(malformed, "cursor"); len(got) != 0 {
+	if got := configuredServers(t, malformed, "cursor"); len(got) != 0 {
 		t.Fatalf("malformed Cursor MCP config produced servers: %v", got)
 	}
 }

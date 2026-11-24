@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -27,7 +28,6 @@ var projectSources = map[string][]string{
 	"claude_code": {".mcp.json"},
 	"codex_cli":   {".codex/config.toml"},
 	"gemini":      {".gemini/settings.json"},
-	"windsurf":    {},
 	"opencode":    {"opencode.json", "opencode.jsonc"},
 }
 
@@ -36,7 +36,6 @@ var homeSources = map[string][]string{
 	"claude_code": {".claude.json"},
 	"codex_cli":   {".codex/config.toml"},
 	"gemini":      {".gemini/settings.json"},
-	"windsurf":    {".codeium/windsurf/mcp_config.json"},
 	"opencode":    {".config/opencode/opencode.json", ".config/opencode/opencode.jsonc"},
 }
 
@@ -52,29 +51,43 @@ type Env struct {
 
 // ConfiguredServers returns the server names configured for one agent
 // across project and user surfaces.
-func ConfiguredServers(env Env, agent string) map[string]any {
+func ConfiguredServers(env Env, agent string) (map[string]any, error) {
+	project, err := projectEntries(env, agent)
+	if err != nil {
+		return nil, err
+	}
+	home, err := homeEntries(env, agent)
+	if err != nil {
+		return nil, err
+	}
 	entries := map[string]any{}
-	for name, entry := range projectEntries(env, agent) {
+	for name, entry := range project {
 		entries[name] = entry
 	}
-	for name, entry := range homeEntries(env, agent) {
+	for name, entry := range home {
 		entries[name] = entry
 	}
-	return entries
+	return entries, nil
 }
 
 // ProjectOnlyServers returns names configured only through project-level
 // surfaces: agents gate those behind checkout trust (Spec §11.3).
-func ProjectOnlyServers(env Env, agent string) map[string]bool {
-	project := projectEntries(env, agent)
-	home := homeEntries(env, agent)
+func ProjectOnlyServers(env Env, agent string) (map[string]bool, error) {
+	project, err := projectEntries(env, agent)
+	if err != nil {
+		return nil, err
+	}
+	home, err := homeEntries(env, agent)
+	if err != nil {
+		return nil, err
+	}
 	out := map[string]bool{}
 	for name := range project {
 		if _, present := home[name]; !present {
 			out[name] = true
 		}
 	}
-	return out
+	return out, nil
 }
 
 // Finding is the verification outcome for one skill.
@@ -113,7 +126,11 @@ func Verify(env Env, agents []string, skills map[string]map[string]skillspec.Mcp
 			requirement := requirements[serverName]
 			var available, missing []string
 			for _, agent := range agents {
-				if _, configured := ConfiguredServers(env, agent)[serverName]; configured {
+				configuredServers, err := ConfiguredServers(env, agent)
+				if err != nil {
+					return findings, warnings, err
+				}
+				if _, configured := configuredServers[serverName]; configured {
 					available = append(available, agent)
 				} else {
 					missing = append(missing, agent)
@@ -140,7 +157,11 @@ func Verify(env Env, agents []string, skills map[string]map[string]skillspec.Mcp
 			// Static stdio PATH probe: warn only when every entry for the
 			// server is positively a stdio server whose command is missing.
 			for _, agent := range available {
-				if command, missing := missingStdioCommand(env, agent, serverName); missing {
+				command, missing, err := missingStdioCommand(env, agent, serverName)
+				if err != nil {
+					return findings, warnings, err
+				}
+				if missing {
 					warnings = append(warnings, fmt.Sprintf(
 						"MCP server %q for %s runs %q, which is not on PATH", serverName, agent, command))
 				}
@@ -148,7 +169,11 @@ func Verify(env Env, agents []string, skills map[string]map[string]skillspec.Mcp
 			// Project-only pending warning.
 			var trustGated []string
 			for _, agent := range available {
-				if ProjectOnlyServers(env, agent)[serverName] {
+				projectOnly, err := ProjectOnlyServers(env, agent)
+				if err != nil {
+					return findings, warnings, err
+				}
+				if projectOnly[serverName] {
 					trustGated = append(trustGated, agent)
 				}
 			}
@@ -166,28 +191,36 @@ func Verify(env Env, agents []string, skills map[string]map[string]skillspec.Mcp
 	return findings, warnings, nil
 }
 
-func missingStdioCommand(env Env, agent, serverName string) (string, bool) {
+func missingStdioCommand(env Env, agent, serverName string) (string, bool, error) {
 	var commands []string
-	for _, source := range []map[string]any{projectEntries(env, agent), homeEntries(env, agent)} {
+	project, err := projectEntries(env, agent)
+	if err != nil {
+		return "", false, err
+	}
+	home, err := homeEntries(env, agent)
+	if err != nil {
+		return "", false, err
+	}
+	for _, source := range []map[string]any{project, home} {
 		entry, present := source[serverName]
 		if !present {
 			continue
 		}
 		command, ok := stdioCommand(entry)
 		if !ok {
-			return "", false // possibly remote: no warning
+			return "", false, nil // possibly remote: no warning
 		}
 		commands = append(commands, command)
 	}
 	if len(commands) == 0 {
-		return "", false
+		return "", false, nil
 	}
 	for _, command := range commands {
 		if _, err := exec.LookPath(command); err == nil {
-			return "", false
+			return "", false, nil
 		}
 	}
-	return commands[0], true
+	return commands[0], true, nil
 }
 
 // stdioCommand extracts the executable of a stdio entry; false when the
@@ -213,9 +246,13 @@ func stdioCommand(entry any) (string, bool) {
 	return "", false
 }
 
-func projectEntries(env Env, agent string) map[string]any {
+func projectEntries(env Env, agent string) (map[string]any, error) {
 	entries := map[string]any{}
-	for _, rel := range inspectionSources(agent, harnessapi.ProjectScope) {
+	sources, err := mcpSources(agent, harnessapi.ProjectScope, projectSources[agent])
+	if err != nil {
+		return nil, err
+	}
+	for _, rel := range sources {
 		for name, entry := range entriesInFile(filepath.Join(env.ProjectRoot, filepath.FromSlash(rel))) {
 			entries[name] = entry
 		}
@@ -225,54 +262,56 @@ func projectEntries(env Env, agent string) map[string]any {
 			delete(entries, name)
 		}
 	}
-	return entries
+	return entries, nil
 }
 
-func homeEntries(env Env, agent string) map[string]any {
+func homeEntries(env Env, agent string) (map[string]any, error) {
 	entries := map[string]any{}
-	for _, rel := range inspectionSources(agent, harnessapi.UserScope) {
+	sources, err := mcpSources(agent, harnessapi.UserScope, homeSources[agent])
+	if err != nil {
+		return nil, err
+	}
+	for _, rel := range sources {
 		for name, entry := range entriesInFile(filepath.Join(env.UserHome, filepath.FromSlash(rel))) {
 			entries[name] = entry
 		}
 	}
-	return entries
+	return entries, nil
 }
 
-func inspectionSources(agent string, scope harnessapi.Scope) []string {
+func mcpSources(agent string, scope harnessapi.Scope, legacy []string) ([]string, error) {
 	adapter, err := harnessregistry.Lookup(harnessapi.ID(agent))
+	if refusalIs(err, harnessapi.UnknownID) {
+		return legacy, nil
+	}
 	if err != nil {
-		var refusal harnessapi.Refusal
-		if errors.As(err, &refusal) && refusal.Code() == harnessapi.UnknownID {
-			return legacySources(agent, scope)
-		}
-		panic(fmt.Errorf("lookup harness adapter %q: %w", agent, err))
+		return nil, err
 	}
-	if !adapter.Capabilities().Has(harnessapi.MCPInspection) {
-		return legacySources(agent, scope)
-	}
-	channel, err := adapter.MCP(harnessapi.Context{}, scope)
+	context, err := harnessapi.NewContext(runtime.GOOS, scope, harnessapi.VerifiedRelease{})
 	if err != nil {
-		panic(fmt.Errorf("read MCP inspection declaration for %q: %w", agent, err))
+		return nil, err
 	}
-	if !channel.Inspect() || channel.Write() {
-		panic(fmt.Errorf("invalid MCP inspection declaration for %q", agent))
+	channel, err := adapter.MCP(context, scope)
+	if refusalIs(err, harnessapi.OperationNotPorted) {
+		return legacy, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !channel.Inspect() {
+		return nil, nil
 	}
 	paths := channel.Paths().Paths()
-	if len(paths) == 0 {
-		panic(fmt.Errorf("MCP inspection declaration for %q has no paths", agent))
-	}
 	sources := make([]string, 0, len(paths))
 	for _, path := range paths {
 		sources = append(sources, path.String())
 	}
-	return sources
+	return sources, nil
 }
 
-func legacySources(agent string, scope harnessapi.Scope) []string {
-	if scope == harnessapi.ProjectScope {
-		return projectSources[agent]
-	}
-	return homeSources[agent]
+func refusalIs(err error, code string) bool {
+	var refusal harnessapi.Refusal
+	return errors.As(err, &refusal) && refusal.Code() == code
 }
 
 func entriesInFile(path string) map[string]any {
