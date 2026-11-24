@@ -344,6 +344,44 @@ func TestNativeDiscoveryAgentsGetNoProjectMirror(t *testing.T) {
 	}
 }
 
+func TestWindsurfNativeDiscoveryLegacyContract(t *testing.T) {
+	if !KnownAgents()["windsurf"] {
+		t.Fatal("native-discovery agent was not recognized")
+	}
+	if unknown := UnknownAgents([]string{"windsurf"}); len(unknown) != 0 {
+		t.Fatalf("native-discovery agent was rejected: %v", unknown)
+	}
+	if entries := RequiredGitignoreEntries([]string{"windsurf"}); len(entries) != 1 || entries[0] != ".agents/" {
+		t.Fatalf("native store ignore entries: %v", entries)
+	}
+
+	project := t.TempDir()
+	projectStage := t.TempDir()
+	canonical := filepath.Join(project, ".agents", "skills")
+	makeSkill(t, canonical, "skill-a")
+	projectMirror, err := StageProject(projectStage, project, []string{"windsurf"},
+		[]Group{{Root: canonical, Skills: []string{"skill-a"}}}, "copy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(projectMirror.Plan().Targets) != 0 {
+		t.Fatalf("native discovery produced a project mirror: %+v", projectMirror.Plan().Targets)
+	}
+
+	home := t.TempDir()
+	userHome := t.TempDir()
+	globalStage := t.TempDir()
+	globalCanonical := filepath.Join(home, "global", "skills")
+	makeSkill(t, globalCanonical, "skill-a")
+	globalMirror, err := StageGlobal(globalStage, home, userHome, []string{"windsurf"}, []string{"skill-a"}, "copy", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, found := find(globalMirror.Plan(), filepath.Join(userHome, ".agents", "skills", "skill-a")); !found {
+		t.Fatal("global native-discovery mirror is missing")
+	}
+}
+
 func TestStageGlobalCoversTheNativeDiscoveryMirrorOnce(t *testing.T) {
 	home := t.TempDir()
 	userHome := t.TempDir()

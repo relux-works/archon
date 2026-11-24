@@ -120,6 +120,7 @@ func TestNoHarnessBranches(t *testing.T) {
 	for name, body := range map[string]string{
 		"new-branch":      "package shared\nfunc selected(id string) bool { return id == \"claude_code\" }\n",
 		"cursor-branch":   "package shared\nfunc selected(id string) bool { return id == \"cursor\" }\n",
+		"windsurf-branch": "package shared\nfunc selected(id string) bool { return id == \"windsurf\" }\n",
 		"computed-id":     "package shared\ntype ID string\nconst selected = \"claude\" + \"_code\"\nfunc selectedID(id ID) bool { return id == selected }\n",
 		"native-path":     "package shared\nconst nativePath = \".codex/skills\"\n",
 		"cursor-path":     "package shared\nconst nativePath = \".cursor/rules\"\n",

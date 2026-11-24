@@ -69,6 +69,23 @@ func TestSurfacesPerAgent(t *testing.T) {
 	}
 }
 
+func TestWindsurfMCPUsesHomeConfigurationOnly(t *testing.T) {
+	env := newEnv(t)
+	write(t, env.ProjectRoot, ".codeium/windsurf/mcp_config.json", `{"mcpServers": {"project-only": {}}}`)
+	write(t, env.UserHome, ".codeium/windsurf/mcp_config.json", `{"mcpServers": {"home-only": {}}}`)
+
+	configured := ConfiguredServers(env, "windsurf")
+	if _, present := configured["home-only"]; !present {
+		t.Fatalf("home server missing: %v", configured)
+	}
+	if _, present := configured["project-only"]; present {
+		t.Fatalf("project config was read for a home-only surface: %v", configured)
+	}
+	if projectOnly := ProjectOnlyServers(env, "windsurf"); len(projectOnly) != 0 {
+		t.Fatalf("home-only server was classified as project-only: %v", projectOnly)
+	}
+}
+
 func TestClaudeDisabledServersDoNotCount(t *testing.T) {
 	env := newEnv(t)
 	write(t, env.ProjectRoot, ".mcp.json", `{"mcpServers": {"alpha": {}, "beta": {}}}`)
