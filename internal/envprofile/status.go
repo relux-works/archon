@@ -347,6 +347,7 @@ func StatusOf(req StatusRequest) (*Status, error) {
 	}}
 	status.Notes = append(status.Notes, "Muse: monolithic root context delivered at config/muse/AGENTS.md (verified on 1.4.7, 1.4.7-R6101.1); native root suppresses foreign personal rules fallback, but foreign personal skills persist; managed exec requires --no-foreign-personal-context when the target is materialized; interactive requires -c context.foreign_personal_skills=false (JSON boolean) when the target is materialized; serve cannot exclude foreign personal context (foreign-personal-context isolation gap), so required serve exclusion refuses; workspace AGENTS.md prevailed in observed conflicts (recorded residual, not a general precedence guarantee); 1.4.8 on macOS 27: file backend login, subsequent file backend with zero Keychain access, and shared file link verified; 1.4.8 exclusion qualification unknown until the exact build replays P1–P4 on both forms, root present/absent, foreign rules/skills separately, each exclusion spelling, Curator link and regular-file snapshot, and workspace conflict; record loader observations separately from model-visible behavior; model-visible foreign removal, skills discovery, system-prompt discovery, refresh semantics, and state/cache internal layouts remain unverified; Linux and Windows native Muse login and refresh remain unqualified")
 	status.Notes = append(status.Notes, "opencode skills come from the machine-current profile, split-brain by construction (§7.1)")
+	status.Notes = append(status.Notes, envregistry.StatusNotes()...)
 	if req.Policy.SecurityPosture == config.SecurityPostureHardened && len(req.Policy.AllowedSources) == 0 {
 		status.NonCurrent = true
 	}
@@ -396,6 +397,9 @@ func StatusOf(req StatusRequest) (*Status, error) {
 		// Muse is explicitly provisioned. An absent optional home stays
 		// informational; failed marker or backup reads still fail --check.
 		if state.Environment == envregistry.Muse && state.markerState == stateread.KindAbsent && state.BackupsKnown {
+			continue
+		}
+		if regAdapter, err := envregistry.ByID(state.Environment); err == nil && regAdapter.ManagedOnly && state.markerState == stateread.KindAbsent && state.BackupsKnown {
 			continue
 		}
 		if !state.Current && currentProfiles[state.Profile] {
@@ -715,6 +719,10 @@ func homeState(req StatusRequest, profile string, adapter envregistry.Adapter) H
 	if adapter.ID == envregistry.Muse && verdict.plan != nil && verdict.plan.credentialPolicy != nil {
 		policy := verdict.plan.credentialPolicy
 		state.Warnings = append(state.Warnings, fmt.Sprintf("Muse credential policy: effective backend=%s; isolation=%s (optimistic admission; refresh behavior unknown)", policy.effectiveStore, policy.isolation))
+	}
+	if adapter.ForcedCredentialStore != "" && verdict.plan != nil && verdict.plan.credentialPolicy != nil {
+		policy := verdict.plan.credentialPolicy
+		state.Warnings = append(state.Warnings, fmt.Sprintf("%s credential policy: effective backend=%s; isolation=%s", adapter.ID, policy.effectiveStore, policy.isolation))
 	}
 	if verdict.marker == nil {
 		state.Findings = append(state.Findings, verdict.reasons...)
@@ -1067,6 +1075,9 @@ func scopeHomes(req StatusRequest, installed map[string]bool) ([]ScopeHome, []St
 				native, _ = selector.nativeHome(envregistry.Muse)
 			} else if legacy, ok := adapterByID(adapter.ID); ok {
 				native, _ = NativeHome(legacy)
+			} else if adapter.NativeDefaultDir != "" {
+				selector := ResolveRequest{Home: req.Home}
+				native, _ = selector.nativeHome(adapter.ID)
 			}
 			managed := ManagedHomeDir(req.Home, item.profile, adapter.ID)
 			marker, markerErr := envmarker.Read(managed)

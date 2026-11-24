@@ -1,0 +1,81 @@
+// Package antigravity owns the pure descriptor and staged harness surface for
+// the Antigravity CLI (agy) managed-home contract (CIP-0033).
+package antigravity
+
+import "github.com/relux-works/curator/internal/harnessapi"
+
+// ID is this module's stable canonical identifier.
+const ID harnessapi.ID = "antigravity"
+
+// Adapter exposes the staged harness surface with explicit operational refusals.
+type Adapter struct{ harnessapi.UnportedOperations }
+
+// New constructs the module's staged adapter.
+func New() harnessapi.Adapter { return Adapter{} }
+
+// ID returns the module's canonical identifier.
+func (Adapter) ID() harnessapi.ID { return ID }
+
+// APIVersion returns the implemented internal contract revision.
+func (Adapter) APIVersion() harnessapi.APIVersion { return harnessapi.AdapterAPIVersionV1 }
+
+// Capabilities returns only actually ported operations.
+func (Adapter) Capabilities() harnessapi.CapabilitySet {
+	set, _ := harnessapi.NewCapabilitySet(harnessapi.ReleaseProbing)
+	return set
+}
+
+// ReleaseProbe returns the read-only release probe tuple for agy.
+func (Adapter) ReleaseProbe(harnessapi.Context) (harnessapi.ProbeSpec, error) {
+	return harnessapi.NewProbeSpec("agy", []string{"--version"}, harnessapi.ProbeTimeoutV1, nil), nil
+}
+
+// ManagedHomeSpec returns the pure CIP-0033 managed-home specification for
+// Antigravity CLI (verified against agy 1.5.16 on macOS ARM64 and Linux x86_64).
+func ManagedHomeSpec() harnessapi.ManagedHomeSpec {
+	return harnessapi.ManagedHomeSpec{
+		ID:                    string(ID),
+		Alias:                 "agy",
+		HomeTransport:         "flag",
+		ManagedOnly:           true,
+		NativeDefaultDir:      ".gemini",
+		NativeHomeIgnoresEnv:  true,
+		ForbiddenHomeBasename: ".gemini",
+		RootTarget:            "config/AGENTS.md",
+		SkillsDir:             "config/skills",
+		Forms:                 []string{"monolithic"},
+		DefaultForm:           "monolithic",
+		MCPFilename:           "config/mcp_config.json",
+		MCPFormat:             "mcpServers-json",
+		Passthrough: map[string][]harnessapi.PassthroughSpec{
+			"default": {
+				{
+					Path:           "antigravity-cli/antigravity-oauth-token",
+					Strategy:       "file-link",
+					FileLinkTarget: "antigravity-cli/antigravity-oauth-token",
+				},
+			},
+		},
+		CredentialFileGuardPath:           "antigravity-cli/antigravity-oauth-token",
+		ForcedCredentialStore:             "file",
+		ForcedCredentialEnvVar:            "AGY_CLI_FORCE_FILE_TOKEN_STORAGE",
+		ForcedCredentialEnvValue:          "true",
+		RequireLiveNativeCredentialTarget: true,
+		Shadows: []harnessapi.ShadowSpec{
+			{Path: "config/GEMINI.md", Surface: "root-context"},
+			{Path: "config/rules", Surface: "root-context"},
+			{Path: "GEMINI.md", Surface: "root-context"},
+			{Path: "AGENTS.md", Surface: "root-context"},
+		},
+		VerifiedRelease:      "1.5.16",
+		Probe:                []string{"agy", "--version"},
+		SizeAdvisoryBytes:    24000,
+		CredentialScope:      "file-backed per --gemini_dir under AGY_CLI_FORCE_FILE_TOKEN_STORAGE=true (verified on agy 1.5.16 macOS ARM64 & Linux x86_64)",
+		GlobalContextCap:     "24000 bytes per rule file (empirically verified on agy 1.5.16)",
+		FirstRunSteps:        "Launch via curator-run or SAM with --gemini_dir; for isolated auth run AGY_CLI_FORCE_FILE_TOKEN_STORAGE=true agy acp --login --gemini-dir <home>; for shared auth log in once in the native ~/.gemini home with AGY_CLI_FORCE_FILE_TOKEN_STORAGE=true.",
+		StatusNote:           "Antigravity CLI (agy 1.5.16): managed-home-only via flag home transport (--gemini_dir, launch-env-fragment-v7); root context at config/AGENTS.md (24000-byte per-file cap), skills at config/skills/ (non-.gemini basename skips ~/.agents/skills), MCP at config/mcp_config.json; file-backed OAuth enforced via AGY_CLI_FORCE_FILE_TOKEN_STORAGE=true; headless credential-injection/1 remains unqualified on agy 1.5.16 due to stdio MCP GEMINI_API_KEY inheritance (CIP-0033); project-context/Werkstatt certification deferred to Phase 2",
+		NativeLoginHint:      "native credential target is absent; run AGY_CLI_FORCE_FILE_TOKEN_STORAGE=true agy acp --login in the native ~/.gemini home before resolving shared Antigravity",
+		ForcedStoreGuidance:  "managed Antigravity requires file storage; select native or file (global macOS Keychain cannot isolate managed homes)",
+		CredentialPolicyNote: "managed Antigravity maps configured native (including unset) to effective file storage via AGY_CLI_FORCE_FILE_TOKEN_STORAGE=true; the stored selector is unchanged",
+	}
+}

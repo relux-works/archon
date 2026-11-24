@@ -23,8 +23,8 @@ func TestCodexCLI162VerifiedRelease(t *testing.T) {
 }
 
 func TestRegistryClosed(t *testing.T) {
-	if len(Registry) != 5 {
-		t.Fatalf("the revision-1 registry holds %d adapters, want 5", len(Registry))
+	if len(Registry) != 6 {
+		t.Fatalf("the revision-1 registry holds %d adapters, want 6", len(Registry))
 	}
 	seen := map[string]bool{}
 	for _, adapter := range Registry {
@@ -32,11 +32,11 @@ func TestRegistryClosed(t *testing.T) {
 			t.Fatalf("duplicate adapter %s", adapter.ID)
 		}
 		seen[adapter.ID] = true
-		if adapter.EnvVar == "" || adapter.RootTarget == "" {
-			t.Fatalf("adapter %s names no home variable or root target", adapter.ID)
+		if (!adapter.IsFlagHome() && adapter.EnvVar == "") || adapter.RootTarget == "" {
+			t.Fatalf("adapter %s names no home mechanism or root target", adapter.ID)
 		}
 	}
-	for _, id := range []string{ClaudeCode, CodexCLI, OpenCode, Pi, Muse} {
+	for _, id := range []string{ClaudeCode, CodexCLI, OpenCode, Pi, Muse, Antigravity} {
 		if !seen[id] {
 			t.Fatalf("adapter %s is missing from the registry", id)
 		}
@@ -58,12 +58,12 @@ func TestUnknownEnvironment(t *testing.T) {
 // target, unknown, or empty — passes through unchanged for the existing
 // refusal to own.
 func TestNormalizeEnvID(t *testing.T) {
-	for alias, canonical := range map[string]string{"claude": ClaudeCode, "codex": CodexCLI} {
+	for alias, canonical := range map[string]string{"claude": ClaudeCode, "codex": CodexCLI, "agy": Antigravity} {
 		if got := NormalizeEnvID(alias); got != canonical {
 			t.Fatalf("NormalizeEnvID(%q) = %q, want %q", alias, got, canonical)
 		}
 	}
-	for _, id := range []string{ClaudeCode, CodexCLI, OpenCode, Pi, "xcode-coding-assistant", "cursor", "Claude", "claude-code", ""} {
+	for _, id := range []string{ClaudeCode, CodexCLI, OpenCode, Pi, Antigravity, "xcode-coding-assistant", "cursor", "Claude", "claude-code", ""} {
 		if got := NormalizeEnvID(id); got != id {
 			t.Fatalf("NormalizeEnvID(%q) = %q, want it unchanged", id, got)
 		}
@@ -74,7 +74,7 @@ func TestNormalizeEnvID(t *testing.T) {
 // lookup still refuses the raw aliases with environment_unknown, so only
 // the CLI boundary normalizes and the wire identifiers are unchanged.
 func TestAliasesNeverReachTheWireLookup(t *testing.T) {
-	for _, alias := range []string{"claude", "codex"} {
+	for _, alias := range []string{"claude", "codex", "agy"} {
 		if _, err := ByID(alias); err == nil || !strings.Contains(err.Error(), DiagUnknown) {
 			t.Fatalf("ByID(%q) must fail with %s, got %v", alias, DiagUnknown, err)
 		}

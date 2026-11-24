@@ -25,6 +25,14 @@ const (
 	Muse       = "muse"
 )
 
+// Extended managed-home environment identifiers and home transports (CIP-0033).
+const (
+	Antigravity          = "antigravity"
+	HomeTransportEnv     = "env"
+	HomeTransportFlag    = "flag"
+	MCPFormatServersJSON = "mcpServers-json"
+)
+
 // Codex seed behavior recorded in codex_seed_record (environments §7.4,
 // §8.2). Revision A copies config.toml whole and warns about inherited MCP
 // servers. Revision B removes MCP servers; C also excludes project trust.
@@ -85,6 +93,7 @@ const (
 	DiagToolVersionUnverifed         = "environment_tool_version_unverified"
 	DiagSizeExceeded                 = "environment_context_size_exceeded"
 	DiagReservedCommand              = "environment_reserved_command_name"
+	DiagFlagHomeUnsupported          = "environment_flag_home_unsupported"
 )
 
 // DiagCredentialInjectionUnavailable identifies an incapable source consumer
@@ -228,6 +237,24 @@ type Adapter struct {
 	GlobalContextCap string
 	ExecFlags        string
 	ProfileFlag      string
+	// Generic managed-home traits supplied by adapter-owned specifications
+	// (CIP-0033). Existing legacy adapters leave these zero-valued.
+	HomeTransport                     string
+	ManagedOnly                       bool
+	NativeDefaultDir                  string
+	NativeHomeIgnoresEnv              bool
+	ForbiddenHomeBasename             string
+	MCPFormat                         string
+	CredentialFileGuardPath           string
+	ForcedCredentialStore             CredentialStoreSelection
+	ForcedCredentialEnvVar            string
+	ForcedCredentialEnvValue          string
+	RequireLiveNativeCredentialTarget bool
+	FirstRunSteps                     string
+	StatusNote                        string
+	NativeLoginHint                   string
+	ForcedStoreGuidance               string
+	CredentialPolicyNote              string
 }
 
 // Registry is the closed revision-1 adapter set (environments §7.1).

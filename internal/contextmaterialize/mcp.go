@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/relux-works/curator/internal/envregistry"
 	"github.com/relux-works/curator/internal/identifiers"
 	"github.com/relux-works/curator/internal/protocoljson"
 )
@@ -73,6 +74,9 @@ func SupportsMCPFile(environment string) bool {
 	case "claude_code", "codex_cli", "opencode":
 		return true
 	default:
+		if adapter, err := envregistry.ByID(environment); err == nil && adapter.MCP != nil && adapter.MCP.Kind == envregistry.KindFile && adapter.MCPFormat != "" {
+			return true
+		}
 		return false
 	}
 }
@@ -88,6 +92,9 @@ func MCPPath(environment string) string {
 	case "opencode":
 		return MCPOpenCodePath
 	default:
+		if adapter, err := envregistry.ByID(environment); err == nil && adapter.MCP != nil && adapter.MCP.Kind == envregistry.KindFile {
+			return adapter.MCP.Filename
+		}
 		return ""
 	}
 }
@@ -230,12 +237,46 @@ func MCPFile(environment string, servers []MCPServer) (path string, document []b
 	case "opencode":
 		document, err = openCodeMCP(set)
 	default:
-		return "", nil, false, nil
+		if adapter, err := envregistry.ByID(environment); err == nil && adapter.MCPFormat == envregistry.MCPFormatServersJSON {
+			document, err = mcpServersJSON(set)
+		} else {
+			return "", nil, false, nil
+		}
 	}
 	if err != nil {
 		return "", nil, false, err
 	}
 	return MCPPath(environment), document, true, nil
+}
+
+// mcpServersJSON renders the CCJ-1 bytes of {"mcpServers":{...}} followed by
+// exactly one LF for adapters whose file-kind MCP channel uses that schema.
+func mcpServersJSON(set []MCPServer) ([]byte, error) {
+	table := map[string]any{}
+	for _, server := range set {
+		switch server.Transport {
+		case MCPTransportStdio:
+			args := server.Args
+			if args == nil {
+				args = []string{}
+			}
+			table[server.Name] = map[string]any{
+				"args":    args,
+				"command": server.Command,
+				"type":    "stdio",
+			}
+		case MCPTransportHTTP:
+			table[server.Name] = map[string]any{
+				"type": "http",
+				"url":  server.URL,
+			}
+		}
+	}
+	document, err := protocoljson.MarshalCanonical(map[string]any{"mcpServers": table})
+	if err != nil {
+		return nil, err
+	}
+	return append(document, '\n'), nil
 }
 
 // claudeMCP renders the CCJ-1 bytes of the object whose single member

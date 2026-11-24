@@ -14,6 +14,16 @@ import (
 // on an older producer. This is an activation boundary, not runtime qualification.
 // Muse file is admitted by D10; other forced mappings remain gated.
 func admitCredentialStore(adapter envregistry.Adapter, profile string, selection envregistry.CredentialStoreSelection) error {
+	if adapter.ForcedCredentialStore != "" {
+		if selection == envregistry.CredentialStoreNative || selection == adapter.ForcedCredentialStore {
+			return nil
+		}
+		guidance := adapter.ForcedStoreGuidance
+		if guidance == "" {
+			guidance = "this adapter requires its forced credential store"
+		}
+		return fmt.Errorf("%s: %s/%s selection %s: %s", envregistry.DiagCredentialStoreUnsupported, profile, adapter.ID, selection, guidance)
+	}
 	if selection == envregistry.CredentialStoreNative || adapter.ID == envregistry.Muse && selection == envregistry.CredentialStoreFile {
 		return nil
 	}
@@ -109,6 +119,12 @@ func (req *ResolveRequest) computeCredentialPolicy(adapter envregistry.Adapter, 
 	if adapter.ID == envregistry.Muse {
 		p.effectiveStore = envregistry.CredentialStoreFile
 		p.launchEnv["TBH_CREDENTIAL_BACKEND"] = "file"
+	}
+	if adapter.ForcedCredentialStore != "" {
+		p.effectiveStore = adapter.ForcedCredentialStore
+		if adapter.ForcedCredentialEnvVar != "" {
+			p.launchEnv[adapter.ForcedCredentialEnvVar] = adapter.ForcedCredentialEnvValue
+		}
 	}
 	atAbove := true
 	if ok, known := adapter.AtOrAbovePinned(release); known {

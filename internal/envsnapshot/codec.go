@@ -22,8 +22,9 @@ import (
 
 // Snapshot and descriptor wire versions are independent of launch fragments.
 const (
-	ManifestVersion   = "managed-home-snapshot-v1"
-	DescriptorVersion = "snapshot-launch-v1"
+	ManifestVersion     = "managed-home-snapshot-v1"
+	DescriptorVersion   = "snapshot-launch-v1"
+	DescriptorVersionV2 = "snapshot-launch-v2"
 	// Mismatch is deliberately content-free, including for failed filesystem reads.
 	Mismatch = "environment_materialize_snapshot_mismatch"
 )
@@ -104,12 +105,19 @@ type RootContext struct {
 	Exclusive bool `json:"exclusive"`
 }
 
-// Descriptor is a portable snapshot-launch-v1 object, not a launch fragment.
+// HomeBinding carries a relative flag-transported home in snapshot-launch-v2.
+type HomeBinding struct {
+	Path      string `json:"path"`
+	Transport string `json:"transport"`
+}
+
+// Descriptor is a portable snapshot-launch-v1 or snapshot-launch-v2 object, not a launch fragment.
 type Descriptor struct {
 	Descriptor   string            `json:"descriptor"`
 	Environment  string            `json:"environment"`
 	Profile      Profile           `json:"profile"`
 	Precedence   Precedence        `json:"precedence"`
+	Home         *HomeBinding      `json:"home,omitempty"`
 	Env          map[string]string `json:"env"`
 	Permissions  Permissions       `json:"permissions"`
 	SystemPrompt *SystemPrompt     `json:"system_prompt,omitempty"`
@@ -149,10 +157,15 @@ var validators = sync.OnceValues(func() (map[string]*jsonschema.Schema, error) {
 		return nil, err
 	}
 	d, err := c.Compile(base + "snapshot-launch-v1.schema.json")
-	return map[string]*jsonschema.Schema{"manifest": m, "descriptor": d}, err
+	if err != nil {
+		return nil, err
+	}
+	v2Base := "https://relux-works.github.io/curator-spec/schemas/antigravity-managed-home-v1/"
+	d2, err := c.Compile(v2Base + "snapshot-launch-v2.schema.json")
+	return map[string]*jsonschema.Schema{"manifest": m, "descriptor": d, "descriptor-v2": d2}, err
 })
 
-func decode(raw []byte, manifest bool, dst any) error {
+func decode(raw []byte, kind string, dst any) error {
 	if len(raw) == 0 || raw[len(raw)-1] != '\n' {
 		return refuse("metadata-canonical")
 	}
@@ -170,10 +183,9 @@ func decode(raw []byte, manifest bool, dst any) error {
 	if err != nil {
 		return refuse("schema-unavailable")
 	}
-	schema := checks["descriptor"]
+	schema := checks[kind]
 	reason := "launch-schema"
-	if manifest {
-		schema = checks["manifest"]
+	if kind == "manifest" {
 		reason = "manifest-schema"
 	}
 	return validateSnapshotSchema(schema, value, reason)
@@ -194,18 +206,26 @@ func validateSnapshotSchema(schema *jsonschema.Schema, value any, reason string)
 // Cross-file and actual-tree checks are exclusively the job of Verify.
 func DecodeManifest(raw []byte) (Manifest, error) {
 	var m Manifest
-	err := decode(raw, true, &m)
+	err := decode(raw, "manifest", &m)
 	return m, err
 }
 
-// DecodeDescriptor validates the closed descriptor schema and exact wire frame.
+// DecodeDescriptor validates the closed snapshot-launch-v1 schema and exact wire frame.
 func DecodeDescriptor(raw []byte) (Descriptor, error) {
 	var d Descriptor
-	err := decode(raw, false, &d)
+	err := decode(raw, "descriptor", &d)
 	return d, err
 }
 
-func encode(value any, manifest bool) ([]byte, error) {
+// DecodeDescriptorV2 validates the closed snapshot-launch-v2 schema (CIP-0033)
+// and exact wire frame.
+func DecodeDescriptorV2(raw []byte) (Descriptor, error) {
+	var d Descriptor
+	err := decode(raw, "descriptor-v2", &d)
+	return d, err
+}
+
+func encode(value any, kind string) ([]byte, error) {
 	if !validStrings(reflect.ValueOf(value)) {
 		return nil, refuse("metadata-canonical")
 	}
@@ -225,9 +245,12 @@ func encode(value any, manifest bool) ([]byte, error) {
 		return nil, refuse("metadata-canonical")
 	}
 	canonical = append(canonical, '\n')
-	if manifest {
+	switch kind {
+	case "manifest":
 		_, err = DecodeManifest(canonical)
-	} else {
+	case "descriptor-v2":
+		_, err = DecodeDescriptorV2(canonical)
+	default:
 		_, err = DecodeDescriptor(canonical)
 	}
 	if err != nil {
@@ -237,10 +260,13 @@ func encode(value any, manifest bool) ([]byte, error) {
 }
 
 // EncodeManifest emits validated CCJ-1 followed by exactly one LF.
-func EncodeManifest(m Manifest) ([]byte, error) { return encode(m, true) }
+func EncodeManifest(m Manifest) ([]byte, error) { return encode(m, "manifest") }
 
-// EncodeDescriptor emits validated CCJ-1 followed by exactly one LF.
-func EncodeDescriptor(d Descriptor) ([]byte, error) { return encode(d, false) }
+// EncodeDescriptor emits validated snapshot-launch-v1 CCJ-1 followed by one LF.
+func EncodeDescriptor(d Descriptor) ([]byte, error) { return encode(d, "descriptor") }
+
+// EncodeDescriptorV2 emits validated snapshot-launch-v2 CCJ-1 followed by one LF.
+func EncodeDescriptorV2(d Descriptor) ([]byte, error) { return encode(d, "descriptor-v2") }
 
 // Digest hashes exact bytes; manifest and descriptor callers include their LF.
 func Digest(raw []byte) string { sum := sha256.Sum256(raw); return hex.EncodeToString(sum[:]) }

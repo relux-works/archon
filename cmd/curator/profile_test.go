@@ -25,6 +25,14 @@ func profileHome(t *testing.T) (stubConfigSource, string) {
 		cfg:  &config.Config{Path: filepath.Join(home, "config.json")},
 	}
 	base := t.TempDir()
+	userHome := filepath.Join(base, "home")
+	if err := os.MkdirAll(userHome, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", userHome)
+	if runtime.GOOS == "windows" {
+		t.Setenv("USERPROFILE", userHome)
+	}
 	t.Setenv("CLAUDE_CONFIG_DIR", filepath.Join(base, "claude"))
 	t.Setenv("CODEX_HOME", filepath.Join(base, "codex"))
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(base, "xdg"))
@@ -86,6 +94,15 @@ func writeNativeCredentials(t *testing.T) {
 		}
 		if err := os.WriteFile(filepath.Join(dir, ".credentials.json"), []byte("{\"t\":\"operator-claude\"}\n"), 0o600); err != nil {
 			t.Fatal(err)
+		}
+		if userHome := os.Getenv("HOME"); userHome != "" && userHome == filepath.Join(filepath.Dir(dir), "home") {
+			agyToken := filepath.Join(userHome, ".gemini", "antigravity-cli", "antigravity-oauth-token")
+			if err := os.MkdirAll(filepath.Dir(agyToken), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(agyToken, []byte("{\"t\":\"operator-antigravity\"}\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 }

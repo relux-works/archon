@@ -72,6 +72,13 @@ func validateMetadata(m Manifest, d Descriptor, launch []byte) (map[string]bool,
 	if err != nil {
 		return nil, refuse("adapter-profile")
 	}
+	if adapter.IsFlagHome() {
+		if d.Descriptor != DescriptorVersionV2 || d.Home == nil || d.Home.Path != "home" || d.Home.Transport != envregistry.HomeTransportFlag || len(d.Env) != 0 {
+			return nil, refuse("launch-schema")
+		}
+	} else if d.Home != nil {
+		return nil, refuse("launch-schema")
+	}
 	if d.SystemPrompt != nil {
 		if !files[d.SystemPrompt.Path] {
 			return nil, refuse("channel-reference")

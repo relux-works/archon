@@ -129,6 +129,13 @@ func (req *ResolveRequest) inspectMuseAuth(full, target string) museAuthState {
 // managedAdapterParticipates keeps Muse's explicit provisioning boundary in
 // global reconciliation. An unreadable marker is never treated as absent.
 func managedAdapterParticipates(home, profile string, adapter envregistry.Adapter) (bool, error) {
+	if adapter.ManagedOnly {
+		metadata, err := stateread.Lstat(filepath.Join(ManagedHomeDir(home, profile, adapter.ID), envmarker.Name))
+		if err != nil {
+			return false, err
+		}
+		return metadata.Kind == stateread.KindPresent, nil
+	}
 	if adapter.ID != envregistry.Muse {
 		return true, nil
 	}

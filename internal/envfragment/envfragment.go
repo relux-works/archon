@@ -23,6 +23,10 @@ import (
 // Version is the fragment version emitted by this manager release.
 const Version = "launch-env-fragment-v2"
 
+// VersionV7 is the fragment version emitted for flag-transported managed homes
+// (CIP-0033).
+const VersionV7 = "launch-env-fragment-v7"
+
 // Permissions is the resolved per-profile permission policy carried by
 // launch-env-fragment-v2 (environments §10.2).
 type Permissions struct {
@@ -61,6 +65,12 @@ type RootContext struct {
 	Exclusive bool
 }
 
+// HomeBinding carries a flag-transported managed home path (CIP-0033).
+type HomeBinding struct {
+	Path      string
+	Transport string
+}
+
 // Fragment is one typed native v2 or Muse v4 object. This resolver omits the
 // optional path_prepend member (environments §10.2).
 type Fragment struct {
@@ -70,6 +80,7 @@ type Fragment struct {
 	Permissions     Permissions
 	Winner          string
 	Placement       string
+	Home            *HomeBinding
 	Env             map[string]string
 	SystemPrompt    *SystemPrompt
 	MCP             *MCP
@@ -78,6 +89,9 @@ type Fragment struct {
 }
 
 func (f *Fragment) version() string {
+	if f.Home != nil {
+		return VersionV7
+	}
 	if f.Environment == envregistry.Muse || f.CredentialStore != nil || f.RootContext != nil {
 		return "launch-env-fragment-v4"
 	}
@@ -131,6 +145,9 @@ func (f *Fragment) Object() map[string]any {
 		env[name] = value
 	}
 	object["env"] = env
+	if f.Home != nil {
+		object["home"] = map[string]any{"path": f.Home.Path, "transport": f.Home.Transport}
+	}
 	if f.CredentialStore != nil {
 		object["credential_store"] = map[string]any{"selection": string(f.CredentialStore.Selection)}
 	}
@@ -235,6 +252,24 @@ func (f *Fragment) ShellFormat(adapter envregistry.Adapter) []byte {
 		out.WriteString("'\n")
 	}
 	return []byte(out.String())
+}
+
+// RenderEnvFormat renders --format env or fails closed for flag-transported
+// managed homes (CIP-0033) with zero output bytes.
+func (f *Fragment) RenderEnvFormat(adapter envregistry.Adapter) ([]byte, error) {
+	if adapter.IsFlagHome() || f.Home != nil {
+		return nil, fmt.Errorf("%s: %s relocates its managed home via a CLI flag and cannot be projected to --format env; use --format json", envregistry.DiagFlagHomeUnsupported, adapter.ID)
+	}
+	return f.EnvFormat(adapter), nil
+}
+
+// RenderShellFormat renders --format shell or fails closed for flag-transported
+// managed homes (CIP-0033) with zero output bytes.
+func (f *Fragment) RenderShellFormat(adapter envregistry.Adapter) ([]byte, error) {
+	if adapter.IsFlagHome() || f.Home != nil {
+		return nil, fmt.Errorf("%s: %s relocates its managed home via a CLI flag and cannot be projected to --format shell; use --format json", envregistry.DiagFlagHomeUnsupported, adapter.ID)
+	}
+	return f.ShellFormat(adapter), nil
 }
 
 // S4 passthrough diagnostics (environments §2.1, §10.4).
@@ -371,6 +406,12 @@ func CheckBoundary(adapter envregistry.Adapter, envRoot string, fragment *Fragme
 	if fragment.Environment != adapter.ID {
 		return fmt.Errorf("fragment environment disagrees with adapter")
 	}
+	if adapter.IsFlagHome() {
+		return checkFlagHomeBoundary(adapter, envRoot, fragment)
+	}
+	if fragment.Home != nil {
+		return fmt.Errorf("fragment home is admitted only for flag-transported environments")
+	}
 	if fragment.RootContext != nil && (adapter.ID != envregistry.Muse || !fragment.RootContext.Exclusive) {
 		return fmt.Errorf("fragment root_context is only an exclusive Muse fact")
 	}
@@ -444,6 +485,72 @@ func CheckBoundary(adapter envregistry.Adapter, envRoot string, fragment *Fragme
 	if fragment.MCP != nil {
 		if err := checkPath("mcp.path", fragment.MCP.Path); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// checkFlagHomeBoundary enforces the CIP-0033 launch-env-fragment-v7 boundary
+// for flag-transported managed homes.
+func checkFlagHomeBoundary(adapter envregistry.Adapter, envRoot string, fragment *Fragment) error {
+	if fragment.RootContext != nil {
+		return fmt.Errorf("flag-transported fragments carry no root_context member")
+	}
+	if fragment.SystemPrompt != nil {
+		return fmt.Errorf("flag-transported environment %s carries no system-prompt channel", adapter.ID)
+	}
+	if fragment.Home == nil || fragment.Home.Transport != envregistry.HomeTransportFlag {
+		return fmt.Errorf("flag-transported environment %s requires home with transport flag", adapter.ID)
+	}
+	checkPath := func(label, value string) error {
+		if !filepath.IsAbs(value) {
+			return fmt.Errorf("fragment %s %q is not absolute", label, value)
+		}
+		for _, segment := range strings.Split(filepath.ToSlash(value), "/") {
+			if segment == ".." {
+				return fmt.Errorf("fragment %s %q carries a .. segment", label, value)
+			}
+		}
+		if filepath.Clean(value) != value {
+			return fmt.Errorf("fragment %s %q is not clean", label, value)
+		}
+		root := filepath.Clean(envRoot)
+		if value != root && !strings.HasPrefix(value, root+string(filepath.Separator)) {
+			return fmt.Errorf("fragment %s %q is outside the environments root", label, value)
+		}
+		return nil
+	}
+	if err := checkPath("home.path", fragment.Home.Path); err != nil {
+		return err
+	}
+	if adapter.ForbiddenHomeBasename != "" && filepath.Base(fragment.Home.Path) == adapter.ForbiddenHomeBasename {
+		return fmt.Errorf("fragment home.path basename must not be %s", adapter.ForbiddenHomeBasename)
+	}
+	if adapter.ForcedCredentialStore != "" {
+		if fragment.CredentialStore == nil || fragment.CredentialStore.Selection != adapter.ForcedCredentialStore {
+			return fmt.Errorf("%s: managed %s requires effective %s credential store", envregistry.DiagCredentialStoreUnsupported, adapter.ID, adapter.ForcedCredentialStore)
+		}
+	}
+	if adapter.ForcedCredentialEnvVar != "" {
+		if len(fragment.Env) != 1 || fragment.Env[adapter.ForcedCredentialEnvVar] != adapter.ForcedCredentialEnvValue {
+			return fmt.Errorf("%s: managed %s requires env exactly %s=%s", envregistry.DiagCredentialStoreUnsupported, adapter.ID, adapter.ForcedCredentialEnvVar, adapter.ForcedCredentialEnvValue)
+		}
+	} else if len(fragment.Env) != 0 {
+		return fmt.Errorf("flag-transported environment %s declares no env variables", adapter.ID)
+	}
+	if fragment.MCP != nil {
+		if adapter.MCP == nil || adapter.MCP.Kind != envregistry.KindFile {
+			return fmt.Errorf("environment %s declares no file-kind MCP channel", adapter.ID)
+		}
+		expectedMCP := filepath.Join(fragment.Home.Path, filepath.FromSlash(adapter.MCP.Filename))
+		if fragment.MCP.Path != expectedMCP {
+			return fmt.Errorf("fragment mcp.path %q must equal %q", fragment.MCP.Path, expectedMCP)
+		}
+		if err := checkPath("mcp.path", fragment.MCP.Path); err != nil {
+			return err
+		}
+		if len(fragment.MCP.Channels) != 1 || fragment.MCP.Channels[0].Kind != envregistry.KindFile || fragment.MCP.Channels[0].Filename != adapter.MCP.Filename {
+			return fmt.Errorf("fragment mcp channel must be file %s", adapter.MCP.Filename)
 		}
 	}
 	return nil

@@ -202,9 +202,21 @@ func (req *ResolveRequest) nativeHome(id string) (string, error) {
 		adapter, ok = museNativeAdapter(), true
 	}
 	if !ok {
+		if regAdapter, err := envregistry.ByID(id); err == nil && regAdapter.NativeDefaultDir != "" {
+			envVar := regAdapter.EnvVar
+			if regAdapter.NativeHomeIgnoresEnv {
+				envVar = ""
+			}
+			adapter, ok = Adapter{ID: regAdapter.ID, EnvVar: envVar, DefaultDir: regAdapter.NativeDefaultDir}, true
+		}
+	}
+	if !ok {
 		return "", fmt.Errorf("%s: unregistered environment %q", envregistry.DiagUnknown, id)
 	}
-	value := os.Getenv(adapter.EnvVar)
+	value := ""
+	if adapter.EnvVar != "" {
+		value = os.Getenv(adapter.EnvVar)
+	}
 	if id == envregistry.Muse && req.OperatorXDG != "" {
 		value = req.OperatorXDG
 	}
@@ -465,6 +477,9 @@ func assembleHomeObserved(req *ResolveRequest, source Source, lock *contextlock.
 	}
 	if adapter.ID == envregistry.Muse && credentialPolicy.selection == envregistry.CredentialStoreNative {
 		plan.warnings = append(plan.warnings, "managed Muse maps configured native (including unset) to effective file storage; the stored selector is unchanged; refresh remains unqualified")
+	}
+	if adapter.ForcedCredentialStore != "" && adapter.CredentialPolicyNote != "" && credentialPolicy.selection == envregistry.CredentialStoreNative {
+		plan.warnings = append(plan.warnings, adapter.CredentialPolicyNote)
 	}
 	if form == envregistry.FormReferenced && adapter.ID == envregistry.OpenCode {
 		if blocked, err := referencedBlocked(plan.homeDir, prior); err != nil {
@@ -2533,6 +2548,17 @@ func (v *verification) checkPassthrough(req *ResolveRequest, plan *homePlan, mar
 			}
 			continue
 		}
+		if plan.adapter.RequireLiveNativeCredentialTarget {
+			state := req.inspectSharedFileAuth(full, target, plan.adapter.NativeLoginHint)
+			if !state.live && (state.err == nil || !strings.Contains(state.err.Error(), envregistry.DiagPassthroughUnreadable)) {
+				v.reasons = append(v.reasons, envregistry.DiagPassthroughDetached+": "+path)
+			}
+			if state.err != nil {
+				v.reasons = append(v.reasons, state.err.Error())
+				v.passthroughReadFailed = strings.Contains(state.err.Error(), envregistry.DiagPassthroughUnreadable)
+			}
+			continue
+		}
 		var metadata stateread.Metadata
 		if req.passthroughLstat == nil {
 			metadata, err = stateread.Lstat(full)
@@ -2752,6 +2778,16 @@ func buildFragment(req *ResolveRequest, adapter envregistry.Adapter, verdict *ve
 			fragment.Env[variable[0]] = filepath.Join(plan.parent, variable[1])
 		}
 	}
+	if adapter.IsFlagHome() {
+		fragment.Env = map[string]string{}
+		fragment.Home = &envfragment.HomeBinding{
+			Path:      plan.homeDir,
+			Transport: envregistry.HomeTransportFlag,
+		}
+		if adapter.ForcedCredentialStore != "" {
+			fragment.CredentialStore = &envfragment.CredentialStore{Selection: policy.effectiveStore}
+		}
+	}
 	for name, value := range policy.launchEnv {
 		fragment.Env[name] = value
 	}
@@ -2804,9 +2840,9 @@ func renderFragment(fragment *envfragment.Fragment, adapter envregistry.Adapter,
 	case "", "json":
 		return fragment.JSON()
 	case "env":
-		return fragment.EnvFormat(adapter), nil
+		return fragment.RenderEnvFormat(adapter)
 	case "shell":
-		return fragment.ShellFormat(adapter), nil
+		return fragment.RenderShellFormat(adapter)
 	default:
 		return nil, fmt.Errorf("format %q is not json, env, or shell", format)
 	}
@@ -2829,6 +2865,8 @@ func firstResolveNotice(adapter envregistry.Adapter, plan *homePlan) string {
 		steps = "Muse first-run seed coverage and credential refresh semantics are unverified; foreign personal context remains ambient."
 	case envregistry.Pi:
 		steps = "No trust wall; authentication is shared from the native home."
+	default:
+		steps = adapter.FirstRunSteps
 	}
 	return fmt.Sprintf("Managed home provisioned at %s.\nThe tool treats this home as its own state root: sessions, trust records, and approvals accrue here, not in the native home.\nFirst-run steps the seeds do not cover: %s", plan.homeDir, steps)
 }
@@ -3495,6 +3533,14 @@ func repairUnderLock(req *ResolveRequest, adapter envregistry.Adapter, source So
 			}
 		}
 	}
+	if adapter.RequireLiveNativeCredentialTarget {
+		for path, target := range passthroughLinks {
+			state := req.inspectSharedFileAuth(filepath.Join(plan.homeDir, filepath.FromSlash(path)), target, adapter.NativeLoginHint)
+			if state.err != nil {
+				return nil, state.err
+			}
+		}
+	}
 	for path := range passthroughLinks {
 		writePaths[path] = true
 	}
@@ -3717,6 +3763,9 @@ func copyTree(source, root, destination string) error {
 // refuses the assembly with context_system_module_transitive.
 func (p *homePlan) systemPrompt(req *ResolveRequest, lock *contextlock.Lock, precedence contextmaterialize.Precedence, packages map[string]contextmaterialize.Package, surfaces map[string]envmarker.Surface) error {
 	if p.adapter.ID == envregistry.Muse {
+		return nil
+	}
+	if len(p.adapter.SystemPrompt) == 0 && p.adapter.ManagedOnly {
 		return nil
 	}
 	document, written, dropped, err := contextmaterialize.SystemPrompt(lock, precedence, p.adapter.ID, packages, req.Policy.Admission())

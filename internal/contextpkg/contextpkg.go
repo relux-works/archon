@@ -17,6 +17,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/relux-works/curator/internal/capabilities"
+	"github.com/relux-works/curator/internal/envregistry"
 	"github.com/relux-works/curator/internal/identifiers"
 	"github.com/relux-works/curator/internal/pkgversion"
 	"github.com/relux-works/curator/internal/protocoljson"
@@ -156,6 +157,15 @@ func LoadManifest(root string) (*Manifest, error) {
 	}
 	if auth.Kind != stateread.KindAbsent {
 		return nil, invalid(DiagManifestInvalid, "config/muse/auth.json must not be profile content")
+	}
+	for _, rel := range envregistry.CredentialFileGuardPaths() {
+		guarded, err := stateread.Lstat(filepath.Join(root, filepath.FromSlash(rel)))
+		if err != nil {
+			return nil, fmt.Errorf("%s: credential source %s: %w", DiagManifestInvalid, rel, err)
+		}
+		if guarded.Kind != stateread.KindAbsent {
+			return nil, invalid(DiagManifestInvalid, "%s must not be profile content", rel)
+		}
 	}
 
 	manifestPath := filepath.Join(root, ManifestName)

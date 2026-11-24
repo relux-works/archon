@@ -39,7 +39,7 @@ func writeManagedFixture(t *testing.T, profile string) *managedFixture {
 		t.Fatal(err)
 	}
 	native := map[string]string{}
-	for _, id := range []string{"claude_code", "codex_cli", "opencode-native", "pi"} {
+	for _, id := range []string{"claude_code", "codex_cli", "opencode-native", "pi", "antigravity"} {
 		native[id] = t.TempDir()
 	}
 	fx := &managedFixture{home: home, profile: profile, native: native, xdg: gitFixtureHome(t), launch: gitFixtureHome(t)}
@@ -149,6 +149,15 @@ func seedLiveNativeCredentials(t *testing.T, fx *managedFixture) {
 	}
 	if err := os.WriteFile(filepath.Join(fx.native["claude_code"], ".credentials.json"), []byte("{\"t\":\"operator-claude\"}\n"), 0o600); err != nil {
 		t.Fatal(err)
+	}
+	if agyDir := fx.native["antigravity"]; agyDir != "" {
+		agyToken := filepath.Join(agyDir, "antigravity-cli", "antigravity-oauth-token")
+		if err := os.MkdirAll(filepath.Dir(agyToken), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(agyToken, []byte("{\"t\":\"operator-antigravity\"}\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 

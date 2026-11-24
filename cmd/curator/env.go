@@ -57,6 +57,9 @@ func (c cli) profileNativeHomeResolver() func(string) (string, error) {
 		case envregistry.Pi:
 			return filepath.Join(userHome, ".pi"), nil
 		default:
+			if adapter, err := envregistry.ByID(id); err == nil && adapter.NativeDefaultDir != "" {
+				return filepath.Join(userHome, filepath.FromSlash(adapter.NativeDefaultDir)), nil
+			}
 			return "", fmt.Errorf("%s: unregistered environment %q", envregistry.DiagUnknown, id)
 		}
 	}
