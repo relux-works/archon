@@ -2,6 +2,7 @@ package envprofile
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -33,6 +34,16 @@ func TestProfileFileSelectionInstallUpdateAndProjectBoundedSource(t *testing.T) 
 		"modules/support/support.go":                             "package support\n",
 	}, "v1.0.0")
 	largePath := filepath.Join(skillRepo, ".excluded-cache", "over-limit.bin")
+	objects := filepath.Join(skillRepo, ".excluded-cache", "objects")
+	if err := os.MkdirAll(objects, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < skillintegrity.MaxFiles+1; i++ {
+		name := filepath.Join(objects, fmt.Sprintf("%05d.bin", i))
+		if err := os.WriteFile(name, nil, 0o644); err != nil {
+			t.Fatalf("create excluded object %d: %v", i, err)
+		}
+	}
 	if err := os.MkdirAll(filepath.Dir(largePath), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -47,8 +58,8 @@ func TestProfileFileSelectionInstallUpdateAndProjectBoundedSource(t *testing.T) 
 	if err := large.Close(); err != nil {
 		t.Fatal(err)
 	}
-	gitRun(t, skillRepo, "add", ".excluded-cache/over-limit.bin")
-	gitRun(t, skillRepo, "commit", "-m", "add excluded payload")
+	gitRun(t, skillRepo, "add", ".excluded-cache")
+	gitRun(t, skillRepo, "commit", "-m", "add excluded capture overflow")
 	skillCommit := fixtureGitOutput(t, skillRepo, "rev-parse", "HEAD")
 	skillURL := ids.serve(skillRepo, "https://example.org/fixture-skill")
 
