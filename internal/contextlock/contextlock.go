@@ -38,6 +38,10 @@ const SchemaVersion4 = 4
 // SchemaVersion5 binds the complete profile skill plan. It is explicit opt-in.
 const SchemaVersion5 = 5
 
+// SkillPlanSchemaVersion2 adds explicit effective context file sets to skill
+// pins whose profile declarations select files.
+const SkillPlanSchemaVersion2 = 2
+
 // Precedence binds the effective composition policy into a schema-4 lock.
 type Precedence struct {
 	Winner    string `json:"winner"`

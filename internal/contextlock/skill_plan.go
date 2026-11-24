@@ -14,7 +14,7 @@ import (
 	"github.com/relux-works/curator/internal/protocoljson"
 )
 
-// SkillPlan is the closed profile-skill-plan v1 portable carrier (PSP01–05).
+// SkillPlan is the closed profile-skill-plan portable carrier (PSP01–05).
 // Platform artifacts and authority records deliberately have no fields here.
 type SkillPlan struct {
 	SchemaVersion     int                `json:"schema_version"`
@@ -25,13 +25,14 @@ type SkillPlan struct {
 
 // SkillPin binds one selected skill package to exact source and content pins.
 type SkillPin struct {
-	Kind          string `json:"kind"`
-	Name          string `json:"name"`
-	Source        string `json:"source"`
-	Commit        string `json:"commit"`
-	Directory     string `json:"directory"`
-	HashVersion   int    `json:"hash_version"`
-	ContentSHA256 string `json:"content_sha256"`
+	Kind          string   `json:"kind"`
+	Name          string   `json:"name"`
+	Source        string   `json:"source"`
+	Commit        string   `json:"commit"`
+	Directory     string   `json:"directory"`
+	HashVersion   int      `json:"hash_version"`
+	ContentSHA256 string   `json:"content_sha256"`
+	ContextFiles  []string `json:"context_files,omitempty"`
 }
 
 // SkillConsumer identifies the context, skill or machine owning an edge.
@@ -100,6 +101,7 @@ func ParseSkillPlan(payload []byte) (*SkillPlan, error) {
 	}
 	// omitempty must not erase a present empty/null selection on a read.
 	var raw struct {
+		Nodes []map[string]json.RawMessage `json:"nodes"`
 		Edges []map[string]json.RawMessage `json:"edges"`
 	}
 	if err := json.Unmarshal(payload, &raw); err != nil {
@@ -110,6 +112,14 @@ func ParseSkillPlan(payload []byte) (*SkillPlan, error) {
 			var commands []string
 			if json.Unmarshal(value, &commands) != nil || len(commands) == 0 {
 				return nil, fmt.Errorf("profile_skill_plan_invalid: empty command selection")
+			}
+		}
+	}
+	for _, node := range raw.Nodes {
+		if value, ok := node["context_files"]; ok {
+			var files []string
+			if json.Unmarshal(value, &files) != nil || files == nil {
+				return nil, fmt.Errorf("profile_skill_plan_invalid: context_files must be a non-null array")
 			}
 		}
 	}
@@ -146,13 +156,20 @@ func SkillEdgeKey(edge SkillEdge) string {
 // manifests and protected retained members is checked by closure.BuildProfile.
 func (plan *SkillPlan) Validate() error {
 	invalid := func(detail string) error { return fmt.Errorf("profile_skill_plan_invalid: %s", detail) }
-	if plan == nil || plan.SchemaVersion != 1 || plan.Nodes == nil || plan.Edges == nil || plan.DirectConstraints == nil {
+	if plan == nil || (plan.SchemaVersion != 1 && plan.SchemaVersion != SkillPlanSchemaVersion2) || plan.Nodes == nil || plan.Edges == nil || plan.DirectConstraints == nil {
 		return invalid("required plan fields")
 	}
 	nodes := map[string]SkillPin{}
+	hasContextFiles := false
 	for i, pin := range plan.Nodes {
 		if pin.Kind != KindSkill || !identifiers.Valid(pin.Name) || !validSkillSource(pin.Source) || !commitRE.MatchString(pin.Commit) || !validSkillDirectory(pin.Directory) || pin.HashVersion != 2 || !hex256RE.MatchString(pin.ContentSHA256) {
 			return invalid("invalid skill pin")
+		}
+		if pin.ContextFiles != nil {
+			if plan.SchemaVersion != SkillPlanSchemaVersion2 || !validContextFiles(pin.ContextFiles) {
+				return invalid("invalid effective context file set")
+			}
+			hasContextFiles = true
 		}
 		if i > 0 && plan.Nodes[i-1].Name >= pin.Name {
 			return invalid("nodes are not sorted and unique")
@@ -214,6 +231,9 @@ func (plan *SkillPlan) Validate() error {
 			return invalid("invalid consumer kind")
 		}
 	}
+	if plan.SchemaVersion == SkillPlanSchemaVersion2 && !hasContextFiles {
+		return invalid("schema 2 requires an effective context file set")
+	}
 	for name := range direct {
 		if !machine[name] {
 			return invalid("missing machine edge")
@@ -248,6 +268,22 @@ func (plan *SkillPlan) Validate() error {
 		}
 	}
 	return nil
+}
+
+func validContextFiles(files []string) bool {
+	if len(files) == 0 {
+		return false
+	}
+	hasSkill := false
+	for i, file := range files {
+		if !identifiers.PortablePath(file) || i > 0 && files[i-1] >= file {
+			return false
+		}
+		if file == "SKILL.md" {
+			hasSkill = true
+		}
+	}
+	return hasSkill
 }
 
 func validDigest(value string) bool {

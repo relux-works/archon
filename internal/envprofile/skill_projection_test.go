@@ -107,6 +107,63 @@ func TestSkillProjectionCoreSelection(t *testing.T) {
 	}
 }
 
+func TestSkillProjectionProfileFileSelection(t *testing.T) {
+	source, home := gitFixtureHome(t), gitFixtureHome(t)
+	for path, body := range map[string]string{
+		"SKILL.md":                         "# Guide\n",
+		"references/guide.md":              "default context\n",
+		"references/private/nested/key.md": "private context\n",
+		"extras/declared.json":             "{\"kind\":\"guide\"}\n",
+	} {
+		writeGitFile(t, source, path, body)
+	}
+
+	legacy, err := projectSkill(home, source, hashing.VersionV2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	withoutSection, err := projectSkillWithFiles(home, source, hashing.VersionV2, nil)
+	if err != nil || withoutSection.skill.hash != legacy.hash {
+		t.Fatalf("absent file section changed the legacy projection: %v %v", withoutSection.skill.hash, err)
+	}
+
+	projection, err := projectSkillWithFiles(home, source, hashing.VersionV2, &whitelist.FileSelection{
+		Include: []string{"extras/declared.json"},
+		Exclude: []string{"references/private"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantPaths := []string{"SKILL.md", "extras/declared.json", "references/guide.md"}
+	if !reflect.DeepEqual(projection.files, wantPaths) {
+		t.Fatalf("effective file set = %v, want %v", projection.files, wantPaths)
+	}
+	if err := publishTestSkillProjectionWithFiles(t, home, projection); err != nil {
+		t.Fatal(err)
+	}
+	wantFiles := map[string][]byte{
+		"SKILL.md":             []byte("# Guide\n"),
+		"extras/declared.json": []byte("{\"kind\":\"guide\"}\n"),
+		"references/guide.md":  []byte("default context\n"),
+	}
+	if got := projectionFiles(t, projection.skill.root); !reflect.DeepEqual(got, wantFiles) {
+		t.Fatalf("published projection = %v, want %v", got, wantFiles)
+	}
+	if err := verifySkillProjection(home, projection.skill); err != nil {
+		t.Fatalf("published selected projection does not match its identity: %v", err)
+	}
+
+	for _, selection := range []*whitelist.FileSelection{
+		{Exclude: []string{"SKILL.md"}},
+		{Include: []string{"../outside.md"}},
+		{Include: []string{"extras/[broken"}},
+	} {
+		if _, err := projectSkillWithFiles(home, source, hashing.VersionV2, selection); err == nil {
+			t.Errorf("invalid file selection accepted: %+v", selection)
+		}
+	}
+}
+
 // A repository-root package with board/research/vendor inputs activates only
 // with explicit use, and native and managed skill surfaces expose the selected
 // context. Exported scripts and declared runtime/build roots stay out;
@@ -609,6 +666,20 @@ func publishTestSkillProjection(t *testing.T, home string, skill skillOf) error 
 		}
 	}()
 	return publishSkillProjection(op, home, skill)
+}
+
+func publishTestSkillProjectionWithFiles(t *testing.T, home string, projection skillProjectionWithFiles) error {
+	t.Helper()
+	op, err := beginOperation(home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := op.close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	return publishSkillProjectionWithFiles(op, home, projection)
 }
 
 func materializeTestScope(t *testing.T, home, profile, environment string, policy Policy, nativeHomeOf func(string) (string, error)) ([]EntryResult, error) {

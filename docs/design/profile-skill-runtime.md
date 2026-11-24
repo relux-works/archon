@@ -101,8 +101,9 @@ the complete activation graph changes lock interpretation and reader
 requirements. A separate identity makes reader opt-in explicit and keeps
 existing schema-4 directory readers from accepting incomplete runtime state.
 Extending unreleased schema 4 remains possible pending the spec owner's
-allocation decision. This design chooses the separate successor and adds
-no field to `requires.skills`.
+allocation decision. This design chooses the separate successor and adds no
+activation field to `requires.skills`; profile-declared context-file selection
+is carried separately in the skill plan.
 
 The successor lock must retain these inputs:
 

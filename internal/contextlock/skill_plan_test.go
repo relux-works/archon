@@ -84,6 +84,38 @@ func TestProfileSkillPlanLiteralBindings(t *testing.T) {
 	}
 }
 
+func TestProfileSkillPlanV2PinsEffectiveContextFiles(t *testing.T) {
+	var fixture struct{ Lock json.RawMessage }
+	planFixture(t, "baseline.json", &fixture)
+	lock, err := Parse(fixture.Lock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lock.SkillPlan.SchemaVersion = SkillPlanSchemaVersion2
+	lock.SkillPlan.Nodes[0].ContextFiles = []string{"SKILL.md", "references/guide.md"}
+	lock.SkillPlanSHA256, err = lock.SkillPlan.Hash()
+	if err != nil {
+		t.Fatal(err)
+	}
+	canonical, err := lock.Canonical()
+	if err != nil {
+		t.Fatal(err)
+	}
+	round, err := Parse(canonical)
+	if err != nil || !reflect.DeepEqual(round, lock) {
+		t.Fatalf("schema 2 file-set roundtrip: %v", err)
+	}
+
+	for _, invalid := range [][]string{{"SKILL.md", "../outside.md"}, {"references/guide.md"}, {"SKILL.md", "SKILL.md"}} {
+		candidate := *lock.SkillPlan
+		candidate.Nodes = append([]SkillPin(nil), lock.SkillPlan.Nodes...)
+		candidate.Nodes[0].ContextFiles = invalid
+		if err := candidate.Validate(); err == nil {
+			t.Errorf("invalid effective context file set accepted: %v", invalid)
+		}
+	}
+}
+
 // PSP02/03/05 subset: semantic portable-graph counterexamples are run through
 // the Go reader, after the corpus's explicit rebind when requested. Package
 // agreement and activation are exercised through shared closure tests.

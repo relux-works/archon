@@ -13,6 +13,7 @@ import (
 	"github.com/relux-works/curator/internal/identity"
 	"github.com/relux-works/curator/internal/manifest"
 	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/curator/internal/whitelist"
 )
 
 type profileFixture struct {
@@ -20,6 +21,62 @@ type profileFixture struct {
 	roots []ProfileRequirement
 	nodes map[string]*Node
 	calls []string
+}
+
+func TestProfileFilesSelectionIsPinnedInSkillPlan(t *testing.T) {
+	f := newProfileFixture(t)
+	for rel, body := range map[string]string{
+		"references/guide.md":          "guide\n",
+		"references/private/secret.md": "secret\n",
+		"extras/declared.json":         "{}\n",
+	} {
+		path := filepath.Join(f.nodes["memory"].Snapshot, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	f.roots[0].Files = &whitelist.FileSelection{Include: []string{"extras/declared.json"}, Exclude: []string{"references/private"}}
+	first, err := f.build(nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.Lock.SkillPlan.SchemaVersion != contextlock.SkillPlanSchemaVersion2 {
+		t.Fatalf("skill plan schema version = %d, want %d", first.Lock.SkillPlan.SchemaVersion, contextlock.SkillPlanSchemaVersion2)
+	}
+	var pin contextlock.SkillPin
+	ok := false
+	for _, candidate := range first.Lock.SkillPlan.Nodes {
+		if candidate.Name == "memory" {
+			pin, ok = candidate, true
+			break
+		}
+	}
+	if !ok {
+		t.Fatal("skill pin missing")
+	}
+	want := []string{"SKILL.md", "extras/declared.json", "references/guide.md"}
+	if !reflect.DeepEqual(pin.ContextFiles, want) {
+		t.Fatalf("locked context files = %v, want %v", pin.ContextFiles, want)
+	}
+	lockHash, err := first.Lock.Hash()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := first.Lock.VerifySkillBinding(lockHash); err != nil {
+		t.Fatalf("lock does not bind the file set: %v", err)
+	}
+
+	f.roots[0].Files = &whitelist.FileSelection{Include: []string{"references/guide.md"}}
+	second, err := f.build(nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.Lock.SkillPlanSHA256 == second.Lock.SkillPlanSHA256 {
+		t.Fatal("effective file set change did not change the lock plan identity")
+	}
 }
 
 func newProfileFixture(t *testing.T) *profileFixture {
