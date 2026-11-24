@@ -5,23 +5,26 @@ package adapters
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
+	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/curator/internal/harnessregistry"
 	"github.com/relux-works/curator/internal/identifiers"
 	"github.com/relux-works/curator/internal/protocoljson"
 	"github.com/relux-works/curator/internal/stateread"
 )
 
-// AgentPaths maps agent identifiers to their project-relative adapter
-// directories (Spec §10.1).
+// AgentPaths retains legacy paths until each skill projection moves into its
+// adapter package (Spec §10.1).
 var AgentPaths = map[string]string{
 	"codex_cli":   ".codex/skills",
 	"claude_code": ".claude/skills",
-	"gemini":      ".gemini/skills",
 	"cursor":      ".cursor/rules",
 }
 
@@ -49,6 +52,11 @@ func KnownAgents() map[string]bool {
 	for agent := range NativeDiscoveryAgents {
 		known[agent] = true
 	}
+	for _, id := range harnessregistry.IDs() {
+		if _, supported, err := skillPath(string(id), harnessapi.ProjectScope); supported && err == nil {
+			known[string(id)] = true
+		}
+	}
 	return known
 }
 
@@ -57,6 +65,14 @@ func KnownAgents() map[string]bool {
 func RequiredGitignoreEntries(agents []string) []string {
 	entries := map[string]bool{".agents/": true}
 	for _, agent := range agents {
+		if discovery, declared, err := registeredSkills(agent, harnessapi.ProjectScope); declared {
+			if err == nil {
+				for _, path := range discovery.IgnorePaths().Paths() {
+					entries[path.String()+"/"] = true
+				}
+			}
+			continue
+		}
 		if rel, known := AgentPaths[agent]; known {
 			entries[rel+"/"] = true
 		}
@@ -67,6 +83,45 @@ func RequiredGitignoreEntries(agents []string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func registeredSkills(agent string, scope harnessapi.Scope) (harnessapi.SkillDiscovery, bool, error) {
+	adapter, err := harnessregistry.Lookup(harnessapi.ID(agent))
+	if err != nil {
+		var refusal harnessapi.Refusal
+		if errors.As(err, &refusal) && refusal.Code() == harnessapi.UnknownID {
+			return harnessapi.SkillDiscovery{}, false, nil
+		}
+		return harnessapi.SkillDiscovery{}, false, err
+	}
+	if !adapter.Capabilities().Has(harnessapi.SkillProjection) {
+		return harnessapi.SkillDiscovery{}, false, nil
+	}
+	context, err := harnessapi.NewContext(runtime.GOOS, scope, harnessapi.VerifiedRelease{})
+	if err != nil {
+		return harnessapi.SkillDiscovery{}, true, err
+	}
+	discovery, err := adapter.Skills(context, scope)
+	return discovery, true, err
+}
+
+func skillPath(agent string, scope harnessapi.Scope) (string, bool, error) {
+	discovery, declared, err := registeredSkills(agent, scope)
+	if declared {
+		if err != nil {
+			return "", false, err
+		}
+		paths := discovery.Paths().Paths()
+		if len(paths) == 0 {
+			return "", false, fmt.Errorf("harness_skill_path_missing")
+		}
+		return paths[0].String(), true, nil
+	}
+	if err != nil {
+		return "", false, err
+	}
+	rel, known := AgentPaths[agent]
+	return rel, known, nil
 }
 
 // UnknownAgents returns the unrecognized names among agents, sorted.

@@ -33,9 +33,15 @@ func (s *effectSpy) observe(value any, err error) error {
 	return err
 }
 
-// Every unported method is observed through the same effect spy.
-func notPortedResults(adapter harnessapi.Adapter, effects *effectSpy) []error {
-	c, s, r := harnessapi.Context{}, harnessapi.Snapshot{}, harnessapi.Request{}
+// Every declared method and every unported method is observed through the
+// same effect spy.
+func operationResults(t *testing.T, adapter harnessapi.Adapter, effects *effectSpy) []error {
+	t.Helper()
+	c, err := harnessapi.NewContext("darwin", harnessapi.ProjectScope, harnessapi.VerifiedRelease{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, r := harnessapi.Snapshot{}, harnessapi.Request{}
 	var errors []error
 	v, err := adapter.ParseReleaseProbe(c, harnessapi.ProbeOutput{})
 	errors = append(errors, effects.observe(v, err))
@@ -47,7 +53,7 @@ func notPortedResults(adapter harnessapi.Adapter, effects *effectSpy) []error {
 	errors = append(errors, effects.observe(vs, err))
 	vset, err := adapter.Settings(c)
 	errors = append(errors, effects.observe(vset, err))
-	vmcp, err := adapter.MCP(c, harnessapi.UserScope)
+	vmcp, err := adapter.MCP(c, harnessapi.ProjectScope)
 	errors = append(errors, effects.observe(vmcp, err))
 	vc, err := adapter.Credentials(c)
 	errors = append(errors, effects.observe(vc, err))
@@ -68,19 +74,31 @@ func notPortedResults(adapter harnessapi.Adapter, effects *effectSpy) []error {
 
 // Staged capabilities describe implementations, rather than future native
 // support. A false operational declaration fails this same conformance check.
-func stagedCapabilities(adapter harnessapi.Adapter) error {
-	for _, capability := range adapter.Capabilities().Values() {
-		if capability != harnessapi.ReleaseProbing {
+func stagedCapabilities(t *testing.T, adapter harnessapi.Adapter) error {
+	capabilities := adapter.Capabilities()
+	for _, capability := range capabilities.Values() {
+		if capability != harnessapi.ReleaseProbing && capability != harnessapi.SkillProjection && capability != harnessapi.MCPInspection {
 			return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
 		}
 	}
 	effects := effectSpy{}
-	for _, err := range notPortedResults(adapter, &effects) {
-		if code(err) != harnessapi.OperationNotPorted {
+	for index, err := range operationResults(t, adapter, &effects) {
+		expected := harnessapi.OperationNotPorted
+		if index == 3 && capabilities.Has(harnessapi.SkillProjection) || index == 5 && capabilities.Has(harnessapi.MCPInspection) {
+			expected = ""
+		}
+		if expected == "" && err != nil || expected != "" && code(err) != expected {
 			return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
 		}
 	}
-	if effects.count != 0 {
+	expectedEffects := 0
+	if capabilities.Has(harnessapi.SkillProjection) {
+		expectedEffects++
+	}
+	if capabilities.Has(harnessapi.MCPInspection) {
+		expectedEffects++
+	}
+	if effects.count != expectedEffects {
 		return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
 	}
 	_, err := adapter.ReleaseProbe(harnessapi.Context{})
@@ -115,10 +133,10 @@ func TestStagedOperationsAndCapabilities(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := stagedCapabilities(adapter); err != nil {
+			if err := stagedCapabilities(t, adapter); err != nil {
 				t.Fatal(err)
 			}
-			if err := stagedCapabilities(falseCapability{adapter}); code(err) != harnessapi.RegistryMismatch {
+			if err := stagedCapabilities(t, falseCapability{adapter}); code(err) != harnessapi.RegistryMismatch {
 				t.Fatalf("false claim escaped: %v", err)
 			}
 		})

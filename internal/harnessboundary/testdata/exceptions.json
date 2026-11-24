@@ -371,11 +371,6 @@
       "path": "internal/adapters/adapters.go"
     },
     {
-      "harness_id": "gemini",
-      "line_sha256": "37004dad3d2aa74f1ed8c4e98f233915f82e7118dab967d458c4a02c8bcf080a",
-      "path": "internal/adapters/adapters.go"
-    },
-    {
       "harness_id": "opencode",
       "line_sha256": "c0dc5dedc153c557772a6000e0f63a8c5d5ddc671eb0a70b2ec44ecc27eddff0",
       "path": "internal/adapters/adapters.go"
@@ -3358,16 +3353,6 @@
     {
       "harness_id": "cursor",
       "line_sha256": "4adc6b5417f316b59257770b57e2be4716e4d08fb491263f2111ad84be275d8f",
-      "path": "internal/mcp/mcp.go"
-    },
-    {
-      "harness_id": "gemini",
-      "line_sha256": "e70001aaa14e44f705e6bfe542542efc35993d9aee82b9fc79e997abfe356015",
-      "path": "internal/mcp/mcp.go"
-    },
-    {
-      "harness_id": "gemini",
-      "line_sha256": "e70001aaa14e44f705e6bfe542542efc35993d9aee82b9fc79e997abfe356015",
       "path": "internal/mcp/mcp.go"
     },
     {

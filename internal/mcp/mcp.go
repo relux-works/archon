@@ -7,34 +7,37 @@ package mcp
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
 	"github.com/BurntSushi/toml"
 
+	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/curator/internal/harnessregistry"
 	"github.com/relux-works/curator/internal/skillspec"
 )
 
-// projectSources maps agents to project-relative config files (Spec §11.1).
+// projectSources retains project-relative config files not yet owned by their
+// adapter (Spec §11.1).
 var projectSources = map[string][]string{
 	"claude_code": {".mcp.json"},
 	"cursor":      {".cursor/mcp.json"},
 	"codex_cli":   {".codex/config.toml"},
-	"gemini":      {".gemini/settings.json"},
 	"windsurf":    {},
 	"opencode":    {"opencode.json", "opencode.jsonc"},
 }
 
-// homeSources maps agents to home-relative config files.
+// homeSources retains home-relative config files not yet owned by their adapter.
 var homeSources = map[string][]string{
 	"claude_code": {".claude.json"},
 	"cursor":      {".cursor/mcp.json"},
 	"codex_cli":   {".codex/config.toml"},
-	"gemini":      {".gemini/settings.json"},
 	"windsurf":    {".codeium/windsurf/mcp_config.json"},
 	"opencode":    {".config/opencode/opencode.json", ".config/opencode/opencode.jsonc"},
 }
@@ -214,7 +217,7 @@ func stdioCommand(entry any) (string, bool) {
 
 func projectEntries(env Env, agent string) map[string]any {
 	entries := map[string]any{}
-	for _, rel := range projectSources[agent] {
+	for _, rel := range sourcePaths(agent, harnessapi.ProjectScope, projectSources) {
 		for name, entry := range entriesInFile(filepath.Join(env.ProjectRoot, filepath.FromSlash(rel))) {
 			entries[name] = entry
 		}
@@ -229,12 +232,40 @@ func projectEntries(env Env, agent string) map[string]any {
 
 func homeEntries(env Env, agent string) map[string]any {
 	entries := map[string]any{}
-	for _, rel := range homeSources[agent] {
+	for _, rel := range sourcePaths(agent, harnessapi.UserScope, homeSources) {
 		for name, entry := range entriesInFile(filepath.Join(env.UserHome, filepath.FromSlash(rel))) {
 			entries[name] = entry
 		}
 	}
 	return entries
+}
+
+func sourcePaths(agent string, scope harnessapi.Scope, legacy map[string][]string) []string {
+	adapter, err := harnessregistry.Lookup(harnessapi.ID(agent))
+	if err != nil {
+		var refusal harnessapi.Refusal
+		if errors.As(err, &refusal) && refusal.Code() == harnessapi.UnknownID {
+			return legacy[agent]
+		}
+		return nil
+	}
+	if !adapter.Capabilities().Has(harnessapi.MCPInspection) {
+		return legacy[agent]
+	}
+	context, err := harnessapi.NewContext(runtime.GOOS, scope, harnessapi.VerifiedRelease{})
+	if err != nil {
+		return nil
+	}
+	channel, err := adapter.MCP(context, scope)
+	if err != nil {
+		return nil
+	}
+	paths := channel.Paths().Paths()
+	result := make([]string, len(paths))
+	for i, path := range paths {
+		result[i] = path.String()
+	}
+	return result
 }
 
 func entriesInFile(path string) map[string]any {

@@ -419,3 +419,9 @@ func TestGeminiSkillProjectionDestinations(t *testing.T) {
 		t.Fatalf("user mirror missing existing Gemini destination %s", userTarget)
 	}
 }
+
+func TestGeminiRemainsARecognizedSkillTarget(t *testing.T) {
+	if unknown := UnknownAgents([]string{"gemini"}); len(unknown) != 0 {
+		t.Fatalf("registered skill target rejected as unknown: %v", unknown)
+	}
+}
