@@ -31,6 +31,7 @@ func selectionFixture(t *testing.T) string {
 		"data/kept.json",
 		"data/build-only.json",
 		"docs/declared.json",
+		"scripts/guide.md",
 		"scripts/run.sh",
 	} {
 		writeSelectionFile(t, root, file)
