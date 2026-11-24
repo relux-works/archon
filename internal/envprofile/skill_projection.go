@@ -51,7 +51,7 @@ func projectSkillWithFiles(home, source string, version hashing.Version, selecti
 		return skillProjectionWithFiles{}, err
 	}
 	skill := skillOf{source: source, includeScripts: len(spec.Commands) == 0,
-		excludeRoots: whitelist.ContextExcludedRoots(spec.RuntimeRoots, spec.BuildRoots), version: version}
+		excludeRoots: profileSkillExcludedRoots(spec), version: version}
 	files := map[string][]byte{}
 	var selected []string
 	if selection == nil {
@@ -79,6 +79,13 @@ func projectSkillWithFiles(home, source string, version hashing.Version, selecti
 	if err != nil {
 		return skillProjectionWithFiles{}, err
 	}
+	skill.files = append([]string(nil), selected...)
+	if selection != nil {
+		skill.selection = &whitelist.FileSelection{
+			Include: append([]string(nil), selection.Include...),
+			Exclude: append([]string(nil), selection.Exclude...),
+		}
+	}
 	skill.hash, err = hashing.ContentSHA256Files(files, version)
 	if err != nil {
 		return skillProjectionWithFiles{}, err
@@ -87,11 +94,21 @@ func projectSkillWithFiles(home, source string, version hashing.Version, selecti
 	return skillProjectionWithFiles{skill: skill, files: selected, selection: selection}, nil
 }
 
+func profileSkillExcludedRoots(spec *skillspec.Spec) []string {
+	var modules []string
+	for _, command := range spec.Commands {
+		if command.Driver == "go-v1" {
+			modules = append(modules, command.Modules...)
+		}
+	}
+	return whitelist.ContextExcludedRoots(spec.RuntimeRoots, spec.BuildRoots, modules)
+}
+
 // publishSkillProjection runs only during materialization under its mutation
 // lock. A complete private staging tree is renamed into the shared store;
 // raw package snapshots and command/runtime stores remain untouched.
 func publishSkillProjection(op *operation, home string, skill skillOf) (resultErr error) {
-	return publishSkillProjectionSelected(op, home, skill, nil, nil)
+	return publishSkillProjectionSelected(op, home, skill, skill.files, skill.selection)
 }
 
 func publishSkillProjectionWithFiles(op *operation, home string, projection skillProjectionWithFiles) error {

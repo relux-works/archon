@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -34,11 +33,6 @@ func newPreparationFixture(t *testing.T, variants ...string) *preparationFixture
 	ids := newGitIdentities(t)
 	key, pub := statusSignerKey(t)
 	files := map[string]string{"SKILL.md": "---\nname: memory\ndescription: Memory fixture\n---\n# Memory\n", "agent-skill.json": `{"schema_version":4,"capabilities":{},"commands":{}}`}
-	if len(variants) > 0 && variants[0] == "files-selection" {
-		files["references/guide.md"] = "guide\n"
-		files["references/private/secret.md"] = "secret\n"
-		files["extras/guide.json"] = "{}\n"
-	}
 	if len(variants) > 0 && variants[0] == "audit-failure" {
 		files["SKILL.md"] += "Read https://api.example.net/guide\n"
 	}
@@ -49,9 +43,6 @@ func newPreparationFixture(t *testing.T, variants ...string) *preparationFixture
 	root := t.TempDir()
 	writePackage(t, root, "profile", "1.0.0", "fixture\n")
 	raw := fmt.Sprintf(`{"schema_version":1,"name":"profile","version":"1.0.0","requires":{"skills":{"memory":{"git":%q,"revision":%q}}}}`, source, pin)
-	if len(variants) > 0 && variants[0] == "files-selection" {
-		raw = fmt.Sprintf(`{"schema_version":5,"name":"profile","version":"1.0.0","requires":{"skills":{"memory":{"git":%q,"revision":%q,"files":{"include":["extras/guide.json"],"exclude":["references/private"]}}}}}`, source, pin)
-	}
 	writeGitFile(t, root, "agent-context.json", raw)
 	entry, state, err := contextstore.EnsureState(home, "context", "profile", root)
 	if err != nil {
@@ -72,26 +63,6 @@ func newPreparationFixture(t *testing.T, variants ...string) *preparationFixture
 	writeGitFile(t, home, "global/skills/unrelated/kept", "drifting bytes\n")
 	writeGitFile(t, home, "profiles/current", "other\n")
 	return &preparationFixture{home: home, hash: hash, repo: repo, pin: pin, rootEntry: entry, global: global, policy: Policy{RequireSourceSigners: true, SourceSigners: map[string][]contextresolve.Signer{"example.com/memory": {{Type: "ssh", Key: pub}}}}}
-}
-
-func TestSkillPlanPreparationCarriesProfileFileSelection(t *testing.T) {
-	f := newPreparationFixture(t, "files-selection")
-	result, err := PrepareSkillPlan(f.home, "profile", f.hash, f.policy, func(nodes []*closure.Node) error {
-		if len(nodes) != 1 || nodes[0].Name != "memory" {
-			t.Fatalf("selected skill closure = %+v", nodes)
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result.Lock.SkillPlan.SchemaVersion != contextlock.SkillPlanSchemaVersion2 || len(result.Lock.SkillPlan.Nodes) != 1 {
-		t.Fatalf("prepared skill plan = %+v", result.Lock.SkillPlan)
-	}
-	want := []string{"SKILL.md", "extras/guide.json", "references/guide.md"}
-	if got := result.Lock.SkillPlan.Nodes[0].ContextFiles; !reflect.DeepEqual(got, want) {
-		t.Fatalf("prepared context files = %v, want %v", got, want)
-	}
 }
 
 // PSP01/02/05, PSR01/03/05: real signed source acquisition and strict profile

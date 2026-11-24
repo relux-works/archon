@@ -77,41 +77,6 @@ conflict instead of combining the declarations.
 Semantic equality ignores list order and compares network host patterns after
 the audit's existing lowercase normalization.
 
-## Per-skill context files
-
-Schema 5 adds an optional `files` object to each `requires.skills` entry. Its
-`include` and `exclude` arrays contain relative POSIX globs; a matching
-directory applies to its descendants. Includes extend the built-in context
-roots, and excludes remove files or directory trees. Runtime/build roots and
-the fixed developer exclusions remain hard exclusions. `SKILL.md` is always
-included, so an exclude pattern matching it is refused. Malformed, absolute,
-backslash-separated, or parent-traversing patterns are refused.
-
-```json
-{
-  "schema_version": 5,
-  "name": "sample-profile",
-  "version": "1.0.0",
-  "requires": {
-    "skills": {
-      "reader": {
-        "git": "https://example.org/skills/reader.git",
-        "tag": "v1.0.0",
-        "files": {
-          "include": ["extras/reader.json"],
-          "exclude": ["references/private"]
-        }
-      }
-    }
-  }
-}
-```
-
-With no `files` object, the prior projection remains byte-for-byte unchanged.
-When a selection is present, the profile skill plan records the sorted
-effective file set and binds it into the lock identity. Existing runtime
-adoption checks continue to apply to that prepared plan.
-
 Profile-selected Git skills extract only their declared directory and its
 regular-file descendants. Discovery links elsewhere in the repository do not
 enter the snapshot. A link in the selected directory or any ancestor, a

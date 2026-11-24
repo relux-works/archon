@@ -11,7 +11,6 @@ import (
 	"github.com/relux-works/curator/internal/identity"
 	"github.com/relux-works/curator/internal/manifest"
 	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/whitelist"
 )
 
 // ProfileRequirement is an admitted context-origin requirement. Context
@@ -24,7 +23,6 @@ type ProfileRequirement struct {
 	Ref       manifest.Ref
 	Mode      string
 	Commands  []string
-	Files     *whitelist.FileSelection
 }
 
 // ProfileAcquire freezes one exact package through the caller's existing
@@ -87,8 +85,6 @@ func BuildProfile(old *contextlock.Lock, roots []ProfileRequirement, direct []ma
 		}
 		return roots[i].Name < roots[j].Name
 	})
-	fileSelections := map[string][]*whitelist.FileSelection{}
-	hasFileSelection := false
 	for _, root := range roots {
 		if _, ok := old.Find(contextlock.KindContext, root.Consumer); !ok {
 			return nil, fmt.Errorf("profile_skill_plan_invalid: unknown context consumer")
@@ -98,8 +94,6 @@ func BuildProfile(old *contextlock.Lock, roots []ProfileRequirement, direct []ma
 			mode = "full"
 		}
 		queue = append(queue, pending{name: root.Name, git: root.Git, ref: root.Ref, directory: root.Directory, edge: Edge{Consumer: root.Consumer, ConsumerKind: "context", Mode: mode, Commands: root.Commands, Ref: root.Ref}, chain: root.Consumer + " -> " + root.Name})
-		fileSelections[root.Name] = append(fileSelections[root.Name], root.Files)
-		hasFileSelection = hasFileSelection || root.Files != nil
 	}
 	nodes, err := buildQueue(opts, queue, nil, false)
 	if err != nil {
@@ -112,11 +106,7 @@ func BuildProfile(old *contextlock.Lock, roots []ProfileRequirement, direct []ma
 	for _, node := range nodes {
 		byName[node.Name] = node
 	}
-	planVersion := 1
-	if hasFileSelection {
-		planVersion = contextlock.SkillPlanSchemaVersion2
-	}
-	plan := &contextlock.SkillPlan{SchemaVersion: planVersion, Nodes: []contextlock.SkillPin{}, Edges: []contextlock.SkillEdge{}, DirectConstraints: []contextlock.DirectConstraint{}}
+	plan := &contextlock.SkillPlan{SchemaVersion: 1, Nodes: []contextlock.SkillPin{}, Edges: []contextlock.SkillEdge{}, DirectConstraints: []contextlock.DirectConstraint{}}
 	for _, decl := range direct {
 		node, overlap := byName[decl.Name]
 		if !overlap {
@@ -149,34 +139,7 @@ func BuildProfile(old *contextlock.Lock, roots []ProfileRequirement, direct []ma
 		if err != nil {
 			return nil, err
 		}
-		pin := contextlock.SkillPin{Kind: "skill", Name: node.Name, Source: node.Identity, Commit: node.Resolved.Commit, Directory: node.Directory, HashVersion: 2, ContentSHA256: strings.TrimPrefix(digest, "sha256:")}
-		if selections := fileSelections[node.Name]; len(selections) > 0 {
-			explicit := false
-			for _, selection := range selections {
-				explicit = explicit || selection != nil
-			}
-			if explicit {
-				files := map[string]bool{}
-				for _, selection := range selections {
-					effective, err := whitelist.ContextFiles(node.Snapshot, len(node.Spec.Commands) == 0, whitelist.ContextExcludedRoots(node.Spec.RuntimeRoots, node.Spec.BuildRoots), selection)
-					if err != nil {
-						return nil, fmt.Errorf("profile_skill_files_invalid: %w", err)
-					}
-					for _, file := range effective {
-						files[file] = true
-					}
-				}
-				pin.ContextFiles = make([]string, 0, len(files))
-				for file := range files {
-					pin.ContextFiles = append(pin.ContextFiles, file)
-				}
-				sort.Strings(pin.ContextFiles)
-				if err := whitelist.ValidateFileSet(pin.ContextFiles); err != nil {
-					return nil, fmt.Errorf("profile_skill_files_invalid: %w", err)
-				}
-			}
-		}
-		plan.Nodes = append(plan.Nodes, pin)
+		plan.Nodes = append(plan.Nodes, contextlock.SkillPin{Kind: "skill", Name: node.Name, Source: node.Identity, Commit: node.Resolved.Commit, Directory: node.Directory, HashVersion: 2, ContentSHA256: strings.TrimPrefix(digest, "sha256:")})
 		for _, edge := range node.Edges {
 			kind := edge.ConsumerKind
 			if kind == "" {

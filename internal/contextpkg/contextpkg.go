@@ -487,6 +487,9 @@ func parseFileSelection(raw any, prefix string) (*whitelist.FileSelection, error
 	if err := whitelist.ValidateFileSelection(selection); err != nil {
 		return nil, invalid(DiagSkillFilesInvalid, "%sfiles %v", prefix, err)
 	}
+	if len(selection.Include) == 0 && len(selection.Exclude) == 0 {
+		return nil, nil
+	}
 	return selection, nil
 }
 
@@ -505,6 +508,7 @@ func fileGlobList(raw any) ([]string, error) {
 		seen[pattern] = true
 		patterns = append(patterns, pattern)
 	}
+	sort.Strings(patterns)
 	return patterns, nil
 }
 

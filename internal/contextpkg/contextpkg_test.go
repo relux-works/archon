@@ -176,6 +176,11 @@ func TestProfileSkillFilesSelection(t *testing.T) {
 	if err != nil || unchanged.Skills["guide"].Files != nil {
 		t.Fatalf("schema 5 without a selection changed legacy parsing: %+v %v", unchanged, err)
 	}
+	empty := strings.Replace(payload, `"files":{"include":["data/*.json"],"exclude":["references/private"]}`, `"files":{}`, 1)
+	emptyRules, err := ParseManifest([]byte(empty))
+	if err != nil || emptyRules.Skills["guide"].Files != nil {
+		t.Fatalf("empty file selection should have no rules: %+v %v", emptyRules, err)
+	}
 }
 
 func TestProfileSkillFilesSelectionRejectsInvalidPatterns(t *testing.T) {
@@ -187,6 +192,8 @@ func TestProfileSkillFilesSelectionRejectsInvalidPatterns(t *testing.T) {
 		`{"include":["/outside.md"]}`,
 		`{"include":["references/[broken"]}`,
 		`{"exclude":["SKILL.md"]}`,
+		`{"exclude":["agent-skill.json"]}`,
+		`{"include":["data/guide.json"],"exclude":["data/guide.json"]}`,
 		`{"include":["data/*.json"],"extra":true}`,
 	} {
 		payload := `{"schema_version":5,"name":"profile","version":"1.0.0","requires":{"skills":{"guide":{"git":"https://source.example.org/guide","range":"*","files":` + raw + `}}}}`

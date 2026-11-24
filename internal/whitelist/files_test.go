@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -103,6 +104,14 @@ func TestContextFilesKeepsHardExclusionsWithExplicitIncludes(t *testing.T) {
 	}
 }
 
+func TestContextFilesRejectsUnmatchedInclude(t *testing.T) {
+	root := selectionFixture(t)
+	_, err := ContextFiles(root, false, nil, &FileSelection{Include: []string{"missing/**"}})
+	if err == nil || !strings.Contains(err.Error(), "profile_skill_files_no_match") {
+		t.Fatalf("unmatched include did not have a stable refusal: %v", err)
+	}
+}
+
 func TestContextFilesRejectsIncludeSymlinkOutsideSkill(t *testing.T) {
 	root := selectionFixture(t)
 	outside := filepath.Join(t.TempDir(), "outside.md")
@@ -154,6 +163,8 @@ func TestValidateFileSelectionRejectsUnsafeOrInvalidGlobs(t *testing.T) {
 		{Include: []string{"/outside.md"}},
 		{Include: []string{"references/[broken"}},
 		{Exclude: []string{"SKILL.md"}},
+		{Exclude: []string{"agent-skill.json"}},
+		{Include: []string{"references/guide.md"}, Exclude: []string{"references/guide.md"}},
 		{Exclude: []string{"*.md"}},
 	} {
 		if err := ValidateFileSelection(selection); err == nil {

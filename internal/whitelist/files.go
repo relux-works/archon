@@ -44,9 +44,18 @@ func ValidateFileSelection(selection *FileSelection) error {
 			seen[pattern] = true
 		}
 	}
+	for _, include := range selection.Include {
+		for _, exclude := range selection.Exclude {
+			if include == exclude {
+				return fmt.Errorf("%w: include and exclude patterns conflict", errInvalidFileSelection)
+			}
+		}
+	}
 	for _, pattern := range selection.Exclude {
-		if matchesPattern(pattern, "SKILL.md") {
-			return fmt.Errorf("%w: SKILL.md is required context", errInvalidFileSelection)
+		for _, protected := range []string{"SKILL.md", "agent-skill.json", "csk-skill.json", "agents/runtime.json"} {
+			if matchesAnyPrefix([]string{pattern}, protected) {
+				return fmt.Errorf("%w: required skill file cannot be excluded", errInvalidFileSelection)
+			}
 		}
 	}
 	return nil
@@ -94,6 +103,7 @@ func ContextFiles(snapshot string, includeScripts bool, excludeRoots []string, s
 	if err != nil {
 		return nil, err
 	}
+	matchedInclude := false
 	err = filepath.WalkDir(snapshot, func(pathname string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -106,20 +116,25 @@ func ContextFiles(snapshot string, includeScripts bool, excludeRoots []string, s
 			return err
 		}
 		posix := canonicalContextPath(snapshot, filepath.ToSlash(rel))
-		if PathExcluded(posix, excludeRoots) || matchesAnyPrefix(selection.Exclude, posix) {
+		if entry.IsDir() && (PathExcluded(posix, excludeRoots) || SelectionExcludesDirectory(selection, posix)) {
 			deleteFileTree(files, posix)
-			if entry.IsDir() {
-				return filepath.SkipDir
-			}
+			return filepath.SkipDir
+		}
+		if PathExcluded(posix, excludeRoots) || SelectionExcludesFile(selection, posix) {
+			deleteFileTree(files, posix)
 			return nil
 		}
 		if !entry.IsDir() && matchesAnyPrefix(selection.Include, posix) {
 			files[posix] = struct{}{}
+			matchedInclude = true
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
+	}
+	if len(selection.Include) > 0 && !matchedInclude {
+		return nil, fmt.Errorf("profile_skill_files_no_match: no included file exists")
 	}
 	result := sortedFiles(files)
 	if err := ValidateFileSet(result); err != nil {
@@ -206,6 +221,29 @@ func matchesAnyPrefix(patterns []string, file string) bool {
 	return false
 }
 
+// SelectionExcludesFile reports whether an exclusion removes a relative file
+// path, including an exclusion of one of its parent directories.
+func SelectionExcludesFile(selection *FileSelection, file string) bool {
+	return selection != nil && matchesAnyPrefix(selection.Exclude, file)
+}
+
+// SelectionExcludesDirectory reports whether the selection excludes this
+// directory and all of its descendants.
+func SelectionExcludesDirectory(selection *FileSelection, directory string) bool {
+	if selection == nil {
+		return false
+	}
+	if SelectionExcludesFile(selection, directory) {
+		return true
+	}
+	for _, pattern := range selection.Exclude {
+		if pattern == directory+"/**" {
+			return true
+		}
+	}
+	return false
+}
+
 func deleteFileTree(files map[string]struct{}, directory string) {
 	for file := range files {
 		if file == directory || strings.HasPrefix(file, directory+"/") {
@@ -240,6 +278,12 @@ func canonicalContextPath(snapshot, posix string) string {
 		return root + "/" + rest
 	}
 	return root
+}
+
+// CanonicalContextPath applies the portable root spelling used by the shared
+// context walker to one relative path.
+func CanonicalContextPath(snapshot, posix string) string {
+	return canonicalContextPath(snapshot, posix)
 }
 
 func validateSelectedFile(root, snapshot, posix string, excludeRoots []string, selection *FileSelection) error {

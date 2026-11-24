@@ -474,10 +474,11 @@ for paths, journal recovery, Codex base collisions and qualification limits.
 A profile skill requirement can add relative include and exclude globs in
 `agent-context.json` schema 5. Includes extend the built-in context roots;
 excludes remove matching files or directory trees. `SKILL.md` is always kept,
-and runtime/build and fixed developer exclusions remain in force. Without
-`files`, the existing projection is unchanged. Preparing a profile skill plan
-records the sorted effective file set in its lock; existing runtime adoption
-checks continue to apply.
+required skill manifests cannot be excluded, and declared build/runtime inputs
+remain in integrity evidence while only context files are projected. Without
+`files`, projection and lock bytes are unchanged. Lock 6 records the selection
+rules and effective context file set; filtering occurs before bounded integrity
+capture.
 
 ```json
 {

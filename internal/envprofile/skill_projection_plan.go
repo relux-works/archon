@@ -176,7 +176,7 @@ func prepareSkillPlan(home, profile, expectedHash string, policy Policy, prepare
 			if requirement.Range != "" {
 				return SkillPlanResult{}, fmt.Errorf("profile_skill_plan_invalid: skill requirement must be exact")
 			}
-			roots = append(roots, closure.ProfileRequirement{Consumer: member.Name, Name: name, Git: requirement.Git, Directory: requirement.Directory, Ref: ref, Mode: requirement.Mode, Commands: requirement.Commands, Files: requirement.Files})
+			roots = append(roots, closure.ProfileRequirement{Consumer: member.Name, Name: name, Git: requirement.Git, Directory: requirement.Directory, Ref: ref, Mode: requirement.Mode, Commands: requirement.Commands})
 		}
 	}
 	globalPath := manifest.PathIn(filepath.Join(home, "global"))

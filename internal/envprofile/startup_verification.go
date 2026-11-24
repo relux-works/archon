@@ -71,9 +71,14 @@ func prepareStartupEvidence(home string, manager *gitManager, result *contextres
 			return err
 		}
 		var evidence skillintegrity.Entry
-		if resolved.ProfileCapabilitiesPresent {
+		switch {
+		case resolved.ProfileFileSelection != nil && resolved.ProfileCapabilitiesPresent:
+			evidence, err = skillintegrity.BuildWithProfileCapabilitiesAndSelection(context.Background(), root, contextlock.SkillIdentity(member), &resolved.ProfileCapabilities, resolved.ProfileFileSelection, budget)
+		case resolved.ProfileFileSelection != nil:
+			evidence, err = skillintegrity.BuildWithProfileSelection(context.Background(), root, contextlock.SkillIdentity(member), resolved.ProfileFileSelection, budget)
+		case resolved.ProfileCapabilitiesPresent:
 			evidence, err = skillintegrity.BuildWithProfileCapabilities(context.Background(), root, contextlock.SkillIdentity(member), &resolved.ProfileCapabilities, budget)
-		} else {
+		default:
 			evidence, err = skillintegrity.Build(context.Background(), root, contextlock.SkillIdentity(member), budget)
 		}
 		cleanup()
