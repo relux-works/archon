@@ -7,6 +7,7 @@ package mcp
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -16,13 +17,14 @@ import (
 
 	"github.com/BurntSushi/toml"
 
+	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/curator/internal/harnessregistry"
 	"github.com/relux-works/curator/internal/skillspec"
 )
 
 // projectSources maps agents to project-relative config files (Spec §11.1).
 var projectSources = map[string][]string{
 	"claude_code": {".mcp.json"},
-	"cursor":      {".cursor/mcp.json"},
 	"codex_cli":   {".codex/config.toml"},
 	"gemini":      {".gemini/settings.json"},
 	"windsurf":    {},
@@ -32,7 +34,6 @@ var projectSources = map[string][]string{
 // homeSources maps agents to home-relative config files.
 var homeSources = map[string][]string{
 	"claude_code": {".claude.json"},
-	"cursor":      {".cursor/mcp.json"},
 	"codex_cli":   {".codex/config.toml"},
 	"gemini":      {".gemini/settings.json"},
 	"windsurf":    {".codeium/windsurf/mcp_config.json"},
@@ -214,7 +215,7 @@ func stdioCommand(entry any) (string, bool) {
 
 func projectEntries(env Env, agent string) map[string]any {
 	entries := map[string]any{}
-	for _, rel := range projectSources[agent] {
+	for _, rel := range inspectionSources(agent, harnessapi.ProjectScope) {
 		for name, entry := range entriesInFile(filepath.Join(env.ProjectRoot, filepath.FromSlash(rel))) {
 			entries[name] = entry
 		}
@@ -229,12 +230,49 @@ func projectEntries(env Env, agent string) map[string]any {
 
 func homeEntries(env Env, agent string) map[string]any {
 	entries := map[string]any{}
-	for _, rel := range homeSources[agent] {
+	for _, rel := range inspectionSources(agent, harnessapi.UserScope) {
 		for name, entry := range entriesInFile(filepath.Join(env.UserHome, filepath.FromSlash(rel))) {
 			entries[name] = entry
 		}
 	}
 	return entries
+}
+
+func inspectionSources(agent string, scope harnessapi.Scope) []string {
+	adapter, err := harnessregistry.Lookup(harnessapi.ID(agent))
+	if err != nil {
+		var refusal harnessapi.Refusal
+		if errors.As(err, &refusal) && refusal.Code() == harnessapi.UnknownID {
+			return legacySources(agent, scope)
+		}
+		panic(fmt.Errorf("lookup harness adapter %q: %w", agent, err))
+	}
+	if !adapter.Capabilities().Has(harnessapi.MCPInspection) {
+		return legacySources(agent, scope)
+	}
+	channel, err := adapter.MCP(harnessapi.Context{}, scope)
+	if err != nil {
+		panic(fmt.Errorf("read MCP inspection declaration for %q: %w", agent, err))
+	}
+	if !channel.Inspect() || channel.Write() {
+		panic(fmt.Errorf("invalid MCP inspection declaration for %q", agent))
+	}
+	paths := channel.Paths().Paths()
+	if len(paths) == 0 {
+		panic(fmt.Errorf("MCP inspection declaration for %q has no paths", agent))
+	}
+	sources := make([]string, 0, len(paths))
+	for _, path := range paths {
+		sources = append(sources, path.String())
+	}
+	return sources
+}
+
+func legacySources(agent string, scope harnessapi.Scope) []string {
+	if scope == harnessapi.ProjectScope {
+		return projectSources[agent]
+	}
+	return homeSources[agent]
 }
 
 func entriesInFile(path string) map[string]any {

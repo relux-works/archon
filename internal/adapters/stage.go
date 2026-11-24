@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/relux-works/curator/internal/harnessapi"
 	"github.com/relux-works/curator/internal/staging"
 )
 
@@ -37,6 +38,10 @@ func (mirror Mirror) Plan() staging.Plan { return mirror.plan }
 func StageProject(stageRoot, projectRoot string, agents []string, groups []Group, mode string) (Mirror, error) {
 	roots := map[string]string{}
 	for _, agent := range agents {
+		if discovery, supported := registeredSkillProjection(agent, harnessapi.ProjectScope); supported {
+			roots[agent] = filepath.Join(projectRoot, filepath.FromSlash(oneSkillPath(agent, discovery.Paths())))
+			continue
+		}
 		if rel, known := AgentPaths[agent]; known {
 			roots[agent] = filepath.Join(projectRoot, filepath.FromSlash(rel))
 		}
@@ -76,6 +81,10 @@ func StageGlobalWithOwnership(
 	canonical := filepath.Join(home, "global", "skills")
 	roots := map[string]string{}
 	for _, agent := range agents {
+		if discovery, supported := registeredSkillProjection(agent, harnessapi.UserScope); supported {
+			roots[agent] = filepath.Join(userHome, filepath.FromSlash(oneSkillPath(agent, discovery.Paths())))
+			continue
+		}
 		if rel, known := AgentPaths[agent]; known {
 			roots[agent] = filepath.Join(userHome, filepath.FromSlash(rel))
 		}

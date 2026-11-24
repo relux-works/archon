@@ -5,24 +5,74 @@ package adapters
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/curator/internal/harnessregistry"
 	"github.com/relux-works/curator/internal/identifiers"
 	"github.com/relux-works/curator/internal/protocoljson"
 	"github.com/relux-works/curator/internal/stateread"
 )
 
 // AgentPaths maps agent identifiers to their project-relative adapter
-// directories (Spec §10.1).
-var AgentPaths = map[string]string{
+// directories (Spec §10.1). Migrated skill projections come from the registry;
+// the remaining entries stay in the legacy catalog until their moves.
+var AgentPaths = projectAgentPaths()
+
+var legacyAgentPaths = map[string]string{
 	"codex_cli":   ".codex/skills",
 	"claude_code": ".claude/skills",
 	"gemini":      ".gemini/skills",
-	"cursor":      ".cursor/rules",
+}
+
+func projectAgentPaths() map[string]string {
+	paths := make(map[string]string, len(legacyAgentPaths)+len(harnessregistry.IDs()))
+	for agent, path := range legacyAgentPaths {
+		paths[agent] = path
+	}
+	for _, id := range harnessregistry.IDs() {
+		discovery, supported := registeredSkillProjection(string(id), harnessapi.ProjectScope)
+		if !supported || !discovery.Mirror() {
+			continue
+		}
+		paths[string(id)] = oneSkillPath(string(id), discovery.Paths())
+	}
+	return paths
+}
+
+func registeredSkillProjection(agent string, scope harnessapi.Scope) (harnessapi.SkillDiscovery, bool) {
+	adapter, err := harnessregistry.Lookup(harnessapi.ID(agent))
+	if err != nil {
+		var refusal harnessapi.Refusal
+		if errors.As(err, &refusal) && refusal.Code() == harnessapi.UnknownID {
+			return harnessapi.SkillDiscovery{}, false
+		}
+		panic(fmt.Errorf("lookup harness adapter %q: %w", agent, err))
+	}
+	if !adapter.Capabilities().Has(harnessapi.SkillProjection) {
+		return harnessapi.SkillDiscovery{}, false
+	}
+	discovery, err := adapter.Skills(harnessapi.Context{}, scope)
+	if err != nil {
+		panic(fmt.Errorf("read skill projection for %q: %w", agent, err))
+	}
+	if discovery.Scope() != scope || discovery.NativeDiscovery() || !discovery.Mirror() {
+		panic(fmt.Errorf("invalid skill projection declaration for %q", agent))
+	}
+	return discovery, true
+}
+
+func oneSkillPath(agent string, paths harnessapi.NamedPaths) string {
+	values := paths.Paths()
+	if len(values) != 1 {
+		panic(fmt.Errorf("skill projection for %q has %d paths; want exactly one", agent, len(values)))
+	}
+	return values[0].String()
 }
 
 // NativeDiscoveryAgents discover the canonical .agents/skills directory

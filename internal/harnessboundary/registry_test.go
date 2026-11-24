@@ -34,7 +34,7 @@ func (s *effectSpy) observe(value any, err error) error {
 }
 
 // Every unported method is observed through the same effect spy.
-func notPortedResults(adapter harnessapi.Adapter, effects *effectSpy) []error {
+func notPortedResults(adapter harnessapi.Adapter, effects *effectSpy, capabilities harnessapi.CapabilitySet) []error {
 	c, s, r := harnessapi.Context{}, harnessapi.Snapshot{}, harnessapi.Request{}
 	var errors []error
 	v, err := adapter.ParseReleaseProbe(c, harnessapi.ProbeOutput{})
@@ -43,12 +43,16 @@ func notPortedResults(adapter harnessapi.Adapter, effects *effectSpy) []error {
 	errors = append(errors, effects.observe(vh, err))
 	vi, err := adapter.Instructions(c, harnessapi.Monolithic)
 	errors = append(errors, effects.observe(vi, err))
-	vs, err := adapter.Skills(c, harnessapi.ProjectScope)
-	errors = append(errors, effects.observe(vs, err))
+	if !capabilities.Has(harnessapi.SkillProjection) && !capabilities.Has(harnessapi.NativeSkillDiscovery) {
+		vs, err := adapter.Skills(c, harnessapi.ProjectScope)
+		errors = append(errors, effects.observe(vs, err))
+	}
 	vset, err := adapter.Settings(c)
 	errors = append(errors, effects.observe(vset, err))
-	vmcp, err := adapter.MCP(c, harnessapi.UserScope)
-	errors = append(errors, effects.observe(vmcp, err))
+	if !capabilities.Has(harnessapi.MCPInspection) && !capabilities.Has(harnessapi.NativeMCPWrite) {
+		vmcp, err := adapter.MCP(c, harnessapi.UserScope)
+		errors = append(errors, effects.observe(vmcp, err))
+	}
 	vc, err := adapter.Credentials(c)
 	errors = append(errors, effects.observe(vc, err))
 	vt, err := adapter.Trust(c)
@@ -69,13 +73,38 @@ func notPortedResults(adapter harnessapi.Adapter, effects *effectSpy) []error {
 // Staged capabilities describe implementations, rather than future native
 // support. A false operational declaration fails this same conformance check.
 func stagedCapabilities(adapter harnessapi.Adapter) error {
-	for _, capability := range adapter.Capabilities().Values() {
-		if capability != harnessapi.ReleaseProbing {
+	capabilities := adapter.Capabilities()
+	for _, capability := range capabilities.Values() {
+		switch capability {
+		case harnessapi.ReleaseProbing:
+		case harnessapi.SkillProjection, harnessapi.NativeSkillDiscovery:
+			discovery, err := adapter.Skills(harnessapi.Context{}, harnessapi.ProjectScope)
+			if err != nil || discovery.Scope() != harnessapi.ProjectScope {
+				return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
+			}
+			if capability == harnessapi.SkillProjection && (!discovery.Mirror() || discovery.NativeDiscovery()) {
+				return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
+			}
+			if capability == harnessapi.NativeSkillDiscovery && !discovery.NativeDiscovery() {
+				return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
+			}
+		case harnessapi.MCPInspection, harnessapi.NativeMCPWrite:
+			channel, err := adapter.MCP(harnessapi.Context{}, harnessapi.ProjectScope)
+			if err != nil || !channel.Inspect() {
+				return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
+			}
+			if capability == harnessapi.MCPInspection && channel.Write() {
+				return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
+			}
+			if capability == harnessapi.NativeMCPWrite && !channel.Write() {
+				return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
+			}
+		default:
 			return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
 		}
 	}
 	effects := effectSpy{}
-	for _, err := range notPortedResults(adapter, &effects) {
+	for _, err := range notPortedResults(adapter, &effects, capabilities) {
 		if code(err) != harnessapi.OperationNotPorted {
 			return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
 		}

@@ -31,13 +31,18 @@ func probing() harnessapi.CapabilitySet {
 	return set
 }
 
+func skillAndMCPInspection() harnessapi.CapabilitySet {
+	set, _ := harnessapi.NewCapabilitySet(harnessapi.SkillProjection, harnessapi.MCPInspection)
+	return set
+}
+
 // This is the only registration table. No runtime registration path exists.
 // Probe aliases and arguments are pinned to the original environment catalog;
 // the five-second deadline and empty overrides are the v1 contract policy.
 var entries = [...]registration{
 	{claude_code.ID, 1, probing(), claude_code.New, harnessapi.NewProbeSpec("claude", []string{"--version"}, harnessapi.ProbeTimeoutV1, nil), true},
 	{codex_cli.ID, 1, probing(), codex_cli.New, harnessapi.NewProbeSpec("codex", []string{"--version"}, harnessapi.ProbeTimeoutV1, nil), true},
-	{cursor.ID, 1, harnessapi.CapabilitySet{}, cursor.New, harnessapi.ProbeSpec{}, false},
+	{cursor.ID, 1, skillAndMCPInspection(), cursor.New, harnessapi.ProbeSpec{}, false},
 	{gemini.ID, 1, harnessapi.CapabilitySet{}, gemini.New, harnessapi.ProbeSpec{}, false},
 	{muse.ID, 1, probing(), muse.New, harnessapi.NewProbeSpec("muse", []string{"--version"}, harnessapi.ProbeTimeoutV1, nil), true},
 	{opencode.ID, 1, probing(), opencode.New, harnessapi.NewProbeSpec("opencode", []string{"--version"}, harnessapi.ProbeTimeoutV1, nil), true},
