@@ -121,6 +121,7 @@ func TestNoHarnessBranches(t *testing.T) {
 		"new-branch":      "package shared\nfunc selected(id string) bool { return id == \"claude_code\" }\n",
 		"computed-id":     "package shared\ntype ID string\nconst selected = \"claude\" + \"_code\"\nfunc selectedID(id ID) bool { return id == selected }\n",
 		"native-path":     "package shared\nconst nativePath = \".codex/skills\"\n",
+		"gemini-path":     "package shared\nconst nativePath = \".gemini/skills\"\n",
 		"concrete-import": "package shared\nimport _ \"github.com/relux-works/curator/internal/harness/cursor\"\n",
 	} {
 		t.Run(name, func(t *testing.T) {

@@ -160,3 +160,40 @@ func TestMalformedConfigCountsAsEmpty(t *testing.T) {
 		t.Fatalf("malformed config produced servers: %v", servers)
 	}
 }
+
+// Gemini inspection keeps reading the project and user settings surfaces;
+// project-only declarations remain distinguishable and missing requirements
+// retain the existing refusal.
+func TestGeminiMCPInspectionAndMissingRequirement(t *testing.T) {
+	env := newEnv(t)
+	write(t, env.ProjectRoot, ".gemini/settings.json", `{"mcpServers":{"project-only":{"url":"https://project.invalid"}}}`)
+	write(t, env.UserHome, ".gemini/settings.json", `{"mcpServers":{"home-only":{"url":"https://home.invalid"}}}`)
+
+	configured := ConfiguredServers(env, "gemini")
+	if _, ok := configured["project-only"]; !ok {
+		t.Fatalf("project settings were not inspected: %v", configured)
+	}
+	if _, ok := configured["home-only"]; !ok {
+		t.Fatalf("user settings were not inspected: %v", configured)
+	}
+	projectOnly := ProjectOnlyServers(env, "gemini")
+	if !projectOnly["project-only"] || projectOnly["home-only"] {
+		t.Fatalf("project-only inspection result = %v", projectOnly)
+	}
+
+	findings, warnings, err := Verify(env, []string{"gemini"}, req("project-only", "all"))
+	if err != nil {
+		t.Fatalf("configured project server was refused: %v", err)
+	}
+	if got := findings["skill-x"].FoundIn["project-only"]; len(got) != 1 || got[0] != "gemini" {
+		t.Fatalf("inspection finding = %v", got)
+	}
+	if len(warnings) == 0 || !strings.Contains(strings.Join(warnings, "\n"), "project-level config") {
+		t.Fatalf("project-only trust warning missing: %v", warnings)
+	}
+
+	missing := newEnv(t)
+	if _, _, err := Verify(missing, []string{"gemini"}, req("required-server", "all")); err == nil || !strings.Contains(err.Error(), "not configured") {
+		t.Fatalf("missing required Gemini server error = %v", err)
+	}
+}
