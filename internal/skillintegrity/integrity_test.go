@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/relux-works/curator/internal/capabilities"
 	"github.com/relux-works/curator/internal/privatedir"
@@ -43,6 +44,21 @@ func writeFixture(t *testing.T, root, path string, data []byte, mode os.FileMode
 		if err := privatedir.ProtectTree(root); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func TestBudgetPauseResumeExcludesNonVerificationTime(t *testing.T) {
+	started := time.Now()
+	pausedAt := started.Add(VerificationTimeout - time.Second)
+	resumedAt := pausedAt.Add(2 * VerificationTimeout)
+	budget := &Budget{started: started}
+	budget.pauseAt(pausedAt)
+	if got, want := budget.elapsedAt(resumedAt), VerificationTimeout-time.Second; got != want {
+		t.Fatalf("elapsed while paused = %s, want %s", got, want)
+	}
+	budget.resumeAt(resumedAt)
+	if got, want := budget.elapsedAt(resumedAt.Add(2*time.Second)), VerificationTimeout+time.Second; got != want {
+		t.Fatalf("elapsed after resuming = %s, want %s", got, want)
 	}
 }
 

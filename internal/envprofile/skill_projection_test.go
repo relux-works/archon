@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -161,6 +162,50 @@ func TestSkillProjectionProfileFileSelection(t *testing.T) {
 		if _, err := projectSkillWithFiles(home, source, hashing.VersionV2, selection); err == nil {
 			t.Errorf("invalid file selection accepted: %+v", selection)
 		}
+	}
+}
+
+func TestSkillProjectionNoSelectionPreservesDeclaredModuleContext(t *testing.T) {
+	for _, version := range []hashing.Version{hashing.VersionV1, hashing.VersionV2} {
+		t.Run(fmt.Sprint(version), func(t *testing.T) {
+			source, home := gitFixtureHome(t), gitFixtureHome(t)
+			for path, body := range map[string]string{
+				"SKILL.md":                        "# Guide\n",
+				"references/guide.md":             "guide context\n",
+				"data/library/go.mod":             "module example.invalid/library\n\ngo 1.24\n",
+				"data/library/guide.md":           "library context\n",
+				"agent-skill.json":                `{"schema_version":8,"capabilities":{},"build_roots":["tools/runner"],"commands":{"runner":{"type":"build","driver":"go-v1","source_dir":"tools/runner/cmd/runner","modules":["data/library"]}}}`,
+				"tools/runner/go.mod":             "module example.invalid/runner\n\ngo 1.24\n",
+				"tools/runner/cmd/runner/main.go": "package main\nfunc main() {}\n",
+			} {
+				writeGitFile(t, source, path, body)
+			}
+
+			projection, err := projectSkillWithFiles(home, source, version, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want, err := hashing.ContentSHA256Files(map[string][]byte{
+				"SKILL.md":              []byte("# Guide\n"),
+				"references/guide.md":   []byte("guide context\n"),
+				"data/library/go.mod":   []byte("module example.invalid/library\n\ngo 1.24\n"),
+				"data/library/guide.md": []byte("library context\n"),
+			}, version)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if projection.skill.selection != nil || projection.skill.hash != want {
+				t.Fatalf("no-selection projection hash=%s selection=%+v, want legacy hash %s", projection.skill.hash, projection.skill.selection, want)
+			}
+
+			selected, err := projectSkillWithFiles(home, source, version, &whitelist.FileSelection{Include: []string{"references/guide.md"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if slices.Contains(selected.files, "data/library/go.mod") {
+				t.Fatal("selected projection exposed a declared Go module as context")
+			}
+		})
 	}
 }
 

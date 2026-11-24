@@ -19,7 +19,7 @@ func TestProfileFileSelectionInstallUpdateAndProjectBoundedSource(t *testing.T) 
 	ids := newGitIdentities(t)
 	selection := map[string]any{
 		"include": []string{"data/public.json"},
-		"exclude": []string{".excluded-cache/**"},
+		"exclude": []string{".auxiliary-cache/**", ".excluded-cache/**"},
 	}
 	skillRepo := gitRepo(t, map[string]string{
 		"SKILL.md":                        "---\nname: fixture-skill\ndescription: Fixture skill.\n---\nFixture context.\n",
@@ -33,7 +33,7 @@ func TestProfileFileSelectionInstallUpdateAndProjectBoundedSource(t *testing.T) 
 		"modules/support/go.mod":                                 "module example.invalid/support\n\ngo 1.24\n",
 		"modules/support/support.go":                             "package support\n",
 	}, "v1.0.0")
-	largePath := filepath.Join(skillRepo, ".excluded-cache", "over-limit.bin")
+	largePath := filepath.Join(skillRepo, ".auxiliary-cache", "over-limit.bin")
 	objects := filepath.Join(skillRepo, ".excluded-cache", "objects")
 	if err := os.MkdirAll(objects, 0o755); err != nil {
 		t.Fatal(err)
@@ -58,7 +58,7 @@ func TestProfileFileSelectionInstallUpdateAndProjectBoundedSource(t *testing.T) 
 	if err := large.Close(); err != nil {
 		t.Fatal(err)
 	}
-	gitRun(t, skillRepo, "add", ".excluded-cache")
+	gitRun(t, skillRepo, "add", ".auxiliary-cache", ".excluded-cache")
 	gitRun(t, skillRepo, "commit", "-m", "add excluded capture overflow")
 	skillCommit := fixtureGitOutput(t, skillRepo, "rev-parse", "HEAD")
 	skillURL := ids.serve(skillRepo, "https://example.org/fixture-skill")
@@ -140,8 +140,10 @@ func assertProfileFileSelectionEvidence(t *testing.T, lock *contextlock.Lock) {
 			t.Errorf("declared build input %q missing from lock evidence", path)
 		}
 	}
-	if hasIntegrityFile(entry.Manifest.Files, ".excluded-cache/over-limit.bin") {
-		t.Fatal("excluded file entered lock evidence")
+	for _, path := range []string{".auxiliary-cache/over-limit.bin", ".excluded-cache/objects/00000.bin"} {
+		if hasIntegrityFile(entry.Manifest.Files, path) {
+			t.Errorf("excluded file %q entered lock evidence", path)
+		}
 	}
 }
 

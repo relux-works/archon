@@ -136,12 +136,44 @@ type Budget struct {
 	files   int
 	bytes   int64
 	started time.Time
+	elapsed time.Duration
+	paused  bool
 }
 
 // NewBudget starts the shared file, byte and deadline budget for one pass.
 func NewBudget() *Budget { return &Budget{started: time.Now()} }
+
+// Pause excludes source inspection and other work outside integrity capture
+// from the shared verification deadline, while retaining accumulated file and
+// byte limits. Resume starts counting integrity time again.
+func (b *Budget) Pause()  { b.pauseAt(time.Now()) }
+func (b *Budget) Resume() { b.resumeAt(time.Now()) }
+
+func (b *Budget) pauseAt(now time.Time) {
+	if b.paused {
+		return
+	}
+	b.elapsed += now.Sub(b.started)
+	b.paused = true
+}
+
+func (b *Budget) resumeAt(now time.Time) {
+	if !b.paused {
+		return
+	}
+	b.started = now
+	b.paused = false
+}
+
+func (b *Budget) elapsedAt(now time.Time) time.Duration {
+	if b.paused {
+		return b.elapsed
+	}
+	return b.elapsed + now.Sub(b.started)
+}
+
 func (b *Budget) check(ctx context.Context) error {
-	if ctx.Err() != nil || time.Since(b.started) > VerificationTimeout {
+	if ctx.Err() != nil || b.elapsedAt(time.Now()) > VerificationTimeout {
 		return failure("skill_integrity_unavailable", "verification interrupted or deadline reached")
 	}
 	return nil

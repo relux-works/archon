@@ -51,7 +51,7 @@ func projectSkillWithFiles(home, source string, version hashing.Version, selecti
 		return skillProjectionWithFiles{}, err
 	}
 	skill := skillOf{source: source, includeScripts: len(spec.Commands) == 0,
-		excludeRoots: profileSkillExcludedRoots(spec), version: version}
+		excludeRoots: profileSkillExcludedRoots(spec, selection), version: version}
 	files := map[string][]byte{}
 	var selected []string
 	if selection == nil {
@@ -94,11 +94,13 @@ func projectSkillWithFiles(home, source string, version hashing.Version, selecti
 	return skillProjectionWithFiles{skill: skill, files: selected, selection: selection}, nil
 }
 
-func profileSkillExcludedRoots(spec *skillspec.Spec) []string {
+func profileSkillExcludedRoots(spec *skillspec.Spec, selection *whitelist.FileSelection) []string {
 	var modules []string
-	for _, command := range spec.Commands {
-		if command.Driver == "go-v1" {
-			modules = append(modules, command.Modules...)
+	if selection != nil {
+		for _, command := range spec.Commands {
+			if command.Driver == "go-v1" {
+				modules = append(modules, command.Modules...)
+			}
 		}
 	}
 	return whitelist.ContextExcludedRoots(spec.RuntimeRoots, spec.BuildRoots, modules)

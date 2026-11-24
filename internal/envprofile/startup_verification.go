@@ -55,6 +55,7 @@ func prepareStartupEvidence(home string, manager *gitManager, result *contextres
 		if member.Kind != contextlock.KindSkill {
 			continue
 		}
+		budget.Pause()
 		resolved := result.Members[contextresolve.Key(member.Kind, member.Name)]
 		// Preserve the existing source/audit refusal before introducing new
 		// evidence. The publication path still revalidates before storing.
@@ -70,6 +71,7 @@ func prepareStartupEvidence(home string, manager *gitManager, result *contextres
 			cleanup()
 			return err
 		}
+		budget.Resume()
 		var evidence skillintegrity.Entry
 		switch {
 		case resolved.ProfileFileSelection != nil && resolved.ProfileCapabilitiesPresent:
@@ -81,6 +83,7 @@ func prepareStartupEvidence(home string, manager *gitManager, result *contextres
 		default:
 			evidence, err = skillintegrity.Build(context.Background(), root, contextlock.SkillIdentity(member), budget)
 		}
+		budget.Pause()
 		cleanup()
 		if err != nil {
 			return err
@@ -112,6 +115,7 @@ func startupChecks(home string, lock *contextlock.Lock) ([]startupverification.O
 	budget := skillintegrity.NewBudget()
 	index := 0
 	for _, member := range lock.Members {
+		budget.Pause()
 		entry := memberEntryPath(home, member)
 		if member.Kind == contextlock.KindSkill {
 			if err := skillintegrity.ValidateLegacyBoundary(entry); err != nil {
@@ -168,7 +172,9 @@ func startupChecks(home string, lock *contextlock.Lock) ([]startupverification.O
 		}
 		evidence := lock.SkillIntegrity[index]
 		index++
+		budget.Resume()
 		err = skillintegrity.Verify(context.Background(), root, contextlock.SkillIdentity(member), evidence, budget)
+		budget.Pause()
 		if err == nil {
 			checks = append(checks, startupverification.Observation{Status: startupverification.Passed, Code: "skill_integrity_verified"})
 			continue
