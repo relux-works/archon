@@ -28,7 +28,8 @@ func inPlaceSkillsDir(id string) string {
 			}
 		}
 	}
-	if _, registered := adapterByID(id); registered {
+	switch id {
+	case envregistry.ClaudeCode, envregistry.CodexCLI, envregistry.Pi:
 		adapter, err := envregistry.ByID(id)
 		if err == nil && adapter.SkillsDir != "" {
 			return adapter.SkillsDir
