@@ -13,20 +13,6 @@ import (
 
 const ownershipSourceHead = "643e727edd2db21307ca6d8c0332935e33d50ac8"
 
-var capabilityNames = map[harnessapi.Capability]string{
-	harnessapi.ManagedHome:          "ManagedHome",
-	harnessapi.InstructionOutput:    "InstructionOutput",
-	harnessapi.SkillProjection:      "SkillProjection",
-	harnessapi.NativeSkillDiscovery: "NativeSkillDiscovery",
-	harnessapi.MCPInspection:        "MCPInspection",
-	harnessapi.NativeMCPWrite:       "NativeMCPWrite",
-	harnessapi.ProjectContextOutput: "ProjectContextOutput",
-	harnessapi.HomeLease:            "HomeLease",
-	harnessapi.CredentialMetadata:   "CredentialMetadata",
-	harnessapi.TrustObservation:     "TrustObservation",
-	harnessapi.ReleaseProbing:       "ReleaseProbing",
-}
-
 // Every inventory row has explicit adapter methods and a neutral effect owner.
 // Each previously omitted package is scanned, with ID and path plants paired
 // with a harness-neutral control. The map describes migration ownership, not

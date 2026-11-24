@@ -106,9 +106,13 @@ func TestWindsurfMCPUsesHomeConfigurationOnly(t *testing.T) {
 
 func TestMCPSourceFallbackIsNarrow(t *testing.T) {
 	fallback := []string{"legacy.json"}
-	paths, err := mcpSources("cursor", "user", fallback)
+	cursorPaths, err := mcpSources("cursor", "user", fallback)
+	if err != nil || len(cursorPaths) != 1 || cursorPaths[0] != ".cursor/mcp.json" {
+		t.Fatalf("registered Cursor MCP path: paths=%v err=%v", cursorPaths, err)
+	}
+	paths, err := mcpSources("gemini", "user", fallback)
 	if err != nil || len(paths) != 1 || paths[0] != fallback[0] {
-		t.Fatalf("explicit not-ported fallback: paths=%v err=%v", paths, err)
+		t.Fatalf("registered but unported Gemini fallback: paths=%v err=%v", paths, err)
 	}
 	paths, err = mcpSources("unregistered", "user", fallback)
 	if err != nil || len(paths) != 1 || paths[0] != fallback[0] {
