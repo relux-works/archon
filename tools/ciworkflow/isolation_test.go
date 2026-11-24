@@ -493,11 +493,13 @@ func TestMacOSRoutingKeepsForksHosted(t *testing.T) {
 	const linuxRunner = `["self-hosted","relux-linux","curator"]`
 	cases := []struct {
 		name, os, event, linuxEnabled, macEnabled string
-		fork                                      bool
+		fork, macUnset                            bool
 	}{
 		{name: "trusted_pull_request", os: "macos-latest", event: "pull_request", macEnabled: "true"},
 		{name: "fork_pull_request", os: "macos-latest", event: "pull_request", macEnabled: "true", fork: true},
 		{name: "variable_disabled", os: "macos-latest", event: "pull_request", macEnabled: "false"},
+		{name: "variable_empty", os: "macos-latest", event: "pull_request", macEnabled: ""},
+		{name: "variable_unset", os: "macos-latest", event: "pull_request", macUnset: true},
 		{name: "push", os: "macos-latest", event: "push", macEnabled: "true"},
 		{name: "dispatch", os: "macos-latest", event: "workflow_dispatch", macEnabled: "true"},
 		{name: "linux_unchanged", os: "ubuntu-latest", event: "push", linuxEnabled: "false", macEnabled: "true"},
@@ -532,8 +534,12 @@ func TestMacOSRoutingKeepsForksHosted(t *testing.T) {
 			if tc.fork {
 				head = "fork/repository"
 			}
+			vars := map[string]string{"LINUX_SELF_HOSTED": tc.linuxEnabled}
+			if !tc.macUnset {
+				vars["MACOS_SELF_HOSTED"] = tc.macEnabled
+			}
 			contexts = append(contexts, map[string]any{
-				"vars":   map[string]string{"LINUX_SELF_HOSTED": tc.linuxEnabled, "MACOS_SELF_HOSTED": tc.macEnabled},
+				"vars":   vars,
 				"matrix": map[string]string{"os": tc.os},
 				"github": map[string]any{"event_name": tc.event, "repository": "example/repository", "event": map[string]any{"pull_request": map[string]any{"head": map[string]any{"repo": map[string]string{"full_name": head}}}}},
 			})
