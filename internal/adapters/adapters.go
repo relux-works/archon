@@ -27,7 +27,6 @@ var AgentPaths = projectAgentPaths()
 
 var legacyAgentPaths = map[string]string{
 	"codex_cli":   ".codex/skills",
-	"claude_code": ".claude/skills",
 	"gemini":      ".gemini/skills",
 }
 
