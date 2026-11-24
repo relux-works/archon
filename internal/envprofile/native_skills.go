@@ -19,9 +19,8 @@ import (
 // inPlaceSkillsDir preserves opencode staging; only the single-home native
 // adapters participate in the native skills ownership contract.
 func inPlaceSkillsDir(id string) string {
-	switch id {
-	case envregistry.ClaudeCode, envregistry.CodexCLI, envregistry.Pi:
-	default:
+	adapter, err := envregistry.ByID(id)
+	if err != nil || adapter.SkillsDir != "skills" {
 		return profileSkillsSurfaceDir
 	}
 	if contract, err := harnessregistry.Lookup(harnessapi.ID(id)); err == nil && contract.Capabilities().Has(harnessapi.SkillProjection) {
@@ -33,11 +32,7 @@ func inPlaceSkillsDir(id string) string {
 			}
 		}
 	}
-	adapter, err := envregistry.ByID(id)
-	if err == nil && adapter.SkillsDir != "" {
-		return adapter.SkillsDir
-	}
-	return profileSkillsSurfaceDir
+	return adapter.SkillsDir
 }
 
 // inPlaceSkillsLedger checks the parent before reading ownership state. A
