@@ -142,7 +142,9 @@ func stagedCapabilities(adapter harnessapi.Adapter) error {
 		if err != nil || reflect.ValueOf(value).IsZero() {
 			return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
 		}
-		effects.observe(value, nil)
+		if observeErr := effects.observe(value, nil); observeErr != nil {
+			return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
+		}
 		expectedEffects++
 	} else if code(err) != harnessapi.CapabilityUnsupported || !reflect.ValueOf(value).IsZero() {
 		return harnessapi.NewRefusal(harnessapi.RegistryMismatch)
@@ -158,8 +160,7 @@ func declaredResult(value any, err error, declared bool, effects *effectSpy) boo
 		if err != nil || reflect.ValueOf(value).IsZero() {
 			return false
 		}
-		effects.observe(value, nil)
-		return true
+		return effects.observe(value, nil) == nil
 	}
 	return code(err) == harnessapi.OperationNotPorted && reflect.ValueOf(value).IsZero()
 }
