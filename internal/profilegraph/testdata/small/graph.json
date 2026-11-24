@@ -4,11 +4,12 @@
     "name": "curator",
     "version": "dev"
   },
-  "inputs_digest": "3d4153667712ee1794ee3ae9e6ae70755c52a70b468f4ea9ac3841d031f16d84",
+  "inputs_digest": "afe62b99f111c7e6e52c1b17b9f6cb0f32ae340f97e089d7d95f0610a1057aac",
   "scope": {
     "profile": "sample",
     "mode": "installed",
     "environments": [
+      "antigravity",
       "claude_code",
       "codex_cli",
       "muse",
@@ -62,8 +63,8 @@
     {
       "root": "projection",
       "path": "environments.json",
-      "sha256": "c1d6539cbd5b02afcb66450c910240ee75478d3b68b2cea0dfa88222f0435718",
-      "bytes": 50
+      "sha256": "fe67491b74efb297558ae868ef9975005e627d97213d45e3627327f2381f83cb",
+      "bytes": 64
     },
     {
       "root": "snapshot/context/sample-nested/48309cf49e429835a2709222767eeeff0f476bd9",
@@ -144,6 +145,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -181,6 +189,83 @@
       ]
     },
     {
+      "id": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+      "identity": [
+        "emitted-document",
+        "sample",
+        "antigravity",
+        "config/AGENTS.md"
+      ],
+      "kind": "emitted-document",
+      "label": "antigravity document",
+      "source": null,
+      "layer": null,
+      "content": {
+        "status": "text",
+        "bytes": 845,
+        "lines": 21,
+        "sha256": "ef656b33b0c5f1ad89e63394bc3d1044e8e61fa11503c0ba6ff900db1f41ecd4"
+      },
+      "emissions": [
+        {
+          "document": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+          "ranges": [
+            {
+              "start": 0,
+              "end": 845
+            }
+          ],
+          "bytes": 845,
+          "lines": 21,
+          "sha256": "ef656b33b0c5f1ad89e63394bc3d1044e8e61fa11503c0ba6ff900db1f41ecd4"
+        }
+      ],
+      "loads": [
+        {
+          "environment": "antigravity",
+          "class": "always",
+          "state": "emitted",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "claude_code",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
+        {
+          "environment": "codex_cli",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
+        {
+          "environment": "muse",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
+        {
+          "environment": "opencode",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
+        {
+          "environment": "pi",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        }
+      ]
+    },
+    {
       "id": "n:08c929c6aa74acd4e7150271f56f2cdc5dba34608b894b4f0b385bce7df24920",
       "identity": [
         "emitted-document",
@@ -213,6 +298,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -283,6 +375,18 @@
       },
       "emissions": [
         {
+          "document": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+          "ranges": [
+            {
+              "start": 786,
+              "end": 845
+            }
+          ],
+          "bytes": 59,
+          "lines": 5,
+          "sha256": "05ebe869b71ce817374754ed395b770c38ac45d34ef2cc0db73c151b91631015"
+        },
+        {
           "document": "n:65d8fae986f9f2dc58b018c1075ef47c2527c71175e40b8c40ec002148ba051d",
           "ranges": [
             {
@@ -344,6 +448,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -422,6 +533,18 @@
       },
       "emissions": [
         {
+          "document": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+          "ranges": [
+            {
+              "start": 786,
+              "end": 845
+            }
+          ],
+          "bytes": 59,
+          "lines": 5,
+          "sha256": "05ebe869b71ce817374754ed395b770c38ac45d34ef2cc0db73c151b91631015"
+        },
+        {
           "document": "n:65d8fae986f9f2dc58b018c1075ef47c2527c71175e40b8c40ec002148ba051d",
           "ranges": [
             {
@@ -483,6 +606,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "always",
+          "state": "emitted",
+          "basis": "rendering-rule",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "always",
@@ -555,6 +685,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -623,6 +760,18 @@
       },
       "emissions": [
         {
+          "document": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+          "ranges": [
+            {
+              "start": 821,
+              "end": 845
+            }
+          ],
+          "bytes": 24,
+          "lines": 1,
+          "sha256": "1262362c150d1b53320faad8a4b94f3e0613b9fc5f70628f53f819ea794013db"
+        },
+        {
           "document": "n:65d8fae986f9f2dc58b018c1075ef47c2527c71175e40b8c40ec002148ba051d",
           "ranges": [
             {
@@ -684,6 +833,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "always",
+          "state": "emitted",
+          "basis": "rendering-rule",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "always",
@@ -759,6 +915,13 @@
       },
       "emissions": [],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "available",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -840,6 +1003,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "UNKNOWN",
@@ -911,6 +1081,13 @@
       },
       "emissions": [],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -992,6 +1169,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "always",
           "state": "emitted",
@@ -1062,6 +1246,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -1134,6 +1325,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -1205,6 +1403,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -1275,6 +1480,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "always",
           "state": "emitted",
@@ -1307,6 +1519,84 @@
           "class": "UNKNOWN",
           "state": "UNKNOWN",
           "basis": "UNKNOWN",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "id": "n:66ab0578712ed68ee52e792457a5de3838dd3cc3ed64d12d978da439e9be57a7",
+      "identity": [
+        "generated",
+        "sample",
+        "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+        "header",
+        "0"
+      ],
+      "kind": "generated",
+      "label": "antigravity header 0",
+      "source": null,
+      "layer": null,
+      "content": {
+        "status": "text",
+        "bytes": 749,
+        "lines": 11,
+        "sha256": "6959ce2aa83bcabacfa6d21e5e7f388af87b69b38ef7e6b4f552eec958364f25"
+      },
+      "emissions": [
+        {
+          "document": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+          "ranges": [
+            {
+              "start": 0,
+              "end": 749
+            }
+          ],
+          "bytes": 749,
+          "lines": 11,
+          "sha256": "6959ce2aa83bcabacfa6d21e5e7f388af87b69b38ef7e6b4f552eec958364f25"
+        }
+      ],
+      "loads": [
+        {
+          "environment": "antigravity",
+          "class": "always",
+          "state": "emitted",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "claude_code",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "codex_cli",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "muse",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "opencode",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "pi",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
           "condition": null
         }
       ]
@@ -1356,6 +1646,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": "environments=claude_code"
+        },
         {
           "environment": "claude_code",
           "class": "always",
@@ -1428,6 +1725,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -1499,9 +1803,94 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "always",
           "state": "emitted",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "codex_cli",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "muse",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "opencode",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "pi",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "id": "n:7a8d05cb176e357a07ebd60db86efb9ecf3d12da598a86f84c4beb6645b59b44",
+      "identity": [
+        "generated",
+        "sample",
+        "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+        "separator",
+        "0"
+      ],
+      "kind": "generated",
+      "label": "antigravity separator 0",
+      "source": null,
+      "layer": null,
+      "content": {
+        "status": "text",
+        "bytes": 1,
+        "lines": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      "emissions": [
+        {
+          "document": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+          "ranges": [
+            {
+              "start": 749,
+              "end": 750
+            }
+          ],
+          "bytes": 1,
+          "lines": 1,
+          "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+        }
+      ],
+      "loads": [
+        {
+          "environment": "antigravity",
+          "class": "always",
+          "state": "emitted",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "claude_code",
+          "class": "UNKNOWN",
+          "state": "excluded",
           "basis": "rendering-rule",
           "condition": null
         },
@@ -1570,6 +1959,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "always",
           "state": "emitted",
@@ -1623,6 +2019,18 @@
         "sha256": null
       },
       "emissions": [
+        {
+          "document": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+          "ranges": [
+            {
+              "start": 0,
+              "end": 845
+            }
+          ],
+          "bytes": 845,
+          "lines": 21,
+          "sha256": "ef656b33b0c5f1ad89e63394bc3d1044e8e61fa11503c0ba6ff900db1f41ecd4"
+        },
         {
           "document": "n:65d8fae986f9f2dc58b018c1075ef47c2527c71175e40b8c40ec002148ba051d",
           "ranges": [
@@ -1685,6 +2093,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -1757,6 +2172,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -1826,6 +2248,13 @@
       },
       "emissions": [],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -1899,6 +2328,13 @@
       },
       "emissions": [],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "available",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -1975,6 +2411,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "always",
           "state": "emitted",
@@ -2045,6 +2488,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "always",
@@ -2117,6 +2567,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -2187,6 +2644,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -2259,6 +2723,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -2269,6 +2740,84 @@
           "environment": "codex_cli",
           "class": "always",
           "state": "emitted",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "muse",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "opencode",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "pi",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "id": "n:acc3c70004254300c752ffa3ce0c2339c9fdba0f178e372578d34e01af08f234",
+      "identity": [
+        "generated",
+        "sample",
+        "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+        "chapter",
+        "0"
+      ],
+      "kind": "generated",
+      "label": "antigravity chapter 0",
+      "source": null,
+      "layer": null,
+      "content": {
+        "status": "text",
+        "bytes": 35,
+        "lines": 3,
+        "sha256": "62d6f670007c30c9b7767c3db9a44bb2fad8aff5eaa7d2aee483c0515bc016bb"
+      },
+      "emissions": [
+        {
+          "document": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+          "ranges": [
+            {
+              "start": 750,
+              "end": 785
+            }
+          ],
+          "bytes": 35,
+          "lines": 3,
+          "sha256": "62d6f670007c30c9b7767c3db9a44bb2fad8aff5eaa7d2aee483c0515bc016bb"
+        }
+      ],
+      "loads": [
+        {
+          "environment": "antigravity",
+          "class": "always",
+          "state": "emitted",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "claude_code",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "codex_cli",
+          "class": "UNKNOWN",
+          "state": "excluded",
           "basis": "rendering-rule",
           "condition": null
         },
@@ -2328,6 +2877,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -2400,6 +2956,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "always",
           "state": "emitted",
@@ -2470,6 +3033,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -2542,6 +3112,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "always",
           "state": "emitted",
@@ -2613,6 +3190,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -2681,6 +3265,18 @@
       },
       "emissions": [
         {
+          "document": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+          "ranges": [
+            {
+              "start": 786,
+              "end": 845
+            }
+          ],
+          "bytes": 59,
+          "lines": 5,
+          "sha256": "05ebe869b71ce817374754ed395b770c38ac45d34ef2cc0db73c151b91631015"
+        },
+        {
           "document": "n:65d8fae986f9f2dc58b018c1075ef47c2527c71175e40b8c40ec002148ba051d",
           "ranges": [
             {
@@ -2742,6 +3338,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "always",
+          "state": "emitted",
+          "basis": "rendering-rule",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "always",
@@ -2824,6 +3427,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -2895,6 +3505,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -2964,6 +3581,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -3036,6 +3660,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -3107,6 +3738,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "UNKNOWN",
           "state": "excluded",
@@ -3124,6 +3762,84 @@
           "environment": "muse",
           "class": "always",
           "state": "emitted",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "opencode",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "pi",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        }
+      ]
+    },
+    {
+      "id": "n:e3b73d8daf7b87de8d700bafc89c57b9f12e94b3405e49d026917d352d8add09",
+      "identity": [
+        "generated",
+        "sample",
+        "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+        "separator",
+        "1"
+      ],
+      "kind": "generated",
+      "label": "antigravity separator 1",
+      "source": null,
+      "layer": null,
+      "content": {
+        "status": "text",
+        "bytes": 1,
+        "lines": 1,
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+      },
+      "emissions": [
+        {
+          "document": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+          "ranges": [
+            {
+              "start": 785,
+              "end": 786
+            }
+          ],
+          "bytes": 1,
+          "lines": 1,
+          "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+        }
+      ],
+      "loads": [
+        {
+          "environment": "antigravity",
+          "class": "always",
+          "state": "emitted",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "claude_code",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "codex_cli",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
+          "environment": "muse",
+          "class": "UNKNOWN",
+          "state": "excluded",
           "basis": "rendering-rule",
           "condition": null
         },
@@ -3189,6 +3905,13 @@
         }
       ],
       "loads": [
+        {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "UNKNOWN",
+          "basis": "UNKNOWN",
+          "condition": null
+        },
         {
           "environment": "claude_code",
           "class": "UNKNOWN",
@@ -3281,6 +4004,13 @@
       ],
       "loads": [
         {
+          "environment": "antigravity",
+          "class": "UNKNOWN",
+          "state": "excluded",
+          "basis": "rendering-rule",
+          "condition": null
+        },
+        {
           "environment": "claude_code",
           "class": "always",
           "state": "emitted",
@@ -3363,6 +4093,12 @@
     },
     {
       "from": "n:21c012a209ba2470480bc51b2012e4d6c417e3e8e30b857116cebdcd70c3046a",
+      "to": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+      "kind": "contributes",
+      "order": 4
+    },
+    {
+      "from": "n:21c012a209ba2470480bc51b2012e4d6c417e3e8e30b857116cebdcd70c3046a",
       "to": "n:08c929c6aa74acd4e7150271f56f2cdc5dba34608b894b4f0b385bce7df24920",
       "kind": "contributes",
       "order": 4
@@ -3434,6 +4170,12 @@
       "order": 2
     },
     {
+      "from": "n:66ab0578712ed68ee52e792457a5de3838dd3cc3ed64d12d978da439e9be57a7",
+      "to": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+      "kind": "contributes",
+      "order": 0
+    },
+    {
       "from": "n:6b50c7da67be7da46057c0da4c053d6cc70a92f850d12617fe5ca381317b46e0",
       "to": "n:65d8fae986f9f2dc58b018c1075ef47c2527c71175e40b8c40ec002148ba051d",
       "kind": "contributes",
@@ -3458,6 +4200,12 @@
       "order": 2
     },
     {
+      "from": "n:7a8d05cb176e357a07ebd60db86efb9ecf3d12da598a86f84c4beb6645b59b44",
+      "to": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+      "kind": "contributes",
+      "order": 1
+    },
+    {
       "from": "n:7fb0ccb17ae4e4696f3860d14b5252f1bc1976c8a123c09a404cd873fdbab037",
       "to": "n:65d8fae986f9f2dc58b018c1075ef47c2527c71175e40b8c40ec002148ba051d",
       "kind": "contributes",
@@ -3465,33 +4213,39 @@
     },
     {
       "from": "n:804f2cdb72802ae038d47ba50a4e0fa73e98d09e160f68d99c3440df1da7c2b8",
-      "to": "n:65d8fae986f9f2dc58b018c1075ef47c2527c71175e40b8c40ec002148ba051d",
+      "to": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
       "kind": "emits",
       "order": 0
     },
     {
       "from": "n:804f2cdb72802ae038d47ba50a4e0fa73e98d09e160f68d99c3440df1da7c2b8",
-      "to": "n:3a53750dec22ef3b372c3817b473be1d3a2cb050ecaaa7b45c86268497d15efa",
+      "to": "n:65d8fae986f9f2dc58b018c1075ef47c2527c71175e40b8c40ec002148ba051d",
       "kind": "emits",
       "order": 1
     },
     {
       "from": "n:804f2cdb72802ae038d47ba50a4e0fa73e98d09e160f68d99c3440df1da7c2b8",
-      "to": "n:08c929c6aa74acd4e7150271f56f2cdc5dba34608b894b4f0b385bce7df24920",
+      "to": "n:3a53750dec22ef3b372c3817b473be1d3a2cb050ecaaa7b45c86268497d15efa",
       "kind": "emits",
       "order": 2
     },
     {
       "from": "n:804f2cdb72802ae038d47ba50a4e0fa73e98d09e160f68d99c3440df1da7c2b8",
-      "to": "n:d948e50e16a0479a6ba44f1c4ef77db8e05d444a63844c389d47520f5bfec976",
+      "to": "n:08c929c6aa74acd4e7150271f56f2cdc5dba34608b894b4f0b385bce7df24920",
       "kind": "emits",
       "order": 3
     },
     {
       "from": "n:804f2cdb72802ae038d47ba50a4e0fa73e98d09e160f68d99c3440df1da7c2b8",
-      "to": "n:b00da0517e21b22f7a0ed4dc193467844372e09563bab33416024381f1c4153d",
+      "to": "n:d948e50e16a0479a6ba44f1c4ef77db8e05d444a63844c389d47520f5bfec976",
       "kind": "emits",
       "order": 4
+    },
+    {
+      "from": "n:804f2cdb72802ae038d47ba50a4e0fa73e98d09e160f68d99c3440df1da7c2b8",
+      "to": "n:b00da0517e21b22f7a0ed4dc193467844372e09563bab33416024381f1c4153d",
+      "kind": "emits",
+      "order": 5
     },
     {
       "from": "n:804f2cdb72802ae038d47ba50a4e0fa73e98d09e160f68d99c3440df1da7c2b8",
@@ -3562,6 +4316,12 @@
       "order": 0
     },
     {
+      "from": "n:acc3c70004254300c752ffa3ce0c2339c9fdba0f178e372578d34e01af08f234",
+      "to": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+      "kind": "contributes",
+      "order": 2
+    },
+    {
       "from": "n:ba56e9ae0ee9ae1710588397b8e124be5fb1b3a2e43a5f4f41a7a1b3017a3b79",
       "to": "n:65d8fae986f9f2dc58b018c1075ef47c2527c71175e40b8c40ec002148ba051d",
       "kind": "contributes",
@@ -3610,6 +4370,12 @@
       "order": 0
     },
     {
+      "from": "n:e3b73d8daf7b87de8d700bafc89c57b9f12e94b3405e49d026917d352d8add09",
+      "to": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+      "kind": "contributes",
+      "order": 3
+    },
+    {
       "from": "n:f5657a986a7bfb4dca2a15b9ceb34c4ec1c88002b840e9b95c49480a7171a156",
       "to": "n:6b50c7da67be7da46057c0da4c053d6cc70a92f850d12617fe5ca381317b46e0",
       "kind": "contains",
@@ -3617,6 +4383,54 @@
     }
   ],
   "documents": [
+    {
+      "node": "n:0858a3aaa828299b445ae8facc6a9b6ee262a84dcf7e78cc2af0ee5d190233b0",
+      "environment": "antigravity",
+      "root": "environment/antigravity",
+      "path": "config/AGENTS.md",
+      "form": "monolithic",
+      "origin": "rendered",
+      "bytes": 845,
+      "lines": 21,
+      "sha256": "ef656b33b0c5f1ad89e63394bc3d1044e8e61fa11503c0ba6ff900db1f41ecd4",
+      "coverage": [
+        {
+          "node": "n:66ab0578712ed68ee52e792457a5de3838dd3cc3ed64d12d978da439e9be57a7",
+          "range": {
+            "start": 0,
+            "end": 749
+          }
+        },
+        {
+          "node": "n:7a8d05cb176e357a07ebd60db86efb9ecf3d12da598a86f84c4beb6645b59b44",
+          "range": {
+            "start": 749,
+            "end": 750
+          }
+        },
+        {
+          "node": "n:acc3c70004254300c752ffa3ce0c2339c9fdba0f178e372578d34e01af08f234",
+          "range": {
+            "start": 750,
+            "end": 785
+          }
+        },
+        {
+          "node": "n:e3b73d8daf7b87de8d700bafc89c57b9f12e94b3405e49d026917d352d8add09",
+          "range": {
+            "start": 785,
+            "end": 786
+          }
+        },
+        {
+          "node": "n:21c012a209ba2470480bc51b2012e4d6c417e3e8e30b857116cebdcd70c3046a",
+          "range": {
+            "start": 786,
+            "end": 845
+          }
+        }
+      ]
+    },
     {
       "node": "n:65d8fae986f9f2dc58b018c1075ef47c2527c71175e40b8c40ec002148ba051d",
       "environment": "claude_code",

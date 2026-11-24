@@ -552,6 +552,11 @@ func checkFlagHomeBoundary(adapter envregistry.Adapter, envRoot string, fragment
 		if len(fragment.MCP.Channels) != 1 || fragment.MCP.Channels[0].Kind != envregistry.KindFile || fragment.MCP.Channels[0].Filename != adapter.MCP.Filename {
 			return fmt.Errorf("fragment mcp channel must be file %s", adapter.MCP.Filename)
 		}
+		for _, envName := range fragment.MCP.EnvNames {
+			if adapter.ForbidsMCPEnvName(envName) {
+				return fmt.Errorf("fragment mcp.env_names forbids %q for %s", envName, adapter.ID)
+			}
+		}
 	}
 	return nil
 }

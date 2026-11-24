@@ -33,6 +33,7 @@ func (Adapter) ReleaseProbe(harnessapi.Context) (harnessapi.ProbeSpec, error) {
 // ManagedHomeSpec returns the pure CIP-0033 managed-home specification for
 // Antigravity CLI (verified against agy 1.5.16 on macOS ARM64 and Linux x86_64).
 func ManagedHomeSpec() harnessapi.ManagedHomeSpec {
+	// #nosec G101 -- no credential material here: relative file paths and environment variable names only.
 	return harnessapi.ManagedHomeSpec{
 		ID:                    string(ID),
 		Alias:                 "agy",
@@ -47,18 +48,27 @@ func ManagedHomeSpec() harnessapi.ManagedHomeSpec {
 		DefaultForm:           "monolithic",
 		MCPFilename:           "config/mcp_config.json",
 		MCPFormat:             "mcpServers-json",
+		ForbiddenMCPEnvNames: []string{
+			"GEMINI_API_KEY",
+			"GOOGLE_API_KEY",
+			"AGY_ADC_AUTH",
+			"GOOGLE_APPLICATION_CREDENTIALS",
+			"GOOGLE_CLOUD_QUOTA_PROJECT",
+			"AGY_CLI_FORCE_FILE_TOKEN_STORAGE",
+			"AGY_CLI_DISABLE_AUTO_UPDATE",
+		},
 		Passthrough: map[string][]harnessapi.PassthroughSpec{
 			"default": {
 				{
-					Path:           "antigravity-cli/antigravity-oauth-token",
+					Path:           "antigravity-cli/antigravity-oauth-token", // #nosec G101 -- relative path descriptor, not a secret.
 					Strategy:       "file-link",
-					FileLinkTarget: "antigravity-cli/antigravity-oauth-token",
+					FileLinkTarget: "antigravity-cli/antigravity-oauth-token", // #nosec G101 -- relative path descriptor, not a secret.
 				},
 			},
 		},
-		CredentialFileGuardPath:           "antigravity-cli/antigravity-oauth-token",
+		CredentialFileGuardPath:           "antigravity-cli/antigravity-oauth-token", // #nosec G101 -- relative path descriptor, not a secret.
 		ForcedCredentialStore:             "file",
-		ForcedCredentialEnvVar:            "AGY_CLI_FORCE_FILE_TOKEN_STORAGE",
+		ForcedCredentialEnvVar:            "AGY_CLI_FORCE_FILE_TOKEN_STORAGE", // #nosec G101 -- environment variable name, not a secret.
 		ForcedCredentialEnvValue:          "true",
 		RequireLiveNativeCredentialTarget: true,
 		Shadows: []harnessapi.ShadowSpec{

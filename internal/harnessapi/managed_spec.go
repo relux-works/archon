@@ -32,6 +32,7 @@ type ManagedHomeSpec struct {
 	DefaultForm                       string
 	MCPFilename                       string
 	MCPFormat                         string
+	ForbiddenMCPEnvNames              []string
 	Passthrough                       map[string][]PassthroughSpec
 	CredentialFileGuardPath           string
 	ForcedCredentialStore             string

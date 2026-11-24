@@ -128,6 +128,13 @@ func MCPSet(servers []MCPServer, environment string) ([]MCPServer, error) {
 		default:
 			return nil, fmt.Errorf("mcp server %q transport %q is not stdio or http", server.Name, server.Transport)
 		}
+		if adapter, lookupErr := envregistry.ByID(environment); lookupErr == nil {
+			for _, envName := range server.EnvNames {
+				if adapter.ForbidsMCPEnvName(envName) {
+					return nil, fmt.Errorf("mcp server %q requests forbidden environment variable %q for %s", server.Name, envName, environment)
+				}
+			}
+		}
 		set = append(set, server)
 	}
 	sort.Slice(set, func(i, j int) bool { return set[i].Name < set[j].Name })
@@ -237,7 +244,7 @@ func MCPFile(environment string, servers []MCPServer) (path string, document []b
 	case "opencode":
 		document, err = openCodeMCP(set)
 	default:
-		if adapter, err := envregistry.ByID(environment); err == nil && adapter.MCPFormat == envregistry.MCPFormatServersJSON {
+		if adapter, lookupErr := envregistry.ByID(environment); lookupErr == nil && adapter.MCPFormat == envregistry.MCPFormatServersJSON {
 			document, err = mcpServersJSON(set)
 		} else {
 			return "", nil, false, nil
@@ -270,6 +277,8 @@ func mcpServersJSON(set []MCPServer) ([]byte, error) {
 				"type": "http",
 				"url":  server.URL,
 			}
+		default:
+			return nil, fmt.Errorf("mcp server %q transport %q is not stdio or http", server.Name, server.Transport)
 		}
 	}
 	document, err := protocoljson.MarshalCanonical(map[string]any{"mcpServers": table})
@@ -301,6 +310,8 @@ func claudeMCP(set []MCPServer) ([]byte, error) {
 				"type": "http",
 				"url":  server.URL,
 			}
+		default:
+			return nil, fmt.Errorf("mcp server %q transport %q is not stdio or http", server.Name, server.Transport)
 		}
 	}
 	document, err := protocoljson.MarshalCanonical(map[string]any{"mcpServers": table})

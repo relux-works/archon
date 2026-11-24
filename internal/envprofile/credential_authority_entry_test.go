@@ -300,7 +300,9 @@ func isolateAuthorityNativeHomes(t *testing.T, fx *managedFixture) {
 		if path == "" {
 			path = t.TempDir()
 		}
-		t.Setenv(adapter.EnvVar, path)
+		if adapter.EnvVar != "" {
+			t.Setenv(adapter.EnvVar, path)
+		}
 	}
 }
 

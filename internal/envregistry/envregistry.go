@@ -245,6 +245,7 @@ type Adapter struct {
 	NativeHomeIgnoresEnv              bool
 	ForbiddenHomeBasename             string
 	MCPFormat                         string
+	ForbiddenMCPEnvNames              []string
 	CredentialFileGuardPath           string
 	ForcedCredentialStore             CredentialStoreSelection
 	ForcedCredentialEnvVar            string

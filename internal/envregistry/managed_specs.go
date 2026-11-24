@@ -1,6 +1,8 @@
 package envregistry
 
 import (
+	"strings"
+
 	"github.com/relux-works/curator/internal/harnessapi"
 	"github.com/relux-works/curator/internal/harnessregistry"
 )
@@ -27,6 +29,7 @@ func adapterFromManagedSpec(spec harnessapi.ManagedHomeSpec) Adapter {
 		Forms:                             append([]string(nil), spec.Forms...),
 		DefaultForm:                       spec.DefaultForm,
 		MCPFormat:                         spec.MCPFormat,
+		ForbiddenMCPEnvNames:              append([]string(nil), spec.ForbiddenMCPEnvNames...),
 		CredentialFileGuardPath:           spec.CredentialFileGuardPath,
 		ForcedCredentialStore:             CredentialStoreSelection(spec.ForcedCredentialStore),
 		ForcedCredentialEnvVar:            spec.ForcedCredentialEnvVar,
@@ -81,6 +84,18 @@ func (a Adapter) EffectiveHomeTransport() string {
 // flag rather than an environment variable.
 func (a Adapter) IsFlagHome() bool {
 	return a.EffectiveHomeTransport() == HomeTransportFlag
+}
+
+// ForbidsMCPEnvName reports whether name is forbidden in this adapter's MCP
+// env_names declarations (case-insensitive), preventing ambient auth or
+// managed-home policy variables from bypassing credential isolation.
+func (a Adapter) ForbidsMCPEnvName(name string) bool {
+	for _, forbidden := range a.ForbiddenMCPEnvNames {
+		if strings.EqualFold(name, forbidden) {
+			return true
+		}
+	}
+	return false
 }
 
 // CredentialFileGuardPaths returns the home-relative credential file paths
