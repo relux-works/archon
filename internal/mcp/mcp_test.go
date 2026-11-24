@@ -160,3 +160,26 @@ func TestMalformedConfigCountsAsEmpty(t *testing.T) {
 		t.Fatalf("malformed config produced servers: %v", servers)
 	}
 }
+
+func TestCursorProjectAndHomeMCPInspection(t *testing.T) {
+	env := newEnv(t)
+	write(t, env.ProjectRoot, ".cursor/mcp.json", `{"mcpServers": {"project": {}, "shared": {}}}`)
+	write(t, env.UserHome, ".cursor/mcp.json", `{"mcpServers": {"user": {}, "shared": {}}}`)
+
+	servers := ConfiguredServers(env, "cursor")
+	for _, name := range []string{"project", "user", "shared"} {
+		if _, present := servers[name]; !present {
+			t.Errorf("Cursor MCP source missing %q: %v", name, servers)
+		}
+	}
+	projectOnly := ProjectOnlyServers(env, "cursor")
+	if !projectOnly["project"] || projectOnly["shared"] || projectOnly["user"] {
+		t.Fatalf("project-only Cursor MCP servers = %v", projectOnly)
+	}
+
+	malformed := newEnv(t)
+	write(t, malformed.ProjectRoot, ".cursor/mcp.json", `{broken`)
+	if got := ConfiguredServers(malformed, "cursor"); len(got) != 0 {
+		t.Fatalf("malformed Cursor MCP config produced servers: %v", got)
+	}
+}

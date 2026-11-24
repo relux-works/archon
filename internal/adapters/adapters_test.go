@@ -367,6 +367,38 @@ func TestStageGlobalCoversTheNativeDiscoveryMirrorOnce(t *testing.T) {
 	}
 }
 
+func TestStageGlobalMirrorsCursorAtItsExistingHomePath(t *testing.T) {
+	home := t.TempDir()
+	userHome := t.TempDir()
+	stageRoot := t.TempDir()
+	canonical := filepath.Join(home, "global", "skills")
+	makeSkill(t, canonical, "skill-c")
+
+	mirror, err := StageGlobal(stageRoot, home, userHome,
+		[]string{"cursor"}, []string{"skill-c"}, "copy", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan := mirror.Plan()
+	if err := plan.Validate(); err != nil {
+		t.Fatalf("staged global adapter plan is invalid: %v", err)
+	}
+	root := filepath.Join(userHome, ".cursor", "rules")
+	if _, err := os.Lstat(root); !os.IsNotExist(err) {
+		t.Fatalf("staging touched the live Cursor root: %v", err)
+	}
+	entry, found := find(plan, filepath.Join(root, "skill-c"))
+	if !found {
+		t.Fatal("Cursor home skill directory is not a journaled target")
+	}
+	if _, err := os.Stat(filepath.Join(entry.StagedPath, "SKILL.md")); err != nil {
+		t.Fatalf("staged Cursor skill is incomplete: %v", err)
+	}
+	if _, found := find(plan, filepath.Join(root, LedgerName)); !found {
+		t.Fatal("Cursor home ownership ledger is not a journaled target")
+	}
+}
+
 func TestGitignoreEntriesAndUnknownAgents(t *testing.T) {
 	entries := RequiredGitignoreEntries([]string{"claude_code", "opencode", "bogus"})
 	joined := strings.Join(entries, " ")
