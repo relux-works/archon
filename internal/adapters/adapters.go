@@ -27,7 +27,7 @@ import (
 var AgentPaths = projectAgentPaths()
 
 var legacyAgentPaths = map[string]string{
-	"codex_cli": ".codex/skills",
+	"codex_cli":   ".codex/skills",
 }
 
 func projectAgentPaths() map[string]string {
