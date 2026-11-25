@@ -3,12 +3,15 @@ package adapters
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 
 	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/curator/internal/harnessregistry"
 	"github.com/relux-works/curator/internal/staging"
 )
 
@@ -38,9 +41,17 @@ func (mirror Mirror) Plan() staging.Plan { return mirror.plan }
 func StageProject(stageRoot, projectRoot string, agents []string, groups []Group, mode string) (Mirror, error) {
 	roots := map[string]string{}
 	for _, agent := range agents {
-		if rel, known, err := skillPath(agent, harnessapi.ProjectScope); err != nil {
+		discovery, ported, err := registeredSkills(agent, harnessapi.ProjectScope)
+		if err != nil {
 			return Mirror{}, err
-		} else if known {
+		}
+		if ported {
+			if discovery.Mirror() {
+				addSkillRoots(roots, agent, projectRoot, discovery.Paths())
+			}
+			continue
+		}
+		if rel, known := AgentPaths[agent]; known {
 			roots[agent] = filepath.Join(projectRoot, filepath.FromSlash(rel))
 		}
 	}
@@ -79,9 +90,17 @@ func StageGlobalWithOwnership(
 	canonical := filepath.Join(home, "global", "skills")
 	roots := map[string]string{}
 	for _, agent := range agents {
-		if rel, known, err := skillPath(agent, harnessapi.UserScope); err != nil {
+		discovery, ported, err := registeredSkills(agent, harnessapi.UserScope)
+		if err != nil {
 			return Mirror{}, err
-		} else if known {
+		}
+		if ported {
+			if discovery.Mirror() {
+				addSkillRoots(roots, agent, userHome, discovery.Paths())
+			}
+			continue
+		}
+		if rel, known := AgentPaths[agent]; known {
 			roots[agent] = filepath.Join(userHome, filepath.FromSlash(rel))
 		}
 		if NativeDiscoveryAgents[agent] {
@@ -89,6 +108,43 @@ func StageGlobalWithOwnership(
 		}
 	}
 	return stageWithOwnership(stageRoot, roots, []Group{{Root: canonical, Skills: skills, Sources: sources, Admitted: admitted}}, mode, owner)
+}
+
+func registeredSkills(agent string, scope harnessapi.Scope) (harnessapi.SkillDiscovery, bool, error) {
+	adapter, err := harnessregistry.Lookup(harnessapi.ID(agent))
+	if refusalIs(err, harnessapi.UnknownID) {
+		return harnessapi.SkillDiscovery{}, false, nil
+	}
+	if err != nil {
+		return harnessapi.SkillDiscovery{}, false, err
+	}
+	context, err := harnessapi.NewContext(runtime.GOOS, scope, harnessapi.VerifiedRelease{})
+	if err != nil {
+		return harnessapi.SkillDiscovery{}, false, err
+	}
+	discovery, err := adapter.Skills(context, scope)
+	if refusalIs(err, harnessapi.OperationNotPorted) {
+		return harnessapi.SkillDiscovery{}, false, nil
+	}
+	if err != nil {
+		return harnessapi.SkillDiscovery{}, false, err
+	}
+	return discovery, true, nil
+}
+
+func refusalIs(err error, code string) bool {
+	var refusal harnessapi.Refusal
+	return errors.As(err, &refusal) && refusal.Code() == code
+}
+
+func addSkillRoots(roots map[string]string, agent, base string, paths harnessapi.NamedPaths) {
+	for index, path := range paths.Paths() {
+		key := agent
+		if index > 0 {
+			key = fmt.Sprintf("%s#%d", agent, index)
+		}
+		roots[key] = filepath.Join(base, filepath.FromSlash(path.String()))
+	}
 }
 
 func stage(stageRoot string, adapterRoots map[string]string, groups []Group, mode string) (Mirror, error) {

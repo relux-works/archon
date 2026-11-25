@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/curator/internal/harnessvalue"
 	"github.com/relux-works/curator/internal/staging"
 	"github.com/relux-works/curator/internal/stateread"
 )
@@ -344,6 +346,77 @@ func TestNativeDiscoveryAgentsGetNoProjectMirror(t *testing.T) {
 	}
 }
 
+func TestWindsurfNativeDiscoveryLegacyContract(t *testing.T) {
+	if !KnownAgents()["windsurf"] {
+		t.Fatal("native-discovery agent was not recognized")
+	}
+	if unknown := UnknownAgents([]string{"windsurf"}); len(unknown) != 0 {
+		t.Fatalf("native-discovery agent was rejected: %v", unknown)
+	}
+	if entries := RequiredGitignoreEntries([]string{"windsurf"}); len(entries) != 1 || entries[0] != ".agents/" {
+		t.Fatalf("native store ignore entries: %v", entries)
+	}
+
+	project := t.TempDir()
+	projectStage := t.TempDir()
+	canonical := filepath.Join(project, ".agents", "skills")
+	makeSkill(t, canonical, "skill-a")
+	projectMirror, err := StageProject(projectStage, project, []string{"windsurf"},
+		[]Group{{Root: canonical, Skills: []string{"skill-a"}}}, "copy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(projectMirror.Plan().Targets) != 0 {
+		t.Fatalf("native discovery produced a project mirror: %+v", projectMirror.Plan().Targets)
+	}
+
+	home := t.TempDir()
+	userHome := t.TempDir()
+	globalStage := t.TempDir()
+	globalCanonical := filepath.Join(home, "global", "skills")
+	makeSkill(t, globalCanonical, "skill-a")
+	globalMirror, err := StageGlobal(globalStage, home, userHome, []string{"windsurf"}, []string{"skill-a"}, "copy", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, found := find(globalMirror.Plan(), filepath.Join(userHome, ".agents", "skills", "skill-a")); !found {
+		t.Fatal("global native-discovery mirror is missing")
+	}
+}
+
+func TestRegisteredSkillRoutingFallbackAndPathExpansion(t *testing.T) {
+	if _, ported, err := registeredSkills("cursor", harnessapi.ProjectScope); err != nil || !ported {
+		t.Fatalf("registered Cursor adapter did not select its registry declaration: ported=%t err=%v", ported, err)
+	}
+	if _, ported, err := registeredSkills("claude_code", harnessapi.ProjectScope); err != nil || ported {
+		t.Fatalf("unported adapter did not select the explicit legacy fallback: ported=%t err=%v", ported, err)
+	}
+	if _, ported, err := registeredSkills("unknown", harnessapi.ProjectScope); err != nil || ported {
+		t.Fatalf("unknown adapter changed the legacy empty result: ported=%t err=%v", ported, err)
+	}
+	if _, _, err := registeredSkills("cursor", "unsupported"); err == nil || err.Error() != "harness_scope_unsupported" {
+		t.Fatalf("registry context error was masked: %v", err)
+	}
+
+	var relative []harnessvalue.RelativePath
+	for _, name := range []string{".agents/skills", "shared/skills"} {
+		path, err := harnessvalue.NewRelativePath(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		relative = append(relative, path)
+	}
+	paths, err := harnessapi.NewNamedPaths(relative)
+	if err != nil {
+		t.Fatal(err)
+	}
+	roots := map[string]string{}
+	addSkillRoots(roots, "adapter", t.TempDir(), paths)
+	if len(roots) != 2 || roots["adapter"] == "" || roots["adapter#1"] == "" {
+		t.Fatalf("named skill roots were not preserved: %v", roots)
+	}
+}
+
 func TestStageGlobalCoversTheNativeDiscoveryMirrorOnce(t *testing.T) {
 	home := t.TempDir()
 	userHome := t.TempDir()
@@ -364,6 +437,38 @@ func TestStageGlobalCoversTheNativeDiscoveryMirrorOnce(t *testing.T) {
 		if _, found := find(plan, filepath.Join(userHome, filepath.FromSlash(rel))); !found {
 			t.Fatalf("global mirror %s is not a journaled target", rel)
 		}
+	}
+}
+
+func TestStageGlobalMirrorsCursorAtItsExistingHomePath(t *testing.T) {
+	home := t.TempDir()
+	userHome := t.TempDir()
+	stageRoot := t.TempDir()
+	canonical := filepath.Join(home, "global", "skills")
+	makeSkill(t, canonical, "skill-c")
+
+	mirror, err := StageGlobal(stageRoot, home, userHome,
+		[]string{"cursor"}, []string{"skill-c"}, "copy", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan := mirror.Plan()
+	if err := plan.Validate(); err != nil {
+		t.Fatalf("staged global adapter plan is invalid: %v", err)
+	}
+	root := filepath.Join(userHome, ".cursor", "rules")
+	if _, err := os.Lstat(root); !os.IsNotExist(err) {
+		t.Fatalf("staging touched the live Cursor root: %v", err)
+	}
+	entry, found := find(plan, filepath.Join(root, "skill-c"))
+	if !found {
+		t.Fatal("Cursor home skill directory is not a journaled target")
+	}
+	if _, err := os.Stat(filepath.Join(entry.StagedPath, "SKILL.md")); err != nil {
+		t.Fatalf("staged Cursor skill is incomplete: %v", err)
+	}
+	if _, found := find(plan, filepath.Join(root, LedgerName)); !found {
+		t.Fatal("Cursor home ownership ledger is not a journaled target")
 	}
 }
 

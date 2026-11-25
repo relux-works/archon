@@ -367,21 +367,6 @@
     },
     {
       "harness_id": "cursor",
-      "line_sha256": "9cf69bcaa8a31b7cff28dd865d5c67dfb7ee47ebd0ba6263f32d946271d90dca",
-      "path": "internal/adapters/adapters.go"
-    },
-    {
-      "harness_id": "opencode",
-      "line_sha256": "c0dc5dedc153c557772a6000e0f63a8c5d5ddc671eb0a70b2ec44ecc27eddff0",
-      "path": "internal/adapters/adapters.go"
-    },
-    {
-      "harness_id": "windsurf",
-      "line_sha256": "c0dc5dedc153c557772a6000e0f63a8c5d5ddc671eb0a70b2ec44ecc27eddff0",
-      "path": "internal/adapters/adapters.go"
-    },
-    {
-      "harness_id": "cursor",
       "line_sha256": "0f72f3add8205e7557e928cbfa9af056a819725206b6ef786fc3e58959aee606",
       "path": "internal/artifactpolicy/containers.go"
     },
@@ -3346,16 +3331,6 @@
       "path": "internal/mcp/mcp.go"
     },
     {
-      "harness_id": "cursor",
-      "line_sha256": "4adc6b5417f316b59257770b57e2be4716e4d08fb491263f2111ad84be275d8f",
-      "path": "internal/mcp/mcp.go"
-    },
-    {
-      "harness_id": "cursor",
-      "line_sha256": "4adc6b5417f316b59257770b57e2be4716e4d08fb491263f2111ad84be275d8f",
-      "path": "internal/mcp/mcp.go"
-    },
-    {
       "harness_id": "opencode",
       "line_sha256": "0d555f027c39e37f981dbe5cb0aced7491ce4cc4eceeab260d7ea2d8bfc5a8b6",
       "path": "internal/mcp/mcp.go"
@@ -3378,16 +3353,6 @@
     {
       "harness_id": "opencode",
       "line_sha256": "ed36a1a4f50d7ae026e86375f2a7d6254755694ba9f544e80fab4f780b192f7c",
-      "path": "internal/mcp/mcp.go"
-    },
-    {
-      "harness_id": "windsurf",
-      "line_sha256": "6d053b0ee26c08296e6407347ea255009913e7e9ea0ba8221a2a207475e8e2d8",
-      "path": "internal/mcp/mcp.go"
-    },
-    {
-      "harness_id": "windsurf",
-      "line_sha256": "e21eab1520a85f1e3ea1c330cae53218828e8a0478412a04691e7c57d5ba59f2",
       "path": "internal/mcp/mcp.go"
     },
     {

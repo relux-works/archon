@@ -103,13 +103,22 @@ func TestAdapterSurfaceOwnership(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		capabilityNames := map[harnessapi.Capability]string{
+			harnessapi.ManagedHome:          "ManagedHome",
+			harnessapi.InstructionOutput:    "InstructionOutput",
+			harnessapi.SkillProjection:      "SkillProjection",
+			harnessapi.NativeSkillDiscovery: "NativeSkillDiscovery",
+			harnessapi.MCPInspection:        "MCPInspection",
+			harnessapi.NativeMCPWrite:       "NativeMCPWrite",
+			harnessapi.ProjectContextOutput: "ProjectContextOutput",
+			harnessapi.HomeLease:            "HomeLease",
+			harnessapi.CredentialMetadata:   "CredentialMetadata",
+			harnessapi.TrustObservation:     "TrustObservation",
+			harnessapi.ReleaseProbing:       "ReleaseProbing",
+		}
 		for _, capability := range adapter.Capabilities().Values() {
-			name := map[harnessapi.Capability]string{
-				harnessapi.ReleaseProbing:  "ReleaseProbing",
-				harnessapi.SkillProjection: "SkillProjection",
-				harnessapi.MCPInspection:   "MCPInspection",
-			}[capability]
-			if name == "" || len(ownership.CapabilityMethods[name]) == 0 {
+			name, known := capabilityNames[capability]
+			if !known || len(ownership.CapabilityMethods[name]) == 0 {
 				t.Fatal("registered capability has no actual contract method")
 			}
 		}

@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/relux-works/curator/internal/envregistry"
 	"github.com/relux-works/curator/internal/harnessapi"
 	"github.com/relux-works/curator/internal/harnessregistry"
 	"github.com/relux-works/curator/internal/identifiers"
@@ -20,18 +21,101 @@ import (
 	"github.com/relux-works/curator/internal/stateread"
 )
 
-// AgentPaths retains legacy paths until each skill projection moves into its
-// adapter package (Spec §10.1).
-var AgentPaths = map[string]string{
+// AgentPaths maps agent identifiers to their project-relative adapter
+// directories (Spec §10.1). Migrated skill projections come from the registry;
+// the remaining entries stay in the legacy catalog until their moves.
+var AgentPaths = projectAgentPaths()
+
+var legacyAgentPaths = map[string]string{
 	"codex_cli":   ".codex/skills",
 	"claude_code": ".claude/skills",
-	"cursor":      ".cursor/rules",
+}
+
+func projectAgentPaths() map[string]string {
+	paths := make(map[string]string, len(legacyAgentPaths)+len(harnessregistry.IDs()))
+	for agent, path := range legacyAgentPaths {
+		paths[agent] = path
+	}
+	for _, id := range harnessregistry.IDs() {
+		discovery, supported := registeredSkillProjection(string(id), harnessapi.ProjectScope)
+		if !supported || !discovery.Mirror() {
+			continue
+		}
+		paths[string(id)] = oneSkillPath(string(id), discovery.Paths())
+	}
+	return paths
+}
+
+func registeredSkillProjection(agent string, scope harnessapi.Scope) (harnessapi.SkillDiscovery, bool) {
+	adapter, err := harnessregistry.Lookup(harnessapi.ID(agent))
+	if err != nil {
+		var refusal harnessapi.Refusal
+		if errors.As(err, &refusal) && refusal.Code() == harnessapi.UnknownID {
+			return harnessapi.SkillDiscovery{}, false
+		}
+		panic(fmt.Errorf("lookup harness adapter %q: %w", agent, err))
+	}
+	if !adapter.Capabilities().Has(harnessapi.SkillProjection) {
+		return harnessapi.SkillDiscovery{}, false
+	}
+	context, err := harnessapi.NewContext(runtime.GOOS, scope, harnessapi.VerifiedRelease{})
+	if err != nil {
+		panic(fmt.Errorf("create skill projection context for %q: %w", agent, err))
+	}
+	discovery, err := adapter.Skills(context, scope)
+	if err != nil {
+		panic(fmt.Errorf("read skill projection for %q: %w", agent, err))
+	}
+	if discovery.Scope() != scope || discovery.NativeDiscovery() || !discovery.Mirror() {
+		panic(fmt.Errorf("invalid skill projection declaration for %q", agent))
+	}
+	return discovery, true
+}
+
+func oneSkillPath(agent string, paths harnessapi.NamedPaths) string {
+	values := paths.Paths()
+	if len(values) != 1 {
+		panic(fmt.Errorf("skill projection for %q has %d paths; want exactly one", agent, len(values)))
+	}
+	return values[0].String()
+}
+
+func skillPath(agent string, scope harnessapi.Scope) (string, bool, error) {
+	discovery, declared, err := registeredSkills(agent, scope)
+	if declared {
+		if err != nil {
+			return "", false, err
+		}
+		paths := discovery.Paths().Paths()
+		if len(paths) == 0 {
+			return "", false, fmt.Errorf("harness_skill_path_missing")
+		}
+		return paths[0].String(), true, nil
+	}
+	if err != nil {
+		return "", false, err
+	}
+	path, known := AgentPaths[agent]
+	return path, known, nil
 }
 
 // NativeDiscoveryAgents discover the canonical .agents/skills directory
 // natively and receive no project-level mirror; global installs mirror into
 // the home-level .agents/skills for them (Spec §10.2).
-var NativeDiscoveryAgents = map[string]bool{"windsurf": true, "opencode": true}
+var NativeDiscoveryAgents = nativeDiscoveryAgents()
+
+func nativeDiscoveryAgents() map[string]bool {
+	agents := map[string]bool{}
+	for _, adapter := range envregistry.Registry {
+		if adapter.SkillsDir == "" {
+			agents[adapter.ID] = true
+		}
+	}
+	for _, id := range harnessregistry.IDsWithCapability(harnessapi.NativeSkillDiscovery) {
+		agents[string(id)] = true
+	}
+	return agents
+}
 
 // NativeDiscoveryHomePath is the home-relative mirror for native-discovery
 // agents in the global scope.
@@ -52,11 +136,6 @@ func KnownAgents() map[string]bool {
 	for agent := range NativeDiscoveryAgents {
 		known[agent] = true
 	}
-	for _, id := range harnessregistry.IDs() {
-		if _, supported, err := skillPath(string(id), harnessapi.ProjectScope); supported && err == nil {
-			known[string(id)] = true
-		}
-	}
 	return known
 }
 
@@ -65,14 +144,6 @@ func KnownAgents() map[string]bool {
 func RequiredGitignoreEntries(agents []string) []string {
 	entries := map[string]bool{".agents/": true}
 	for _, agent := range agents {
-		if discovery, declared, err := registeredSkills(agent, harnessapi.ProjectScope); declared {
-			if err == nil {
-				for _, path := range discovery.IgnorePaths().Paths() {
-					entries[path.String()+"/"] = true
-				}
-			}
-			continue
-		}
 		if rel, known := AgentPaths[agent]; known {
 			entries[rel+"/"] = true
 		}
@@ -83,45 +154,6 @@ func RequiredGitignoreEntries(agents []string) []string {
 	}
 	sort.Strings(out)
 	return out
-}
-
-func registeredSkills(agent string, scope harnessapi.Scope) (harnessapi.SkillDiscovery, bool, error) {
-	adapter, err := harnessregistry.Lookup(harnessapi.ID(agent))
-	if err != nil {
-		var refusal harnessapi.Refusal
-		if errors.As(err, &refusal) && refusal.Code() == harnessapi.UnknownID {
-			return harnessapi.SkillDiscovery{}, false, nil
-		}
-		return harnessapi.SkillDiscovery{}, false, err
-	}
-	if !adapter.Capabilities().Has(harnessapi.SkillProjection) {
-		return harnessapi.SkillDiscovery{}, false, nil
-	}
-	context, err := harnessapi.NewContext(runtime.GOOS, scope, harnessapi.VerifiedRelease{})
-	if err != nil {
-		return harnessapi.SkillDiscovery{}, true, err
-	}
-	discovery, err := adapter.Skills(context, scope)
-	return discovery, true, err
-}
-
-func skillPath(agent string, scope harnessapi.Scope) (string, bool, error) {
-	discovery, declared, err := registeredSkills(agent, scope)
-	if declared {
-		if err != nil {
-			return "", false, err
-		}
-		paths := discovery.Paths().Paths()
-		if len(paths) == 0 {
-			return "", false, fmt.Errorf("harness_skill_path_missing")
-		}
-		return paths[0].String(), true, nil
-	}
-	if err != nil {
-		return "", false, err
-	}
-	rel, known := AgentPaths[agent]
-	return rel, known, nil
 }
 
 // UnknownAgents returns the unrecognized names among agents, sorted.

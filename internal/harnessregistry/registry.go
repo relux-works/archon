@@ -31,18 +31,28 @@ func probing() harnessapi.CapabilitySet {
 	return set
 }
 
+func skillAndMCPInspection() harnessapi.CapabilitySet {
+	set, _ := harnessapi.NewCapabilitySet(harnessapi.SkillProjection, harnessapi.MCPInspection)
+	return set
+}
+
+func nativeSkillsAndMCPInspection() harnessapi.CapabilitySet {
+	set, _ := harnessapi.NewCapabilitySet(harnessapi.NativeSkillDiscovery, harnessapi.MCPInspection)
+	return set
+}
+
 // This is the only registration table. No runtime registration path exists.
 // Probe aliases and arguments are pinned to the original environment catalog;
 // the five-second deadline and empty overrides are the v1 contract policy.
 var entries = [...]registration{
 	{claude_code.ID, 1, probing(), claude_code.New, harnessapi.NewProbeSpec("claude", []string{"--version"}, harnessapi.ProbeTimeoutV1, nil), true},
 	{codex_cli.ID, 1, probing(), codex_cli.New, harnessapi.NewProbeSpec("codex", []string{"--version"}, harnessapi.ProbeTimeoutV1, nil), true},
-	{cursor.ID, 1, harnessapi.CapabilitySet{}, cursor.New, harnessapi.ProbeSpec{}, false},
+	{cursor.ID, 1, skillAndMCPInspection(), cursor.New, harnessapi.ProbeSpec{}, false},
 	{gemini.ID, 1, gemini.Capabilities(), gemini.New, harnessapi.ProbeSpec{}, false},
 	{muse.ID, 1, probing(), muse.New, harnessapi.NewProbeSpec("muse", []string{"--version"}, harnessapi.ProbeTimeoutV1, nil), true},
 	{opencode.ID, 1, probing(), opencode.New, harnessapi.NewProbeSpec("opencode", []string{"--version"}, harnessapi.ProbeTimeoutV1, nil), true},
 	{pi.ID, 1, probing(), pi.New, harnessapi.NewProbeSpec("pi", []string{"--version"}, harnessapi.ProbeTimeoutV1, nil), true},
-	{windsurf.ID, 1, harnessapi.CapabilitySet{}, windsurf.New, harnessapi.ProbeSpec{}, false},
+	{windsurf.ID, 1, nativeSkillsAndMCPInspection(), windsurf.New, harnessapi.ProbeSpec{}, false},
 }
 
 // CanonicalID normalizes the existing CLI aliases without choosing a fallback.
@@ -61,6 +71,17 @@ func IDs() []harnessapi.ID {
 	ids := make([]harnessapi.ID, len(entries))
 	for i, entry := range entries {
 		ids[i] = entry.id
+	}
+	return ids
+}
+
+// IDsWithCapability returns the static registrations that declare a capability.
+func IDsWithCapability(capability harnessapi.Capability) []harnessapi.ID {
+	var ids []harnessapi.ID
+	for _, entry := range entries {
+		if entry.capabilities.Has(capability) {
+			ids = append(ids, entry.id)
+		}
 	}
 	return ids
 }
