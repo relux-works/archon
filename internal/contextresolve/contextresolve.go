@@ -1107,13 +1107,13 @@ func canonicalFileSelection(selection *whitelist.FileSelection) *whitelist.FileS
 	if selection == nil {
 		return nil
 	}
-	copy := &whitelist.FileSelection{
+	clone := &whitelist.FileSelection{
 		Include: append([]string(nil), selection.Include...),
 		Exclude: append([]string(nil), selection.Exclude...),
 	}
-	sort.Strings(copy.Include)
-	sort.Strings(copy.Exclude)
-	return copy
+	sort.Strings(clone.Include)
+	sort.Strings(clone.Exclude)
+	return clone
 }
 
 func equalFileSelection(left, right *whitelist.FileSelection) bool {

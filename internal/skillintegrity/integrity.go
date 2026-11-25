@@ -145,8 +145,10 @@ func NewBudget() *Budget { return &Budget{started: time.Now()} }
 
 // Pause excludes source inspection and other work outside integrity capture
 // from the shared verification deadline, while retaining accumulated file and
-// byte limits. Resume starts counting integrity time again.
-func (b *Budget) Pause()  { b.pauseAt(time.Now()) }
+// byte limits.
+func (b *Budget) Pause() { b.pauseAt(time.Now()) }
+
+// Resume starts counting integrity time again after a paused interval.
 func (b *Budget) Resume() { b.resumeAt(time.Now()) }
 
 func (b *Budget) pauseAt(now time.Time) {
@@ -199,13 +201,13 @@ func cloneFileSelection(selection *whitelist.FileSelection) *whitelist.FileSelec
 	if selection == nil {
 		return nil
 	}
-	copy := &whitelist.FileSelection{
+	clone := &whitelist.FileSelection{
 		Include: append([]string(nil), selection.Include...),
 		Exclude: append([]string(nil), selection.Exclude...),
 	}
-	sort.Strings(copy.Include)
-	sort.Strings(copy.Exclude)
-	return copy
+	sort.Strings(clone.Include)
+	sort.Strings(clone.Exclude)
+	return clone
 }
 
 func equalFileSelection(left, right *whitelist.FileSelection) bool {
