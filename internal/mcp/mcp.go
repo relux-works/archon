@@ -26,14 +26,12 @@ import (
 // projectSources maps agents to project-relative config files (Spec §11.1).
 var projectSources = map[string][]string{
 	"codex_cli":   {".codex/config.toml"},
-	"gemini":      {".gemini/settings.json"},
 	"opencode":    {"opencode.json", "opencode.jsonc"},
 }
 
 // homeSources maps agents to home-relative config files.
 var homeSources = map[string][]string{
 	"codex_cli":   {".codex/config.toml"},
-	"gemini":      {".gemini/settings.json"},
 	"opencode":    {".config/opencode/opencode.json", ".config/opencode/opencode.jsonc"},
 }
 
