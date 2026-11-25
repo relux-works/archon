@@ -101,7 +101,7 @@ func (Adapter) Settings(context harnessapi.Context) (harnessapi.SettingsSpec, er
 
 // MCP describes the Claude native MCP files. User-home seed writes remain in
 // the shared owner because v1 cannot express their merge input.
-func (Adapter) MCP(context harnessapi.Context, scope harnessapi.Scope) (harnessapi.MCPChannel, error) {
+func (Adapter) MCP(_ harnessapi.Context, scope harnessapi.Scope) (harnessapi.MCPChannel, error) {
 	var path string
 	var write, trust bool
 	switch scope {
