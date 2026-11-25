@@ -34,14 +34,20 @@ func TestClaudeSharedSurfaceCharacterization(t *testing.T) {
 		writeClaudeFixture(t, home, ".claude.json", `{"mcpServers":{"home-only":{"url":"https://home"}}}`)
 		env := mcp.Env{ProjectRoot: project, UserHome: home}
 
-		configured := mcp.ConfiguredServers(env, "claude_code")
+		configured, err := mcp.ConfiguredServers(env, "claude_code")
+		if err != nil {
+			t.Fatal(err)
+		}
 		if len(configured) != 2 || configured["project-only"] == nil || configured["home-only"] == nil {
 			t.Fatalf("configured servers = %v, want project-only and home-only", configured)
 		}
 		if _, present := configured["disabled"]; present {
 			t.Fatal("a disabled project server counted as configured")
 		}
-		projectOnly := mcp.ProjectOnlyServers(env, "claude_code")
+		projectOnly, err := mcp.ProjectOnlyServers(env, "claude_code")
+		if err != nil {
+			t.Fatal(err)
+		}
 		if !projectOnly["project-only"] || projectOnly["home-only"] || projectOnly["disabled"] {
 			t.Fatalf("project-only servers = %v", projectOnly)
 		}
