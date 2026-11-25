@@ -68,7 +68,21 @@ func TestClaudeHarnessV2GapCharacterization(t *testing.T) {
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			t.Fatal(err)
 		}
-		input := []byte(`{"hasCompletedOnboarding":true,"foreign":17,"projects":{"/other":{"unknown":"keep","cost":1e-7},"/fixture-project":{"hasTrustDialogAccepted":false,"hasClaudeMdExternalIncludesApproved":false,"unknown":[1e-7]}}}`)
+		input, err := json.Marshal(map[string]any{
+			"hasCompletedOnboarding": true,
+			"foreign":                json.Number("17"),
+			"projects": map[string]any{
+				"/other": map[string]any{"unknown": "keep", "cost": json.Number("1e-7")},
+				launchDir: map[string]any{
+					"hasTrustDialogAccepted":              false,
+					"hasClaudeMdExternalIncludesApproved": false,
+					"unknown":                             []any{json.Number("1e-7")},
+				},
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
 		if err := os.WriteFile(path, input, 0o600); err != nil {
 			t.Fatal(err)
 		}
