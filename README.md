@@ -6,7 +6,7 @@ Curator implements the open [Curator Specification](https://github.com/relux-wor
 
 ## Status
 
-Version v0.1 development is complete: all twelve phases in [docs/implementation-plan.md](docs/implementation-plan.md) are done. Continuous integration validates schemas and conformance vectors from `curator-spec` on macOS, Linux, and Windows. Work tracking lives in [.task-board/](.task-board/).
+Version v0.1 development is complete: all twelve phases in [docs/implementation-plan.md](docs/implementation-plan.md) are done. Continuous integration validates schemas and conformance vectors from `curator-spec` on macOS, Linux, and Windows. Work tracking lives in Axiloom.
 
 ## Install
 
@@ -506,7 +506,7 @@ Curator conforms to an open specification. Independent implementations include [
 
 ## Development
 
-Curator uses an in-repository task board in `.task-board/`. Automated gates run under `.github/ci/` and mirror `Makefile` targets; see [docs/ci-gates.md](docs/ci-gates.md) for gate definitions, evidence paths, platform carve-out rules, and suite consumption requirements.
+Work tracking (`knowledge`, `taskboard`, `release`) lives in Axiloom. Automated gates run under `.github/ci/` and mirror `Makefile` targets; see [docs/ci-gates.md](docs/ci-gates.md) for gate definitions, evidence paths, platform carve-out rules, and suite consumption requirements.
 
 ### Tools
 

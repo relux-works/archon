@@ -1,7 +1,0 @@
-# TASK-260915-4f44cs — landing evidence (orchestrator, 2026-09-18)
-
-- Delivery: PR #70 "Admit the goal's worker policy and add the rose-air test lane", merged (merge commit 559447ef), reviewed at its exact head in the previous session; hosted checks green at merge time.
-- Remaining AC clause "rose-air lane green" was blocked by the missing Rust toolchain on the self-hosted runner macbook-iv. Resolution chain: rust-toolchain.toml pin + install-rust-toolchain.sh + rust-pin-guard.sh + docs/self-hosted-runner-setup.md (TASK-260916-vygif0, PR #75, main 1de6f8e); rustup installed on macbook-iv by the operator on 2026-09-18 (Homebrew build, on the runner PATH); CARGO_HOME/bin lookup hardening for per-user rustup (BUG-260918-3u6qqq, PR #77, main d00fe7a5).
-- Evidence: GitHub main run 35302875022 (commit bee9b57d, 2026-09-18 03:41Z): job "Test (rose-air)" completed success (rust-pin: toolchain file and Go agree on Rust 1.91.0; 1.91.0-aarch64-apple-darwin installed; go test lane passed). The next main run 35306933411 (d00fe7a5) re-exercises the lane with the PR #77 script.
-- Preflight on main resolves the two admitted pairs (muse-spark-1.3-contributor/max|xhigh, gpt-6-astra/low) per the tracked config; the override config used for orchestration adds no new pairs.
-- No Change Request record exists for this element (delivered pre-CR via PR #70), so it is closed with set_status per the task-board landed_close_not_applicable rule.

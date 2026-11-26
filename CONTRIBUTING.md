@@ -4,8 +4,7 @@ Curator follows a small set of working agreements. They are binding for every ch
 
 ## Workflow
 
-- Work is tracked on the in-repo task board [.task-board/](.task-board/). Every change starts from a task; create the story or task card first, keep `progress.md` status current (todo, in-progress, review, done), and attach research artifacts under `.task-board/.resources/<ID>/`.
-- Epics map one to one onto the plan phases; respect the dependency order in the plan (section 5).
+- Work (`knowledge`, `taskboard`, `release`) is tracked in **Axiloom** via the `axiloom` CLI (local workspace config in gitignored `.axiloom.json`). Run `axiloom guide --with-status` before mutating state.
 - Spec first: the protocol specification (cited as `Spec §N.M`) is the source of truth. When implementation and spec disagree, stop and resolve the spec question before coding around it.
 
 ## Commits
