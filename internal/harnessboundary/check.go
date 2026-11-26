@@ -472,9 +472,24 @@ func ApplyExceptions(findings []Finding, exceptions ExceptionSet) []Finding {
 
 var pureImports = map[string]bool{
 	"bytes": true, "encoding/json": true, "fmt": true, "path": true, "path/filepath": true, "sort": true, "strconv": true, "strings": true,
-	"github.com/relux-works/curator/internal/harnessapi":     true,
-	"github.com/relux-works/curator/internal/harnessvalue":   true,
-	"github.com/relux-works/curator/internal/harnessformats": true,
+	"github.com/relux-works/curator/internal/harnessapi":         true,
+	"github.com/relux-works/curator/internal/harnessvalue":       true,
+	"github.com/relux-works/curator/internal/harnessformats":     true,
+	"github.com/relux-works/curator-runtimes/pkg/harnessapi":     true,
+	"github.com/relux-works/curator-runtimes/pkg/harnessvalue":   true,
+}
+
+const upstreamSystemsPrefix = "github.com/relux-works/curator-runtimes/pkg/agentic/systems/"
+
+func isPureImport(name, sourcePath string) bool {
+	if pureImports[name] {
+		return true
+	}
+	if adapterPath(sourcePath) && strings.HasPrefix(name, upstreamSystemsPrefix) {
+		rest := strings.TrimPrefix(name, upstreamSystemsPrefix)
+		return rest != "" && !strings.Contains(rest, "/")
+	}
+	return false
 }
 var pureFormat = map[string]bool{"Errorf": true, "Sprint": true, "Sprintf": true, "Sprintln": true, "Append": true, "Appendf": true, "Appendln": true, "FormatString": true}
 var lexicalFilepath = map[string]bool{"Base": true, "Clean": true, "Dir": true, "Ext": true, "FromSlash": true, "IsAbs": true, "IsLocal": true, "Join": true, "Localize": true, "Match": true, "Rel": true, "Separator": true, "Split": true, "SplitList": true, "ToSlash": true, "VolumeName": true}
@@ -509,7 +524,7 @@ func ScanEffects(root string) ([]Finding, error) {
 				local = imp.Name.Name
 			}
 			imports[local] = name
-			allowed := pureImports[name] || (apiPath && name == "time")
+			allowed := isPureImport(name, s.path) || (apiPath && name == "time")
 			if !allowed || local == "." || local == "_" {
 				add(imp.Pos(), "adapter_import_forbidden")
 			}
@@ -525,7 +540,7 @@ func ScanEffects(root string) ([]Finding, error) {
 			}
 			name := imports[ident.Name]
 			apiTime := apiPath && name == "time" && (sel.Sel.Name == "Duration" || sel.Sel.Name == "Second")
-			if name != "" && !pureImports[name] && !apiTime || name == "fmt" && !pureFormat[sel.Sel.Name] || name == "path/filepath" && !lexicalFilepath[sel.Sel.Name] {
+			if name != "" && !isPureImport(name, s.path) && !apiTime || name == "fmt" && !pureFormat[sel.Sel.Name] || name == "path/filepath" && !lexicalFilepath[sel.Sel.Name] {
 				add(sel.Pos(), "adapter_effect_api_forbidden")
 			}
 			return true

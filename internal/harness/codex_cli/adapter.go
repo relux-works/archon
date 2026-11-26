@@ -1,31 +1,14 @@
-// Package codex_cli declares the staged harness surface; native operations remain
-// in the legacy implementation until their separately qualified migration.
+// Package codex_cli delegates the Codex CLI harness adapter to
+// github.com/relux-works/curator-runtimes/pkg/agentic/systems/codex.
 package codex_cli
 
-import "github.com/relux-works/curator/internal/harnessapi"
+import (
+	"github.com/relux-works/curator-runtimes/pkg/agentic/systems/codex"
+	"github.com/relux-works/curator/internal/harnessapi"
+)
 
-// ID is this module's stable canonical identifier.
 const ID harnessapi.ID = "codex_cli"
 
-// Adapter exposes the staged harness surface with explicit operational refusals.
-type Adapter struct{ harnessapi.UnportedOperations }
+type Adapter = codex.HarnessAdapter
 
-// New constructs the module's staged adapter.
-func New() harnessapi.Adapter { return Adapter{} }
-
-// ID returns the module's canonical identifier.
-func (Adapter) ID() harnessapi.ID { return ID }
-
-// APIVersion returns the implemented internal contract revision.
-func (Adapter) APIVersion() harnessapi.APIVersion { return harnessapi.AdapterAPIVersionV1 }
-
-// Capabilities returns only actually ported operations.
-func (Adapter) Capabilities() harnessapi.CapabilitySet {
-	set, _ := harnessapi.NewCapabilitySet(harnessapi.ReleaseProbing)
-	return set
-}
-
-// ReleaseProbe returns the real baseline tuple or an unsupported-capability refusal.
-func (Adapter) ReleaseProbe(harnessapi.Context) (harnessapi.ProbeSpec, error) {
-	return harnessapi.NewProbeSpec("codex", []string{"--version"}, harnessapi.ProbeTimeoutV1, nil), nil
-}
+func New() harnessapi.Adapter { return codex.NewHarnessAdapter() }

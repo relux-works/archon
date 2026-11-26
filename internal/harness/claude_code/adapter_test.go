@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/curator/internal/harnessvalue"
 )
 
 func claudeContext(t *testing.T, platform string, scope harnessapi.Scope) harnessapi.Context {
@@ -92,7 +93,7 @@ func TestAdapterHomeInstructionsSkillsAndSettings(t *testing.T) {
 	if _, err := adapter.Settings(harnessapi.Context{}); err == nil || err.Error() != "harness_scope_unsupported" {
 		t.Fatalf("unsupported settings scope accepted: %v", err)
 	}
-	if _, err := namedPaths("../escape"); err == nil {
+	if _, err := harnessvalue.NewRelativePath("../escape"); err == nil {
 		t.Fatal("escaping path passed the adapter's path constructor")
 	}
 }

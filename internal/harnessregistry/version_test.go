@@ -40,7 +40,7 @@ func TestAPIVersionRefusal(t *testing.T) {
 	} {
 		t.Run(row.name, func(t *testing.T) {
 			constructors, metadata, operations := 0, 0, 0
-			adapter, err := verify(row.registered, "fixture", harnessapi.CapabilitySet{}, func() harnessapi.Adapter {
+			adapter, err := Verify(row.registered, "fixture", harnessapi.CapabilitySet{}, func() harnessapi.Adapter {
 				constructors++
 				return adapterSpy{id: row.id, version: row.reported, capabilities: row.capabilities, metadata: &metadata, operations: &operations}
 			})
@@ -63,7 +63,7 @@ func TestAPIVersionRefusal(t *testing.T) {
 	}
 	metadata, operations := 0, 0
 	claimed, _ := harnessapi.NewCapabilitySet(harnessapi.ManagedHome)
-	_, err := verify(1, "fixture", harnessapi.CapabilitySet{}, func() harnessapi.Adapter {
+	_, err := Verify(1, "fixture", harnessapi.CapabilitySet{}, func() harnessapi.Adapter {
 		return adapterSpy{id: "fixture", version: 1, capabilities: claimed, metadata: &metadata, operations: &operations}
 	})
 	if code(err) != harnessapi.RegistryMismatch || operations != 0 {

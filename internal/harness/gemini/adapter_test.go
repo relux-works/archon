@@ -108,7 +108,7 @@ func TestMCPInspectionByScope(t *testing.T) {
 }
 
 func TestInvalidNativePathIsRefused(t *testing.T) {
-	if _, err := namedPath("../escape"); err == nil {
+	if _, err := harnessvalue.NewRelativePath("../escape"); err == nil {
 		t.Fatal("escaping native path accepted")
 	}
 	var invalid harnessvalue.RelativePath
