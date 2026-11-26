@@ -308,24 +308,30 @@ func ScanBranches(root string, vocabulary map[string][]string) ([]Finding, error
 	if err != nil {
 		return nil, err
 	}
-	managedHomeValues := map[string]bool{}
+	branchVocabulary := make(map[string][]string, len(vocabulary))
+	for marker, ids := range vocabulary {
+		branchVocabulary[marker] = append([]string(nil), ids...)
+	}
+	managedHomeValues := map[string]string{}
+	addManagedHomeValue := func(value, id string) {
+		if value == "" {
+			return
+		}
+		managedHomeValues[value] = id
+		for _, existing := range branchVocabulary[value] {
+			if existing == value {
+				return
+			}
+		}
+		branchVocabulary[value] = append(branchVocabulary[value], value)
+	}
 	for _, spec := range harnessregistry.ManagedHomeSpecs() {
-		if spec.ID != "" {
-			managedHomeValues[spec.ID] = true
-		}
-		if spec.Alias != "" {
-			managedHomeValues[spec.Alias] = true
-		}
+		id := string(spec.ID)
+		addManagedHomeValue(id, id)
+		addManagedHomeValue(spec.Alias, id)
 	}
 	patterns := map[string]*regexp.Regexp{}
-	for marker, ids := range vocabulary {
-		// Managed-home IDs are branch values, while declarations and schema
-		// namespaces may legitimately mention them as text. Keep them in the
-		// vocabulary for AST comparisons below without expanding the broad text
-		// marker scan or its frozen exception baseline.
-		if managedHomeValues[marker] && len(ids) == 1 && ids[0] == marker {
-			continue
-		}
+	for marker := range vocabulary {
 		patterns[marker] = regexp.MustCompile(`(^|[^A-Za-z0-9_])` + regexp.QuoteMeta(marker) + `([^A-Za-z0-9_]|$)`)
 	}
 	var findings []Finding
@@ -366,12 +372,33 @@ func ScanBranches(root string, vocabulary map[string][]string) ([]Finding, error
 			checkID := func(expr ast.Expr) {
 				value, known := constants.value(expr, sourceIndex, map[string]bool{})
 				if known {
-					for _, id := range vocabulary[value] {
+					for _, id := range branchVocabulary[value] {
 						add(s.set.PositionFor(expr.Pos(), false).Line, id, "harness_id_branch_outside_owner")
 					}
 				}
 			}
+			checkCallPredicate := func(expr ast.Expr) {
+				ast.Inspect(expr, func(node ast.Node) bool {
+					call, ok := node.(*ast.CallExpr)
+					if !ok {
+						return true
+					}
+					for _, arg := range call.Args {
+						value, known := constants.value(arg, sourceIndex, map[string]bool{})
+						if id, managedHomeValue := managedHomeValues[value]; known && managedHomeValue {
+							add(s.set.PositionFor(call.Pos(), false).Line, id, "harness_id_call_predicate_outside_owner")
+						}
+					}
+					return true
+				})
+			}
 			switch n := node.(type) {
+			case *ast.IfStmt:
+				checkCallPredicate(n.Cond)
+			case *ast.SwitchStmt:
+				if n.Tag != nil {
+					checkCallPredicate(n.Tag)
+				}
 			case *ast.BinaryExpr:
 				if n.Op == token.EQL || n.Op == token.NEQ {
 					checkID(n.X)
@@ -392,6 +419,7 @@ func ScanBranches(root string, vocabulary map[string][]string) ([]Finding, error
 			case *ast.CaseClause:
 				for _, expr := range n.List {
 					checkID(expr)
+					checkCallPredicate(expr)
 				}
 			}
 			return true

@@ -45,10 +45,6 @@ func vocabulary(t *testing.T) map[string][]string {
 	for _, id := range harnessregistry.IDs() {
 		addID(string(id))
 	}
-	for _, spec := range harnessregistry.ManagedHomeSpecs() {
-		addID(spec.ID)
-		addID(spec.Alias)
-	}
 	return v
 }
 func plant(t *testing.T, root, rel, body string) {
@@ -131,6 +127,85 @@ func TestManagedHomeBranchVocabulary(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestManagedHomeCallPredicates(t *testing.T) {
+	specs := harnessregistry.ManagedHomeSpecs()
+	if len(specs) == 0 {
+		t.Fatal("managed-home catalog is empty")
+	}
+	for _, spec := range specs {
+		values := []struct{ name, value string }{{"id", string(spec.ID)}}
+		if spec.Alias != "" {
+			values = append(values, struct{ name, value string }{"alias", spec.Alias})
+		}
+		for _, value := range values {
+			for _, fixture := range []struct{ predicate, source string }{
+				{"contains", "func matches(id string) bool { if strings.Contains(id, %q) { return true }; return false }\n"},
+				{"has-prefix", "func matches(id string) bool { switch strings.HasPrefix(id, %q) { case true: return true }; return false }\n"},
+				{"equal-fold", "func matches(id string) bool { switch id { case strings.EqualFold(id, %q): return true }; return false }\n"},
+			} {
+				t.Run(fixture.predicate+"/"+value.name, func(t *testing.T) {
+					root := t.TempDir()
+					rel := "internal/shared/managed_home_call.go"
+					body := "package shared\nimport \"strings\"\n" + fmt.Sprintf(fixture.source, value.value)
+					plant(t, root, rel, body)
+					findings, err := ScanBranches(root, vocabulary(t))
+					if err != nil {
+						t.Fatal(err)
+					}
+					for _, finding := range findings {
+						if finding.Path == rel && finding.Rule == "harness_id_call_predicate_outside_owner" {
+							return
+						}
+					}
+					t.Fatalf("missing managed-home call predicate finding for %q: %v", value.value, findings)
+				})
+			}
+		}
+
+		t.Run("owning-adapter-positive", func(t *testing.T) {
+			root := t.TempDir()
+			rel := filepath.ToSlash(filepath.Join("internal", "harness", string(spec.ID), "managed_home_call.go"))
+			body := "package adapter\nimport \"strings\"\n"
+			for index, value := range values {
+				body += fmt.Sprintf("func contains%d(id string) bool { return strings.Contains(id, %q) }\n", index, value.value)
+				body += fmt.Sprintf("func hasPrefix%d(id string) bool { return strings.HasPrefix(id, %q) }\n", index, value.value)
+				body += fmt.Sprintf("func equalFold%d(id string) bool { return strings.EqualFold(id, %q) }\n", index, value.value)
+			}
+			plant(t, root, rel, body)
+			findings, err := ScanBranches(root, vocabulary(t))
+			if err != nil || len(findings) != 0 {
+				t.Fatalf("owning adapter call predicate was refused: findings=%v err=%v", findings, err)
+			}
+		})
+	}
+
+	t.Run("metadata-is-not-a-branch", func(t *testing.T) {
+		root := t.TempDir()
+		rel := "internal/shared/managed_home_metadata.go"
+		plant(t, root, rel, "package shared\nconst managedHomeID = \"antigravity\"\nvar managedHomeDeclaration = map[string]string{\"id\": \"antigravity\", \"alias\": \"agy\"}\n")
+		findings, err := ScanBranches(root, vocabulary(t))
+		if err != nil || len(findings) != 0 {
+			t.Fatalf("plain metadata was treated as a branch: findings=%v err=%v", findings, err)
+		}
+	})
+
+	t.Run("base-marker-remains-visible", func(t *testing.T) {
+		root := t.TempDir()
+		rel := "internal/shared/base_marker_call.go"
+		plant(t, root, rel, "package shared\nimport \"strings\"\nfunc matches(id string) bool { return strings.Contains(id, \"claude_code\") }\n")
+		findings, err := ScanBranches(root, vocabulary(t))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, finding := range findings {
+			if finding.Path == rel && finding.HarnessID == "claude_code" && finding.Rule == "harness_policy_outside_owner" {
+				return
+			}
+		}
+		t.Fatalf("base vocabulary marker was no longer detected: %v", findings)
+	})
 }
 
 // The production scan accounts for remaining legacy policy, rejects every new
