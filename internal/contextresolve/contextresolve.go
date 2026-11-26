@@ -907,6 +907,14 @@ func (r *resolver) install(name string, sel *selection) error {
 			return &Error{Diagnostic: DiagWeightsNotRoot, Name: name}
 		}
 		for _, requirement := range sel.pkg.Requires {
+			if requirement.Directory != "" {
+				if requirement.Source == "" && sel.source != "" {
+					requirement.Source = sel.source
+				}
+				if requirement.Range == "" && requirement.Tag == "" && requirement.Revision == "" && sel.commit != "" {
+					requirement.Revision = sel.commit
+				}
+			}
 			r.add(requirement, sel.requirerName(), sel.key())
 		}
 	}

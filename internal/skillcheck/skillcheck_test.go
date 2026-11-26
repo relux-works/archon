@@ -63,10 +63,9 @@ func TestValidateWarnsAboutRuntimePathInPromptContext(t *testing.T) {
 				},
 			}))
 			issues := Validate(dir, "")
-			if len(issues) != 3 ||
+			if len(issues) != 2 ||
 				issues[0].Code != "script-command-declared-only" ||
-				issues[1].Code != "skill.runtime_root_in_prompt_context" ||
-				issues[2].Code != "skill.command_resolution_contract_missing" {
+				issues[1].Code != "skill.runtime_root_in_prompt_context" {
 				t.Fatalf("issues = %+v", issues)
 			}
 			if issues[0].Severity != "warning" || HasErrors(issues) {
@@ -89,9 +88,8 @@ func TestValidateWarnsWhenConsumerGuessesProviderRuntimePath(t *testing.T) {
 		}},
 	}))
 	issues := Validate(dir, "")
-	if len(issues) != 2 ||
-		issues[0].Code != "skill.provider_runtime_path_in_prompt_context" ||
-		issues[1].Code != "skill.command_resolution_contract_missing" {
+	if len(issues) != 1 ||
+		issues[0].Code != "skill.provider_runtime_path_in_prompt_context" {
 		t.Fatalf("issues = %+v", issues)
 	}
 }
@@ -162,7 +160,7 @@ func TestValidateDoesNotScanMarkdownInsideExcludedBuildRoot(t *testing.T) {
 	}
 }
 
-func TestValidateBuildCommandRequiresShellNeutralResolver(t *testing.T) {
+func TestValidateBuildCommandDoesNotRequireShellNeutralResolverBoilerplate(t *testing.T) {
 	dir := t.TempDir()
 	writeSkillFile(t, dir, "SKILL.md", "---\nname: skill\n---\n")
 	writeSkillFile(t, dir, "build/go.mod", "module example.com/tool\n")
@@ -175,11 +173,59 @@ func TestValidateBuildCommandRequiresShellNeutralResolver(t *testing.T) {
 			"tool": map[string]any{"type": "build", "driver": "go-v1", "source_dir": "build/cmd/tool"},
 		},
 	}))
-	issues := Validate(dir, "")
-	if len(issues) != 1 || issues[0].Code != "skill.command_resolution_contract_missing" ||
-		!strings.Contains(issues[0].Message, "Windows .cmd shim suffix") {
-		t.Fatalf("issues = %+v", issues)
+	if issues := Validate(dir, ""); len(issues) != 0 {
+		t.Fatalf("unexpected boilerplate issues = %+v", issues)
 	}
+}
+
+func TestValidateBrokenRelativeReferenceSizeUnicodeSecretsAndScripts(t *testing.T) {
+	t.Run("broken_relative_reference", func(t *testing.T) {
+		dir := t.TempDir()
+		writeSkillFile(t, dir, "SKILL.md", "---\nname: skill\n---\nSee [guide](references/guide.md) and references/missing.md.\n")
+		writeSkillFile(t, dir, "references/guide.md", "# Guide\n")
+		issues := Validate(dir, "")
+		if len(issues) != 1 || issues[0].Code != "skill.broken_relative_reference" || !strings.Contains(issues[0].Message, "references/missing.md") {
+			t.Fatalf("broken relative reference issues = %+v", issues)
+		}
+	})
+	t.Run("skill_md_size_budget", func(t *testing.T) {
+		warnDir := t.TempDir()
+		writeSkillFile(t, warnDir, "SKILL.md", "---\nname: skill\n---\n"+strings.Repeat("a", 9000))
+		warnIssues := Validate(warnDir, "")
+		if len(warnIssues) != 1 || warnIssues[0].Code != "skill.skill_md_size_warning" || warnIssues[0].Severity != "warning" {
+			t.Fatalf("size warning issues = %+v", warnIssues)
+		}
+		errDir := t.TempDir()
+		writeSkillFile(t, errDir, "SKILL.md", "---\nname: skill\n---\n"+strings.Repeat("a", 25000))
+		errIssues := Validate(errDir, "")
+		if len(errIssues) != 1 || errIssues[0].Code != "skill.skill_md_size_exceeded" || errIssues[0].Severity != "error" {
+			t.Fatalf("size exceeded issues = %+v", errIssues)
+		}
+	})
+	t.Run("hidden_unicode_and_secret_scanner", func(t *testing.T) {
+		dir := t.TempDir()
+		secret := "ghp_" + strings.Repeat("A", 36)
+		writeSkillFile(t, dir, "SKILL.md", "---\nname: skill\n---\nHidden \u202E bidi and token "+secret+"\n")
+		issues := Validate(dir, "")
+		if len(issues) != 2 || issues[0].Code != "skill.hidden_unicode_injection" || issues[1].Code != "skill.secret_detected" {
+			t.Fatalf("unicode/secret issues = %+v", issues)
+		}
+	})
+	t.Run("script_executable_and_shebang", func(t *testing.T) {
+		dir := t.TempDir()
+		writeSkillFile(t, dir, "SKILL.md", "---\nname: skill\n---\n")
+		badScript := filepath.Join(dir, "scripts", "run.sh")
+		if err := os.MkdirAll(filepath.Dir(badScript), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(badScript, []byte("echo hi\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		issues := Validate(dir, "")
+		if len(issues) != 2 || issues[0].Code != "skill.script_missing_shebang" || issues[1].Code != "skill.script_not_executable" {
+			t.Fatalf("script issues = %+v", issues)
+		}
+	})
 }
 
 func TestValidateAcceptsCrossPlatformShellNeutralResolver(t *testing.T) {
@@ -217,7 +263,11 @@ func writeSkillFile(t *testing.T, root, relative, content string) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+	mode := os.FileMode(0o644)
+	if strings.HasPrefix(relative, "scripts/") && strings.HasPrefix(content, "#!") {
+		mode = 0o755
+	}
+	if err := os.WriteFile(path, []byte(content), mode); err != nil {
 		t.Fatal(err)
 	}
 }

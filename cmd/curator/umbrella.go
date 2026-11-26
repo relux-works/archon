@@ -713,6 +713,9 @@ func (c cli) cmdUmbrella(cfg *config.Config, home string, args []string) int {
 	}
 	path, warning, err := findProvider(args[0], in)
 	if err != nil {
+		if args[0] == "run" && len(args) >= 2 && strings.HasPrefix(err.Error(), providerDiagnosticMissing) {
+			return c.cmdNativeRun(cfg, home, args[1:])
+		}
 		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
 		return exitFail
 	}

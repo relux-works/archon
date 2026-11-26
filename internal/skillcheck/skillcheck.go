@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -45,7 +47,10 @@ func Validate(skillDir, localeValue string) []Issue {
 		issues = append(issues, scriptAuditLabelIssues(spec)...)
 		issues = append(issues, runtimeRootReferenceWarnings(skillDir, spec)...)
 		issues = append(issues, buildRootReferenceWarnings(skillDir, spec)...)
-		issues = append(issues, commandResolutionWarnings(skillDir, spec)...)
+		issues = append(issues, brokenRelativeReferenceIssues(skillDir, spec)...)
+		issues = append(issues, skillMDSizeIssues(skillDir)...)
+		issues = append(issues, unicodeAndSecretIssues(skillDir, spec)...)
+		issues = append(issues, scriptExecutableAndShebangIssues(skillDir, spec)...)
 	}
 	analysis := locale.Analyze(skillDir, localeValue)
 	for _, item := range analysis.Issues {
@@ -208,74 +213,251 @@ func buildRootReferenceWarnings(skillDir string, spec *skillspec.Spec) []Issue {
 	return issues
 }
 
-func commandResolutionWarnings(skillDir string, spec *skillspec.Spec) []Issue {
-	hasManagedCommands := false
-	hasWindowsCommand := false
-	for _, command := range spec.Commands {
-		switch command.Type {
-		case "script":
-			hasManagedCommands = true
-			if command.WinPath != "" {
-				hasWindowsCommand = true
-			}
-		case "build":
-			hasManagedCommands = true
-			hasWindowsCommand = true
+var (
+	mdLinkPattern      = regexp.MustCompile(`\[[^\]]*\]\(([^)\s]+)\)`)
+	explicitRefPattern = regexp.MustCompile(`\b((?:references|scripts|examples|assets|templates)/[A-Za-z0-9_./-]+)`)
+	secretPattern      = regexp.MustCompile(`-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{30,}|sk-ant-[A-Za-z0-9_-]{20,}|sk-proj-[A-Za-z0-9_-]{20,}`)
+)
+
+const (
+	skillMDSizeWarningBytes  = 8192
+	skillMDSizeExceededBytes = 24576
+)
+
+func specFileSelection(spec *skillspec.Spec) *whitelist.FileSelection {
+	if spec == nil || spec.Files == nil {
+		return nil
+	}
+	return &whitelist.FileSelection{Include: spec.Files.Include, Exclude: spec.Files.Exclude}
+}
+
+func brokenRelativeReferenceIssues(skillDir string, spec *skillspec.Spec) []Issue {
+	skillMDPath := filepath.Join(skillDir, "SKILL.md")
+	payload, err := os.ReadFile(skillMDPath) // #nosec G304 -- validated skill directory
+	if err != nil {
+		return nil
+	}
+	excludeRoots := whitelist.ContextExcludedRoots(spec.RuntimeRoots, spec.BuildRoots)
+	effectiveFiles, err := whitelist.ContextFiles(skillDir, len(spec.Commands) == 0, excludeRoots, specFileSelection(spec))
+	if err != nil {
+		return nil
+	}
+	allowed := make(map[string]bool, len(effectiveFiles))
+	allowedDirs := make(map[string]bool, len(effectiveFiles))
+	for _, f := range effectiveFiles {
+		allowed[f] = true
+		for dir := path.Dir(f); dir != "." && dir != "/"; dir = path.Dir(dir) {
+			allowedDirs[dir] = true
 		}
 	}
-	hasProviderCommands := false
-	for _, dependency := range spec.Dependencies {
-		if dependency.Type == "skill" {
-			hasProviderCommands = true
+	hasProviderRuntime := false
+	for _, dep := range spec.Dependencies {
+		if dep.Type == "skill" {
+			hasProviderRuntime = true
 			break
 		}
 	}
-	if !hasProviderCommands {
-		for _, requirement := range spec.Requirements {
-			if requirement.Mode == "full" || requirement.Mode == "runtime" {
-				hasProviderCommands = true
+	if !hasProviderRuntime {
+		for _, req := range spec.Requirements {
+			if req.Mode == "full" || req.Mode == "runtime" {
+				hasProviderRuntime = true
 				break
 			}
 		}
 	}
-	if !hasManagedCommands && !hasProviderCommands {
-		return nil
-	}
 
-	var content strings.Builder
-	excludeRoots := whitelist.ContextExcludedRoots(spec.RuntimeRoots, spec.BuildRoots)
-	for _, path := range promptMarkdownFiles(skillDir, excludeRoots) {
-		payload, err := os.ReadFile(path) // #nosec G304 -- path is below the validated skill directory
-		if err == nil {
-			content.Write(payload)
-			content.WriteByte('\n')
+	text := string(payload)
+	var candidates []string
+	for _, m := range mdLinkPattern.FindAllStringSubmatch(text, -1) {
+		candidates = append(candidates, m[1])
+	}
+	for _, m := range explicitRefPattern.FindAllStringSubmatch(text, -1) {
+		candidates = append(candidates, m[1])
+	}
+	seen := map[string]bool{}
+	var issues []Issue
+	for _, raw := range candidates {
+		ref := raw
+		if idx := strings.IndexByte(ref, '#'); idx >= 0 {
+			ref = ref[:idx]
+		}
+		ref = strings.TrimRight(ref, ".,;:)'\"`")
+		if ref == "" || strings.Contains(ref, "://") || strings.HasPrefix(ref, "mailto:") ||
+			strings.HasPrefix(ref, "#") || strings.HasPrefix(ref, "/") ||
+			strings.ContainsAny(ref, "<>*${}\\") || strings.HasSuffix(ref, "/") {
+			continue
+		}
+		clean := path.Clean(strings.TrimPrefix(ref, "./"))
+		if clean == "." || strings.HasPrefix(clean, "../") || seen[clean] {
+			continue
+		}
+		seen[clean] = true
+		coveredByRootWarning := false
+		for _, root := range spec.RuntimeRoots {
+			if clean == root || strings.HasPrefix(clean, root+"/") {
+				coveredByRootWarning = true
+				break
+			}
+		}
+		for _, root := range spec.BuildRoots {
+			if clean == root || strings.HasPrefix(clean, root+"/") {
+				coveredByRootWarning = true
+				break
+			}
+		}
+		if hasProviderRuntime && (clean == "scripts" || strings.HasPrefix(clean, "scripts/")) {
+			coveredByRootWarning = true
+		}
+		if coveredByRootWarning {
+			continue
+		}
+		if !allowed[clean] && !allowedDirs[clean] {
+			issues = append(issues, Issue{
+				Severity: "warning",
+				Code:     "skill.broken_relative_reference",
+				Path:     "SKILL.md",
+				Message:  fmt.Sprintf("SKILL.md references relative path %q which does not exist in the materialized skill context", clean),
+			})
 		}
 	}
-	text := content.String()
-	var missing []string
-	if !strings.Contains(text, ".agents/bin") && !strings.Contains(text, `.agents\bin`) {
-		missing = append(missing, "project .agents/bin lookup")
-	}
-	if !strings.Contains(text, "global/bin") && !strings.Contains(text, `global\bin`) {
-		missing = append(missing, "manager global/bin fallback")
-	}
-	if !strings.Contains(text, "command -v") || !strings.Contains(text, "Get-Command") {
-		missing = append(missing, "validated POSIX and PowerShell bare-command fallbacks")
-	}
-	if hasWindowsCommand && !strings.Contains(text, ".cmd") {
-		missing = append(missing, "Windows .cmd shim suffix")
-	}
-	if len(missing) == 0 {
+	return issues
+}
+
+func skillMDSizeIssues(skillDir string) []Issue {
+	info, err := os.Stat(filepath.Join(skillDir, "SKILL.md"))
+	if err != nil || info.IsDir() {
 		return nil
 	}
-	return []Issue{{
-		Severity: "warning",
-		Code:     "skill.command_resolution_contract_missing",
-		Path:     "SKILL.md",
-		Message: "prompt-visible instructions export managed runtime commands but do not document a shell-neutral resolver (" +
-			strings.Join(missing, ", ") +
-			"). Agents must resolve project shims first, then global shims, then a validated bare command; shell profile activation is optional",
-	}}
+	size := info.Size()
+	if size > skillMDSizeExceededBytes {
+		return []Issue{{
+			Severity: "error",
+			Code:     "skill.skill_md_size_exceeded",
+			Path:     "SKILL.md",
+			Message:  fmt.Sprintf("SKILL.md is %d bytes (limit %d bytes / 24 KB); move detailed documentation into on-demand references/*.md", size, skillMDSizeExceededBytes),
+		}}
+	}
+	if size > skillMDSizeWarningBytes {
+		return []Issue{{
+			Severity: "warning",
+			Code:     "skill.skill_md_size_warning",
+			Path:     "SKILL.md",
+			Message:  fmt.Sprintf("SKILL.md is %d bytes (advisory budget %d bytes / 8 KB); move detailed documentation into on-demand references/*.md", size, skillMDSizeWarningBytes),
+		}}
+	}
+	return nil
+}
+
+func unicodeAndSecretIssues(skillDir string, spec *skillspec.Spec) []Issue {
+	excludeRoots := whitelist.ContextExcludedRoots(spec.RuntimeRoots, spec.BuildRoots)
+	files, err := whitelist.ContextFiles(skillDir, len(spec.Commands) == 0, excludeRoots, specFileSelection(spec))
+	if err != nil {
+		for _, p := range promptMarkdownFiles(skillDir, excludeRoots) {
+			if rel, relErr := filepath.Rel(skillDir, p); relErr == nil {
+				files = append(files, filepath.ToSlash(rel))
+			}
+		}
+	}
+	var issues []Issue
+	for _, rel := range files {
+		payload, err := os.ReadFile(filepath.Join(skillDir, filepath.FromSlash(rel))) // #nosec G304 -- validated materialized skill path
+		if err != nil {
+			continue
+		}
+		text := string(payload)
+		if hasHiddenUnicodeInjection(text) {
+			issues = append(issues, Issue{
+				Severity: "error",
+				Code:     "skill.hidden_unicode_injection",
+				Path:     rel,
+				Message:  "file contains hidden zero-width, bidi-override, or Unicode tag characters",
+			})
+		}
+		if secretPattern.Match(payload) {
+			issues = append(issues, Issue{
+				Severity: "error",
+				Code:     "skill.secret_detected",
+				Path:     rel,
+				Message:  "file contains a hardcoded private key or API secret token",
+			})
+		}
+	}
+	return issues
+}
+
+func hasHiddenUnicodeInjection(text string) bool {
+	for _, r := range text {
+		if (r >= '\u200B' && r <= '\u200F') ||
+			(r >= '\u202A' && r <= '\u202E') ||
+			(r >= '\u2066' && r <= '\u2069') ||
+			(r >= '\U000E0000' && r <= '\U000E007F') {
+			return true
+		}
+	}
+	return false
+}
+
+func scriptExecutableAndShebangIssues(skillDir string, spec *skillspec.Spec) []Issue {
+	candidateSet := map[string]bool{}
+	for _, command := range spec.Commands {
+		if command.Type == "script" && command.UnixPath != "" {
+			candidateSet[filepath.ToSlash(command.UnixPath)] = true
+		}
+	}
+	scriptsDir := filepath.Join(skillDir, "scripts")
+	if info, err := os.Stat(scriptsDir); err == nil && info.IsDir() {
+		_ = filepath.WalkDir(scriptsDir, func(p string, entry os.DirEntry, walkErr error) error {
+			if walkErr != nil || entry.IsDir() {
+				return nil
+			}
+			rel, relErr := filepath.Rel(skillDir, p)
+			if relErr != nil {
+				return nil
+			}
+			ext := strings.ToLower(filepath.Ext(p))
+			if ext == ".sh" || ext == ".py" || ext == ".bash" || ext == "" {
+				candidateSet[filepath.ToSlash(rel)] = true
+			}
+			return nil
+		})
+	}
+	if len(candidateSet) == 0 {
+		return nil
+	}
+	candidates := make([]string, 0, len(candidateSet))
+	for rel := range candidateSet {
+		candidates = append(candidates, rel)
+	}
+	sort.Strings(candidates)
+	var issues []Issue
+	for _, rel := range candidates {
+		full := filepath.Join(skillDir, filepath.FromSlash(rel))
+		info, err := os.Stat(full)
+		if err != nil || info.IsDir() {
+			continue
+		}
+		payload, err := os.ReadFile(full) // #nosec G304 -- validated script file below skillDir
+		if err != nil {
+			continue
+		}
+		if !strings.HasPrefix(string(payload), "#!") {
+			issues = append(issues, Issue{
+				Severity: "warning",
+				Code:     "skill.script_missing_shebang",
+				Path:     rel,
+				Message:  fmt.Sprintf("script %q is missing a '#!' shebang line", rel),
+			})
+		}
+		if info.Mode()&0o111 == 0 {
+			issues = append(issues, Issue{
+				Severity: "warning",
+				Code:     "skill.script_not_executable",
+				Path:     rel,
+				Message:  fmt.Sprintf("script %q does not have executable permission bit set (mode %04o)", rel, info.Mode().Perm()),
+			})
+		}
+	}
+	return issues
 }
 
 func promptMarkdownFiles(skillDir string, excludeRoots []string) []string {

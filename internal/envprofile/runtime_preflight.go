@@ -81,7 +81,14 @@ func withNoUseRuntimeWarnings(home string, info Info, sink io.Writer) Info {
 	if err != nil {
 		return info
 	}
-	missing, err := missingRuntimeRows(adapters)
+	var verifiedAdapters []Adapter
+	for _, adapter := range adapters {
+		if registered, err := envregistry.ByID(adapter.ID); err == nil && registered.VerifiedRelease == "" {
+			continue
+		}
+		verifiedAdapters = append(verifiedAdapters, adapter)
+	}
+	missing, err := missingRuntimeRows(verifiedAdapters)
 	if err != nil || len(missing) == 0 {
 		return info
 	}

@@ -5,6 +5,12 @@ package skillspec
 
 import "github.com/relux-works/curator/internal/capabilities"
 
+// FileSelection declares relative include/exclude globs in agent-skill.json.
+type FileSelection struct {
+	Include []string `json:"include,omitempty"`
+	Exclude []string `json:"exclude,omitempty"`
+}
+
 const (
 	// CanonicalManifestName is the implementation-neutral writer filename.
 	CanonicalManifestName = "agent-skill.json"
@@ -116,4 +122,5 @@ type Spec struct {
 	Dependencies      map[string]CommandDependency
 	Requirements      map[string]Requirement
 	McpServers        map[string]McpServer
+	Files             *FileSelection
 }

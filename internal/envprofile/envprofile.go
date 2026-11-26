@@ -687,6 +687,8 @@ type InstallOptions struct {
 	Revision  string
 	As        string
 	Use       bool
+	Replace   bool
+	Resolve   bool
 	Policy    Policy
 	// ConfirmSystemDelta acknowledges a trigger during reinstall of an
 	// existing profile (§9.2).
@@ -855,32 +857,49 @@ func installLocked(op *operation, home string, options InstallOptions) (Info, bo
 	if priorErr != nil && !isStateAbsent(priorErr) {
 		return Info{}, false, false, priorErr
 	}
+	var replacedOldLock *contextlock.Lock
 	if priorErr == nil {
 		// Re-installing an installed source with the same requirement
 		// re-resolves and is reported as an update; a different source
-		// under the same name is taken. A git reinstall is an update, so
-		// it delegates to updateLocked. A path reinstall is the §1
-		// reinstall — the only operator path that refreshes the immutable
-		// snapshot — so it re-resolves from the freshly computed
-		// stateForPath result already in hand; routing it through
-		// updateLocked would throw that snapshot away and re-pin the old
-		// one, since update resolves a path root from the store.
+		// under the same name is taken unless Replace is set.
 		if prior == source {
 			if isPath {
 				return reinstallPathLocked(op, home, name, source, input, options)
 			}
-			info, moved, err := updateLocked(op, home, name, options.Policy, options.SurfacingSink, options.WarningSink, options.ConfirmSystemDelta, nil, nil, manager.fetchRaw, false)
+			info, moved, err := updateLocked(op, home, name, options.Policy, options.SurfacingSink, options.WarningSink, options.ConfirmSystemDelta, nil, nil, manager.fetchRaw, options.Resolve)
 			if err != nil {
 				return Info{}, false, false, err
 			}
 			if options.Use {
 				return activateReinstall(op, home, name, info.Source, info.Lock, info.LockHash, info.Warnings, info.Surfacing, options.Policy)
 			}
+			if options.Resolve {
+				_, _ = syncManagedProfileWithOperation(home, name, options.Policy, envregistry.DefaultMachineConfig(), nil, op)
+			}
 			info = withNoUseRuntimeWarnings(home, info, options.WarningSink)
-			info = withStaleCurrentWarning(home, name, moved, info, options.WarningSink)
+			info = withStaleCurrentWarning(home, name, moved && !options.Resolve, info, options.WarningSink)
 			return info, false, true, nil
 		}
-		return Info{}, false, false, fmt.Errorf("%s: profile %q is already installed", DiagNameTaken, name)
+		if options.Replace && !isPath && prior.Kind == KindGit && prior.Git == source.Git && prior.Directory == source.Directory {
+			req := source.Req
+			info, moved, err := updateLocked(op, home, name, options.Policy, options.SurfacingSink, options.WarningSink, options.ConfirmSystemDelta, nil, &req, manager.fetchRaw, options.Resolve)
+			if err != nil {
+				return Info{}, false, false, err
+			}
+			if options.Use {
+				return activateReinstall(op, home, name, info.Source, info.Lock, info.LockHash, info.Warnings, info.Surfacing, options.Policy)
+			}
+			if options.Resolve {
+				_, _ = syncManagedProfileWithOperation(home, name, options.Policy, envregistry.DefaultMachineConfig(), nil, op)
+			}
+			info = withNoUseRuntimeWarnings(home, info, options.WarningSink)
+			info = withStaleCurrentWarning(home, name, moved && !options.Resolve, info, options.WarningSink)
+			return info, false, true, nil
+		}
+		if !options.Replace {
+			return Info{}, false, false, fmt.Errorf("%s: profile %q is already installed", DiagNameTaken, name)
+		}
+		replacedOldLock, _, _ = readLock(home, name)
 	}
 	if manager == nil {
 		manager = newGitManager(home).withPolicy(options.Policy)
@@ -942,10 +961,19 @@ func installLocked(op *operation, home string, options InstallOptions) (Info, bo
 		return Info{}, false, false, err
 	}
 	records := map[string][]byte{sourcePath(home, name): sourcePayload, lockPath(home, name): canonical}
+	if replacedOldLock != nil {
+		if oldCanonical, oldErr := replacedOldLock.Canonical(); oldErr == nil {
+			records[prevLockPath(home, name)] = oldCanonical
+		}
+	}
 	if err := op.publish(records); err != nil {
 		return Info{}, false, false, err
 	}
 	hash := contextlock.HashBytes(canonical)
+	if options.Resolve {
+		_ = resyncCurrentScopes(op, home, name, options.Policy)
+		_, _ = syncManagedProfileWithOperation(home, name, options.Policy, envregistry.DefaultMachineConfig(), nil, op)
+	}
 	machine, err := Current(home)
 	if err != nil {
 		return Info{}, false, false, err
@@ -953,7 +981,7 @@ func installLocked(op *operation, home string, options InstallOptions) (Info, bo
 	if !options.Use {
 		info := Info{Name: name, Source: source, Lock: result.Lock, LockHash: hash, Current: machine == name, Warnings: warnings, Surfacing: surfacing}
 		info = withNoUseRuntimeWarnings(home, info, options.WarningSink)
-		return info, false, false, nil
+		return info, false, replacedOldLock != nil, nil
 	}
 	// Explicit activation keeps the registration and lock while compensating
 	// any adapter-home/current changes if the complete switch fails.
@@ -1958,6 +1986,9 @@ func stateForPath(home, name, dir string) (*contextresolve.StatePackage, error) 
 	manifest, err := contextpkg.LoadManifest(entry)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", DiagSourceInvalid, err)
+	}
+	if origin, head := localGitSourceAndHead(dir); origin != "" && head != "" {
+		manifest.InheritSource(origin, head)
 	}
 	return &contextresolve.StatePackage{StateHash: hash, Manifest: packageOf(manifest)}, nil
 }

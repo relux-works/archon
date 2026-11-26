@@ -303,6 +303,8 @@ func build(ctx context.Context, root string, identity Identity, budget *Budget, 
 			return Entry{}, failure("skill_integrity_mismatch", "profile file selection differs from pinned evidence")
 		}
 		selection = cloneFileSelection(expected.FileSelection)
+	} else if spec, specErr := skillspec.Load(root); specErr == nil && spec != nil && spec.Files != nil {
+		selection = whitelist.MergeFileSelections(&whitelist.FileSelection{Include: spec.Files.Include, Exclude: spec.Files.Exclude}, selection)
 	}
 	selection = cloneFileSelection(selection)
 	var c *capture

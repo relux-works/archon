@@ -94,12 +94,7 @@ func Validate(data []byte) Result {
 	mapping := document.Content[0]
 	for i := 0; i < len(mapping.Content); i += 2 {
 		key, value := mapping.Content[i], mapping.Content[i+1]
-		switch key.Value {
-		case "name", "description", "license", "allowed-tools", "metadata":
-			fields[key.Value] = value
-		default:
-			return invalid("key_unknown")
-		}
+		fields[key.Value] = value
 	}
 	nameNode, ok := fields["name"]
 	if !ok {
@@ -128,9 +123,6 @@ func Validate(data []byte) Result {
 	}
 	if strings.HasPrefix(description, "[TODO:") {
 		return invalid("description_todo")
-	}
-	if strings.ContainsAny(description, "<>") {
-		return invalid("description_angle")
 	}
 	var marker byte
 	var markerLength int

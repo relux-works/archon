@@ -349,6 +349,15 @@ func syncManagedProfile(home, profile string, policy Policy, machine envregistry
 	return syncManagedProfileWithOperation(home, profile, policy, machine, nativeHomeOf, nil)
 }
 
+// SyncManagedProfileWithPolicy re-materializes the managed homes of a single
+// installed profile from its lock.
+func SyncManagedProfileWithPolicy(home, profile string, policy Policy, machine envregistry.MachineConfig) ([]EntryResult, error) {
+	if err := preflightManagedProfile(home, profile, policy, machine, nil); err != nil {
+		return nil, err
+	}
+	return syncManagedProfile(home, profile, policy, machine, nil)
+}
+
 func syncManagedProfileWithOperation(home, profile string, policy Policy, machine envregistry.MachineConfig, nativeHomeOf func(string) (string, error), op *operation) ([]EntryResult, error) {
 	var results []EntryResult
 	var failures []string

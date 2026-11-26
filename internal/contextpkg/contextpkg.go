@@ -138,6 +138,32 @@ type Manifest struct {
 	MCP        map[string]Requirement
 }
 
+// InheritSource populates omitted same-repo Git and Revision fields on
+// directory-addressed requirements from the enclosing package's git source and
+// resolved commit.
+func (m *Manifest) InheritSource(gitSource, commit string) {
+	if m == nil {
+		return
+	}
+	inheritMap := func(reqs map[string]Requirement) {
+		for name, req := range reqs {
+			if req.Directory == "" {
+				continue
+			}
+			if req.Git == "" && gitSource != "" {
+				req.Git = gitSource
+			}
+			if req.Range == "" && req.Tag == "" && req.Revision == "" && commit != "" {
+				req.Revision = commit
+			}
+			reqs[name] = req
+		}
+	}
+	inheritMap(m.Contexts)
+	inheritMap(m.Skills)
+	inheritMap(m.MCP)
+}
+
 // SortedNames returns the keys of a requirement map in bytewise order.
 func SortedNames(requirements map[string]Requirement) []string {
 	names := make([]string, 0, len(requirements))
@@ -364,13 +390,10 @@ func parseRequirements(raw any, family string, schemaVersion int) (map[string]Re
 		case "skills":
 			allowed = append(allowed, "mode", "commands")
 			if schemaVersion >= 2 {
-				allowed = append(allowed, "directory")
+				allowed = append(allowed, "directory", "files", "include", "exclude")
 			}
 			if schemaVersion >= SkillCapabilitiesSchemaVersion {
 				allowed = append(allowed, "capabilities")
-			}
-			if schemaVersion >= SkillFilesSchemaVersion {
-				allowed = append(allowed, "files")
 			}
 		case "mcp":
 			allowed = append(allowed, "directory")
@@ -379,12 +402,30 @@ func parseRequirements(raw any, family string, schemaVersion int) (map[string]Re
 			return nil, err
 		}
 		requirement := Requirement{Name: name}
-		git, ok := entry["git"].(string)
-		if !ok || git == "" || len(git) > 8192 {
+		if raw, present := entry["directory"]; present {
+			text, ok := raw.(string)
+			if !ok || !identifiers.PortablePath(text) {
+				return nil, invalid(DiagManifestInvalid, "%sdirectory must be a portable relative path", prefix)
+			}
+			requirement.Directory = text
+		}
+		if raw, present := entry["git"]; present {
+			git, ok := raw.(string)
+			if !ok || git == "" || len(git) > 8192 {
+				return nil, invalid(DiagManifestInvalid, "%sgit must be a non-empty string", prefix)
+			}
+			if git == "self" {
+				if requirement.Directory == "" {
+					return nil, invalid(DiagManifestInvalid, "%sgit \"self\" requires directory", prefix)
+				}
+			} else {
+				requirement.Git = git
+			}
+		} else if requirement.Directory == "" {
 			return nil, invalid(DiagManifestInvalid, "%sgit must be a non-empty string", prefix)
 		}
-		requirement.Git = git
 		forms := 0
+		selfRevision := false
 		if raw, present := entry["range"]; present {
 			text, ok := raw.(string)
 			if !ok {
@@ -406,21 +447,22 @@ func parseRequirements(raw any, family string, schemaVersion int) (map[string]Re
 		}
 		if raw, present := entry["revision"]; present {
 			text, ok := raw.(string)
-			if !ok || !ValidCommit(text) {
+			if ok && text == "self" && requirement.Git == "" && requirement.Directory != "" {
+				selfRevision = true
+				forms++
+			} else if !ok || !ValidCommit(text) {
 				return nil, invalid(DiagManifestInvalid, "%srevision is not a full lowercase commit", prefix)
+			} else {
+				requirement.Revision = text
+				forms++
 			}
-			requirement.Revision = text
-			forms++
 		}
-		if forms != 1 {
+		if requirement.Git == "" && requirement.Directory != "" {
+			if forms > 1 || (selfRevision && forms != 1) {
+				return nil, invalid(DiagManifestInvalid, "%s must carry at most one of range, tag, revision", strings.TrimSuffix(prefix, "."))
+			}
+		} else if forms != 1 {
 			return nil, invalid(DiagManifestInvalid, "%s must carry exactly one of range, tag, revision", strings.TrimSuffix(prefix, "."))
-		}
-		if raw, present := entry["directory"]; present {
-			text, ok := raw.(string)
-			if !ok || !identifiers.PortablePath(text) {
-				return nil, invalid(DiagManifestInvalid, "%sdirectory must be a portable relative path", prefix)
-			}
-			requirement.Directory = text
 		}
 		if raw, present := entry["weight"]; present {
 			weight, ok := weightValue(raw)
@@ -447,8 +489,26 @@ func parseRequirements(raw any, family string, schemaVersion int) (map[string]Re
 			requirement.Commands = commands
 		}
 		if family == "skills" {
+			_, hasTopInclude := entry["include"]
+			_, hasTopExclude := entry["exclude"]
 			if raw, present := entry["files"]; present {
+				if hasTopInclude || hasTopExclude {
+					return nil, invalid(DiagSkillFilesInvalid, "%sfiles cannot be combined with top-level include or exclude", prefix)
+				}
 				files, err := parseFileSelection(raw, prefix)
+				if err != nil {
+					return nil, err
+				}
+				requirement.Files = files
+			} else if hasTopInclude || hasTopExclude {
+				synthetic := map[string]any{}
+				if hasTopInclude {
+					synthetic["include"] = entry["include"]
+				}
+				if hasTopExclude {
+					synthetic["exclude"] = entry["exclude"]
+				}
+				files, err := parseFileSelection(synthetic, prefix)
 				if err != nil {
 					return nil, err
 				}

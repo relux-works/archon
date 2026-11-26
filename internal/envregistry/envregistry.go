@@ -458,6 +458,28 @@ func (a Adapter) PassthroughFor(goos string) []Passthrough {
 	return a.Passthrough["default"]
 }
 
+// ReleaseCompatible reports whether a detected tool version satisfies the
+// adapter's recorded VerifiedRelease. Adapters with SizeAdvisoryBytes > 0
+// admit compatible same-major releases (>= VerifiedRelease, < next major).
+func (a Adapter) ReleaseCompatible(detected string) bool {
+	if a.VerifiedRelease == "" || detected == a.VerifiedRelease {
+		return true
+	}
+	cmp, ok := CompareVersions(detected, a.VerifiedRelease)
+	if !ok {
+		return false
+	}
+	if cmp == 0 {
+		return true
+	}
+	if a.SizeAdvisoryBytes > 0 && cmp > 0 {
+		detMajor, _, _ := strings.Cut(strings.TrimPrefix(detected, "v"), ".")
+		recMajor, _, _ := strings.Cut(strings.TrimPrefix(a.VerifiedRelease, "v"), ".")
+		return detMajor != "" && detMajor == recMajor
+	}
+	return false
+}
+
 // ResolveForm maps the configured form to the effective form: the adapter
 // default when unconfigured, else the requested form when the adapter
 // supports it, else environment_form_unsupported (§7.2). Profile data

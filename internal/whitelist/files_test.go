@@ -172,3 +172,26 @@ func TestValidateFileSelectionRejectsUnsafeOrInvalidGlobs(t *testing.T) {
 		}
 	}
 }
+
+func TestContextFilesGlobstarAndStrictAllowlistAndMerge(t *testing.T) {
+	root := selectionFixture(t)
+	writeSelectionFile(t, root, "references/sub/deep_test.go")
+	writeSelectionFile(t, root, "references/sub/keep.md")
+
+	producer := &FileSelection{
+		Include: []string{"SKILL.md", "references/**"},
+		Exclude: []string{"**/*_test.go", "references/private/**"},
+	}
+	consumer := &FileSelection{
+		Exclude: []string{"references/base.md"},
+	}
+	merged := MergeFileSelections(producer, consumer)
+	got, err := ContextFiles(root, false, []string{"references/runtime"}, merged)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"SKILL.md", "references/sub/keep.md"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("merged strict allowlist + globstar = %v, want %v", got, want)
+	}
+}

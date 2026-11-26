@@ -50,6 +50,9 @@ func projectSkillWithFiles(home, source string, version hashing.Version, selecti
 	if err != nil {
 		return skillProjectionWithFiles{}, err
 	}
+	if spec.Files != nil {
+		selection = whitelist.MergeFileSelections(&whitelist.FileSelection{Include: spec.Files.Include, Exclude: spec.Files.Exclude}, selection)
+	}
 	skill := skillOf{source: source, includeScripts: len(spec.Commands) == 0,
 		excludeRoots: profileSkillExcludedRoots(spec, selection), version: version}
 	files := map[string][]byte{}

@@ -167,6 +167,7 @@ func prepareSkillPlan(home, profile, expectedHash string, policy Policy, prepare
 		if pkg.Name != member.Name || pkg.Version != member.Version {
 			return SkillPlanResult{}, fmt.Errorf("profile_skill_plan_invalid: context manifest identity differs")
 		}
+		pkg.InheritSource(member.Source, member.Commit)
 		for _, name := range contextpkg.SortedNames(pkg.Skills) {
 			requirement := pkg.Skills[name]
 			ref := manifest.Ref{Kind: "revision", Value: requirement.Revision}

@@ -1,6 +1,5 @@
 exit: 0
 --- stdout ---
-app: skill-a: warning: skill.command_resolution_contract_missing (SKILL.md): prompt-visible instructions export managed runtime commands but do not document a shell-neutral resolver (project .agents/bin lookup, manager global/bin fallback, validated POSIX and PowerShell bare-command fallbacks, Windows .cmd shim suffix). Agents must resolve project shims first, then global shims, then a validated bare command; shell profile activation is optional
 app: external build ssh: fixture.test/ssh-tools (command "ssh-cmd" of skill "skill-a") <- operator flags/env
 app: external build https: fixture.test/https-tools (command "https-cmd" of skill "skill-a") <- anonymous
 app: skill-a.https-cmd external build key=sha256:$H outcome=would-preflight-and-build

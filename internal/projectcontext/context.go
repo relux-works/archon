@@ -228,6 +228,7 @@ func (s *offlineSource) Manifest(_, name, source, directory, commit string) (*co
 	if m.Name != name {
 		return nil, fail("project_context_invalid", "dependency manifest identity mismatch")
 	}
+	m.InheritSource(source, commit)
 	s.captures[name] = c
 	s.manifests[name] = m
 	return packageOf(m), nil

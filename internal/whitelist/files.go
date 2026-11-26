@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"unicode"
@@ -24,6 +25,48 @@ type FileSelection struct {
 }
 
 var errInvalidFileSelection = errors.New("skill files selection invalid")
+
+// MergeFileSelections combines a producer skill manifest's file selection with
+// a consumer profile's file selection. Consumer includes override producer
+// includes when non-empty; excludes are unioned unless explicitly re-included
+// by the consumer.
+func MergeFileSelections(producer, consumer *FileSelection) *FileSelection {
+	if producer == nil {
+		return consumer
+	}
+	if consumer == nil {
+		return &FileSelection{
+			Include: append([]string(nil), producer.Include...),
+			Exclude: append([]string(nil), producer.Exclude...),
+		}
+	}
+	merged := &FileSelection{}
+	if len(consumer.Include) > 0 {
+		merged.Include = append([]string(nil), consumer.Include...)
+	} else if len(producer.Include) > 0 {
+		merged.Include = append([]string(nil), producer.Include...)
+	}
+	excludeSet := map[string]bool{}
+	for _, pat := range producer.Exclude {
+		if !slices.Contains(merged.Include, pat) {
+			excludeSet[pat] = true
+		}
+	}
+	for _, pat := range consumer.Exclude {
+		if !slices.Contains(merged.Include, pat) {
+			excludeSet[pat] = true
+		}
+	}
+	for pat := range excludeSet {
+		merged.Exclude = append(merged.Exclude, pat)
+	}
+	sort.Strings(merged.Include)
+	sort.Strings(merged.Exclude)
+	if len(merged.Include) == 0 && len(merged.Exclude) == 0 {
+		return nil
+	}
+	return merged
+}
 
 // ValidateFileSelection checks the portable, relative glob grammar used by
 // profile skill declarations. Globs use POSIX separators and path.Match
@@ -88,12 +131,15 @@ func ContextFiles(snapshot string, includeScripts bool, excludeRoots []string, s
 		return nil, err
 	}
 	files := map[string]struct{}{}
-	err := WalkContext(snapshot, includeScripts, excludeRoots, func(_, posix string) error {
-		files[posix] = struct{}{}
-		return nil
-	})
-	if err != nil {
-		return nil, err
+	strictAllowlist := selection != nil && slices.Contains(selection.Include, "SKILL.md")
+	if !strictAllowlist {
+		err := WalkContext(snapshot, includeScripts, excludeRoots, func(_, posix string) error {
+			files[posix] = struct{}{}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 	if selection == nil {
 		return sortedFiles(files), nil
@@ -206,8 +252,37 @@ func validRelativeFile(file string) bool {
 }
 
 func matchesPattern(pattern, file string) bool {
-	matched, err := path.Match(pattern, file)
-	return err == nil && matched
+	if matched, err := path.Match(pattern, file); err == nil && matched {
+		return true
+	}
+	if !strings.Contains(pattern, "**") {
+		return false
+	}
+	return matchSegments(strings.Split(pattern, "/"), strings.Split(file, "/"))
+}
+
+func matchSegments(patSegs, fileSegs []string) bool {
+	if len(patSegs) == 0 {
+		return len(fileSegs) == 0
+	}
+	if patSegs[0] == "**" {
+		if len(patSegs) == 1 {
+			return len(fileSegs) >= 1
+		}
+		if matchSegments(patSegs[1:], fileSegs) {
+			return true
+		}
+		return len(fileSegs) > 0 && matchSegments(patSegs, fileSegs[1:])
+	}
+	if len(fileSegs) == 0 {
+		return false
+	}
+	segPat := strings.ReplaceAll(patSegs[0], "**", "*")
+	matched, err := path.Match(segPat, fileSegs[0])
+	if err != nil || !matched {
+		return false
+	}
+	return matchSegments(patSegs[1:], fileSegs[1:])
 }
 
 func matchesAnyPrefix(patterns []string, file string) bool {

@@ -449,6 +449,13 @@ func (m *gitManager) Manifest(kind, name, source, directory, commit string) (*co
 		if err != nil {
 			return nil, fmt.Errorf("%s: %v", DiagSourceInvalid, err)
 		}
+		rawSource := source
+		if raw, ok := m.fetchRaw[source]; ok {
+			rawSource = raw
+		} else if identity.ValidCanonical(source) {
+			rawSource = "https://" + source
+		}
+		manifest.InheritSource(rawSource, commit)
 		return packageOf(manifest), nil
 	}
 }
@@ -1069,4 +1076,50 @@ func extractMemberSnapshot(repo, commit, kind, directory, destination string) er
 }
 func memberEntryPath(home string, member contextlock.Member) string {
 	return newGitManager(home).entryPath(home, resolvedOf(member))
+}
+
+// ReadProfileSource reads the stored source descriptor for an installed profile.
+func ReadProfileSource(home, profile string) (Source, error) {
+	return readSource(home, profile)
+}
+
+func localGitSourceAndHead(dir string) (string, string) {
+	originOut, err := exec.Command("git", "-C", dir, "config", "--get", "remote.origin.url").Output() // #nosec G204 -- read local git metadata when path package is inside a checkout
+	if err != nil {
+		return "", ""
+	}
+	headOut, err := exec.Command("git", "-C", dir, "rev-parse", "HEAD").Output() // #nosec G204 -- read local git HEAD commit
+	if err != nil {
+		return "", ""
+	}
+	origin := strings.TrimSpace(string(originOut))
+	head := strings.TrimSpace(string(headOut))
+	if origin == "" || !contextpkg.ValidCommit(head) {
+		return "", ""
+	}
+	return origin, head
+}
+
+// ResolveRemoteHead fetches the canonical git repository for a profile and
+// returns the latest commit on the remote default branch (origin/HEAD,
+// origin/main, origin/master, or FETCH_HEAD).
+func ResolveRemoteHead(home, profile string, policy Policy) (string, error) {
+	source, err := readSource(home, profile)
+	if err != nil {
+		return "", err
+	}
+	if source.Kind != KindGit {
+		return "", nil
+	}
+	manager := newGitManager(home).withPolicy(policy)
+	if err := manager.fetch(source.Git); err != nil {
+		return "", err
+	}
+	dir := manager.repoDir(source.Git)
+	for _, ref := range []string{"refs/remotes/origin/HEAD", "refs/remotes/origin/main", "refs/remotes/origin/master", "FETCH_HEAD", "HEAD"} {
+		if resolved, err := gitops.Resolve(dir, "revision", ref); err == nil && contextpkg.ValidCommit(resolved.Commit) {
+			return resolved.Commit, nil
+		}
+	}
+	return "", fmt.Errorf("%s: could not resolve remote HEAD for %s", DiagSourceInvalid, source.Git)
 }

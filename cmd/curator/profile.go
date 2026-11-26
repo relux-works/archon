@@ -117,11 +117,14 @@ func (c cli) cmdProfileInstall(cfg *config.Config, args []string) int {
 	revision := flags.String("revision", "", "exact commit")
 	as := flags.String("as", "", "profile name (default: the root package name)")
 	use := flags.Bool("use", false, "activate the installed profile")
+	replace := flags.Bool("replace", false, "replace or update an existing profile with the same name")
+	force := flags.Bool("force", false, "alias for --replace")
+	resolve := flags.Bool("resolve", false, "re-resolve bound environments after install/update")
 	takeover := flags.Bool("takeover", false, "take over the unmanaged files the install would write")
 	confirmSystemDelta := flags.Bool("confirm-system-delta", false, "confirm system-module or MCP declaration changes on reinstall")
 	positional, err := parseInterspersed(flags, args)
 	if err != nil || len(positional) != 1 {
-		_, _ = fmt.Fprintln(c.stderr, "curator: profile install <git-url|path> [--directory <dir>] [--range <range>|--tag <tag>|--revision <commit>] [--as <name>] [--use] [--takeover] [--confirm-system-delta]")
+		_, _ = fmt.Fprintln(c.stderr, "curator: profile install <git-url|path> [--directory <dir>] [--range <range>|--tag <tag>|--revision <commit>] [--as <name>] [--replace|--force] [--resolve] [--use] [--takeover] [--confirm-system-delta]")
 		return exitUsage
 	}
 	policy := envprofile.PolicyFromConfig(cfg)
@@ -133,6 +136,7 @@ func (c cli) cmdProfileInstall(cfg *config.Config, args []string) int {
 	info, activated, updated, err := envprofile.Install(cfg.Home(), envprofile.InstallOptions{
 		Operand: positional[0], Directory: *directory,
 		Range: *rng, Tag: *tag, Revision: *revision, As: *as, Use: *use,
+		Replace: *replace || *force, Resolve: *resolve,
 		Policy: policy, SurfacingSink: c.stdout, WarningSink: c.stderr, ConfirmSystemDelta: *confirmSystemDelta,
 	})
 	for _, result := range info.Activation {
@@ -151,6 +155,11 @@ func (c cli) cmdProfileInstall(cfg *config.Config, args []string) int {
 		}
 		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
 		return exitFail
+	}
+	if *resolve {
+		if code := c.resolveProfileBoundEnvironments(cfg, policy, info.Name); code != exitOK {
+			return code
+		}
 	}
 	root, _ := info.Lock.RootMember()
 	switch {
@@ -416,16 +425,111 @@ func (c cli) cmdProfileRemove(cfg *config.Config, args []string) int {
 	return exitOK
 }
 
+func (c cli) resolveProfileBoundEnvironments(cfg *config.Config, policy envprofile.Policy, profileName string) int {
+	machine := machineFromConfig(cfg)
+	managed, managedErr := envprofile.SyncManagedProfileWithPolicy(cfg.Home(), profileName, policy, machine)
+	for _, result := range managed {
+		if result.OK {
+			_, _ = fmt.Fprintf(c.stdout, "%s: synced (%s)\n", result.Adapter, result.Home)
+		} else {
+			_, _ = fmt.Fprintf(c.stderr, "%s: %s\n", result.Adapter, result.Detail)
+		}
+	}
+	if managedErr != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", managedErr)
+		return exitFail
+	}
+	return exitOK
+}
+
 func (c cli) cmdProfileSync(cfg *config.Config, args []string) int {
 	flags := c.newFlagSet("profile sync")
+	rng := flags.String("range", "", "replace the Git root requirement with a version range")
+	tag := flags.String("tag", "", "replace the Git root requirement with a tag")
+	revision := flags.String("revision", "", "replace the Git root requirement with a revision")
+	all := flags.Bool("all", false, "fetch, update, and re-resolve every installed profile")
 	takeover := flags.Bool("takeover", false, "take over the unmanaged files the sync would write")
+	confirmSystemDelta := flags.Bool("confirm-system-delta", false, "confirm system-module or MCP declaration changes")
 	positional, err := parseInterspersed(flags, args)
-	if err != nil || len(positional) != 0 {
-		_, _ = fmt.Fprintln(c.stderr, "curator: profile sync [--takeover]")
+	if err != nil || (*all && len(positional) != 0) || (!*all && len(positional) > 1) {
+		_, _ = fmt.Fprintln(c.stderr, "curator: profile sync [<name>|--all] [--range <range>|--tag <tag>|--revision <ref>] [--takeover] [--confirm-system-delta]")
 		return exitUsage
+	}
+	var requirement *envprofile.Requirement
+	forms := 0
+	flags.Visit(func(f *flag.Flag) {
+		if f.Name == "range" || f.Name == "tag" || f.Name == "revision" {
+			forms++
+		}
+	})
+	if forms > 0 {
+		if forms != 1 || (*rng == "" && *tag == "" && *revision == "") || *all || len(positional) > 1 {
+			_, _ = fmt.Fprintf(c.stderr, "curator: %s: requirement flags need one Git profile and at most one of --range, --tag, --revision; --all is not allowed\n", envprofile.DiagRefConflict)
+			return exitUsage
+		}
+		requirement = &envprofile.Requirement{Range: *rng, Tag: *tag, Revision: *revision}
 	}
 	policy := envprofile.PolicyFromConfig(cfg)
 	policy.Takeover = *takeover
+	if *all || len(positional) == 1 || forms > 0 {
+		var names []string
+		if *all {
+			if err := envprofile.EnsureDefaultWithPolicy(cfg.Home(), policy); err != nil {
+				_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+				return exitFail
+			}
+			profiles, err := envprofile.ListWithPolicy(cfg.Home(), policy)
+			if err != nil {
+				_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+				return exitFail
+			}
+			for _, info := range profiles {
+				if info.Name == envprofile.DefaultProfile {
+					continue
+				}
+				names = append(names, info.Name)
+			}
+		} else if len(positional) == 1 {
+			names = []string{positional[0]}
+		} else {
+			machine, err := envprofile.Current(cfg.Home())
+			if err != nil {
+				_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+				return exitFail
+			}
+			if machine == "" {
+				_, _ = fmt.Fprintln(c.stderr, "curator: no current profile")
+				return exitFail
+			}
+			names = []string{machine}
+		}
+		for _, name := range names {
+			req := requirement
+			if req == nil {
+				if src, srcErr := envprofile.ReadProfileSource(cfg.Home(), name); srcErr == nil && src.Kind == envprofile.KindGit && src.Req.Revision != "" {
+					if head, headErr := envprofile.ResolveRemoteHead(cfg.Home(), name, policy); headErr == nil && head != "" {
+						req = &envprofile.Requirement{Revision: head}
+					}
+				}
+			}
+			info, moved, err := envprofile.UpdateWithOptions(cfg.Home(), name, envprofile.UpdateOptions{
+				Policy: policy, SurfacingSink: c.stdout, WarningSink: c.stderr, ConfirmSystemDelta: *confirmSystemDelta, RootRequirement: req,
+			})
+			if err != nil {
+				_, _ = fmt.Fprintf(c.stderr, "%s: %v\n", name, err)
+				return exitFail
+			}
+			if moved {
+				_, _ = fmt.Fprintf(c.stdout, "%s: updated (lock %s)\n", info.Name, info.LockHash)
+			} else {
+				_, _ = fmt.Fprintf(c.stdout, "%s: unchanged\n", info.Name)
+			}
+			if code := c.resolveProfileBoundEnvironments(cfg, policy, name); code != exitOK {
+				return code
+			}
+		}
+		return exitOK
+	}
 	managed, managedErr := envprofile.SyncManagedHomesWithPolicy(cfg.Home(), policy, machineFromConfig(cfg))
 	for _, result := range managed {
 		if result.OK {

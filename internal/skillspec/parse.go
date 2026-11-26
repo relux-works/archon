@@ -124,7 +124,7 @@ func (reader Reader) loadSkillManifest(filePath, sourceFile string) (*Spec, map[
 	}
 
 	if schema >= 2 {
-		allowed := map[string]bool{"schema_version": true, "runtime_roots": true, "commands": true, "dependencies": true}
+		allowed := map[string]bool{"schema_version": true, "runtime_roots": true, "commands": true, "dependencies": true, "files": true, "include": true, "exclude": true}
 		if schema >= 3 {
 			allowed["capabilities"] = true
 		}
@@ -137,6 +137,10 @@ func (reader Reader) loadSkillManifest(filePath, sourceFile string) (*Spec, map[
 		if err := rejectUnknown(data, allowed, sourceFile); err != nil {
 			return nil, nil, err
 		}
+	}
+	files, err := parseSkillFileSelection(data, sourceFile)
+	if err != nil {
+		return nil, nil, err
 	}
 	if schema >= 3 {
 		if _, present := data["capabilities"]; !present {
@@ -213,7 +217,95 @@ func (reader Reader) loadSkillManifest(filePath, sourceFile string) (*Spec, map[
 		Dependencies:      dependencies,
 		Requirements:      requirements,
 		McpServers:        mcpServers,
+		Files:             files,
 	}, data, nil
+}
+
+func parseSkillFileSelection(data map[string]any, sourceFile string) (*FileSelection, error) {
+	_, hasTopInclude := data["include"]
+	_, hasTopExclude := data["exclude"]
+	rawFiles, hasFiles := data["files"]
+	if !hasFiles && !hasTopInclude && !hasTopExclude {
+		return nil, nil
+	}
+	if hasFiles && (hasTopInclude || hasTopExclude) {
+		return nil, verr.New("files", "%s field 'files' cannot be combined with top-level 'include' or 'exclude'", sourceFile)
+	}
+	var obj map[string]any
+	if hasFiles {
+		var ok bool
+		obj, ok = rawFiles.(map[string]any)
+		if !ok {
+			return nil, verr.New("files", "%s field 'files' must be an object", sourceFile)
+		}
+		if err := rejectUnknown(obj, map[string]bool{"include": true, "exclude": true}, sourceFile+" files"); err != nil {
+			return nil, err
+		}
+	} else {
+		obj = map[string]any{}
+		if hasTopInclude {
+			obj["include"] = data["include"]
+		}
+		if hasTopExclude {
+			obj["exclude"] = data["exclude"]
+		}
+	}
+	selection := &FileSelection{}
+	if rawInc, ok := obj["include"]; ok {
+		patterns, err := parseSkillGlobList(rawInc, "files.include")
+		if err != nil {
+			return nil, err
+		}
+		selection.Include = patterns
+	}
+	if rawExc, ok := obj["exclude"]; ok {
+		patterns, err := parseSkillGlobList(rawExc, "files.exclude")
+		if err != nil {
+			return nil, err
+		}
+		selection.Exclude = patterns
+	}
+	for _, pat := range append(append([]string(nil), selection.Include...), selection.Exclude...) {
+		if pat == "" || path.IsAbs(pat) || strings.ContainsAny(pat, "\\:") {
+			return nil, verr.New("files", "pattern must be a portable relative glob")
+		}
+		for _, seg := range strings.Split(pat, "/") {
+			if seg == "" || seg == "." || seg == ".." {
+				return nil, verr.New("files", "pattern escapes or aliases the skill directory")
+			}
+		}
+		if _, err := path.Match(pat, ""); err != nil {
+			return nil, verr.New("files", "malformed glob")
+		}
+	}
+	for _, exc := range selection.Exclude {
+		if exc == "SKILL.md" || exc == "agent-skill.json" || exc == "csk-skill.json" || exc == "agents/runtime.json" {
+			return nil, verr.New("files", "required skill file cannot be excluded")
+		}
+	}
+	if len(selection.Include) == 0 && len(selection.Exclude) == 0 {
+		return nil, nil
+	}
+	return selection, nil
+}
+
+func parseSkillGlobList(raw any, field string) ([]string, error) {
+	items, ok := raw.([]any)
+	if !ok {
+		return nil, verr.New(field, "must be a list of unique globs")
+	}
+	seen := map[string]bool{}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		pat, ok := item.(string)
+		if !ok || seen[pat] {
+			return nil, verr.New(field, "must be a list of unique globs")
+		}
+		seen[pat] = true
+		out = append(out, pat)
+	}
+	sort.Strings(out)
+	return out, nil
 }
 
 func (reader Reader) loadRuntimeFallback(filePath string) (*Spec, error) {

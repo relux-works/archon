@@ -167,9 +167,28 @@ func TestProfileSkillFilesSelection(t *testing.T) {
 		t.Fatalf("file selection = %+v, want %+v", manifest.Skills["guide"].Files, want)
 	}
 
-	legacy := strings.Replace(payload, `"schema_version":5`, `"schema_version":4`, 1)
+	for _, ver := range []string{"2", "3", "4"} {
+		withVer := strings.Replace(payload, `"schema_version":5`, `"schema_version":`+ver, 1)
+		if parsed, err := ParseManifest([]byte(withVer)); err != nil || !reflect.DeepEqual(parsed.Skills["guide"].Files, want) {
+			t.Fatalf("schema %s must accept file selection, got %+v %v", ver, parsed, err)
+		}
+	}
+	topLevel := `{"schema_version":3,"name":"profile","version":"1.0.0","requires":{"skills":{"guide":{"directory":"skills/guide","include":["data/*.json"],"exclude":["references/private"]}}}}`
+	topManifest, err := ParseManifest([]byte(topLevel))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(topManifest.Skills["guide"].Files, want) {
+		t.Fatalf("top-level file selection = %+v, want %+v", topManifest.Skills["guide"].Files, want)
+	}
+	topManifest.InheritSource("https://source.example.org/repo", strings.Repeat("b", 40))
+	if topManifest.Skills["guide"].Git != "https://source.example.org/repo" || topManifest.Skills["guide"].Revision != strings.Repeat("b", 40) {
+		t.Fatalf("inherited skill requirement = %+v", topManifest.Skills["guide"])
+	}
+
+	legacy := strings.Replace(payload, `"schema_version":5`, `"schema_version":1`, 1)
 	if _, err := ParseManifest([]byte(legacy)); err == nil || !strings.Contains(err.Error(), DiagManifestInvalid) {
-		t.Fatalf("schema 4 must keep rejecting file selection, got %v", err)
+		t.Fatalf("schema 1 must keep rejecting file selection, got %v", err)
 	}
 	absent := strings.Replace(payload, `,"files":{"include":["data/*.json"],"exclude":["references/private"]}`, "", 1)
 	unchanged, err := ParseManifest([]byte(absent))

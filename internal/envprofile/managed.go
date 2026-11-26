@@ -38,6 +38,7 @@ import (
 	"github.com/relux-works/curator/internal/envregistry"
 	"github.com/relux-works/curator/internal/hashing"
 	"github.com/relux-works/curator/internal/identifiers"
+	"github.com/relux-works/curator/internal/manifest"
 	"github.com/relux-works/curator/internal/mcpnative"
 	"github.com/relux-works/curator/internal/opaquescan"
 	"github.com/relux-works/curator/internal/pathboundary"
@@ -346,11 +347,14 @@ func skillsOf(home string, manager *gitManager, lock *contextlock.Lock) ([]skill
 		if member.Kind != contextlock.KindSkill {
 			continue
 		}
-		if strings.HasPrefix(member.Name, "curator-") {
-			return nil, fmt.Errorf("%s: skill %q collides with the curator-* name reservation", DiagReservedCommand, member.Name)
-		}
 		entry := manager.entryPath(home, resolvedOf(member))
 		root := packageRoot(entry, member.Directory)
+		if strings.HasPrefix(member.Name, "curator-") {
+			skillName, spec, specErr := manifest.ReadSkillPackage(root)
+			if specErr != nil || skillName != member.Name || len(spec.Commands) > 0 {
+				return nil, fmt.Errorf("%s: skill %q collides with the curator-* name reservation", DiagReservedCommand, member.Name)
+			}
+		}
 		// Spec §8 interim rule for v1 readers: refuse before
 		// recomputing a lock-declared v1 member identity over NUL bytes.
 		if err := opaquescan.RefuseNULV1(root, lock.ContentHashVersion()); err != nil {
@@ -2738,10 +2742,8 @@ func (v *verification) checkToolRelease(req *ResolveRequest, adapter envregistry
 		v.warnings = append(v.warnings, fmt.Sprintf("%s: %s detected release unknown, recorded %s", envregistry.DiagToolVersionUnverifed, adapter.ID, recordedRelease(adapter)))
 		return
 	}
-	if adapter.VerifiedRelease != "" && detected != adapter.VerifiedRelease {
-		if comparison, ok := envregistry.CompareVersions(detected, adapter.VerifiedRelease); !ok || comparison != 0 {
-			v.warnings = append(v.warnings, fmt.Sprintf("%s: %s detected %s, recorded %s", envregistry.DiagToolVersionUnverifed, adapter.ID, detected, adapter.VerifiedRelease))
-		}
+	if adapter.VerifiedRelease != "" && !adapter.ReleaseCompatible(detected) {
+		v.warnings = append(v.warnings, fmt.Sprintf("%s: %s detected %s, recorded %s", envregistry.DiagToolVersionUnverifed, adapter.ID, detected, adapter.VerifiedRelease))
 	}
 }
 
