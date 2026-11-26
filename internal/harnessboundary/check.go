@@ -15,6 +15,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/relux-works/curator/internal/harnessregistry"
 )
 
 // Exception pins one preexisting source-policy occurrence.
@@ -306,8 +308,24 @@ func ScanBranches(root string, vocabulary map[string][]string) ([]Finding, error
 	if err != nil {
 		return nil, err
 	}
+	managedHomeValues := map[string]bool{}
+	for _, spec := range harnessregistry.ManagedHomeSpecs() {
+		if spec.ID != "" {
+			managedHomeValues[spec.ID] = true
+		}
+		if spec.Alias != "" {
+			managedHomeValues[spec.Alias] = true
+		}
+	}
 	patterns := map[string]*regexp.Regexp{}
-	for marker := range vocabulary {
+	for marker, ids := range vocabulary {
+		// Managed-home IDs are branch values, while declarations and schema
+		// namespaces may legitimately mention them as text. Keep them in the
+		// vocabulary for AST comparisons below without expanding the broad text
+		// marker scan or its frozen exception baseline.
+		if managedHomeValues[marker] && len(ids) == 1 && ids[0] == marker {
+			continue
+		}
 		patterns[marker] = regexp.MustCompile(`(^|[^A-Za-z0-9_])` + regexp.QuoteMeta(marker) + `([^A-Za-z0-9_]|$)`)
 	}
 	var findings []Finding

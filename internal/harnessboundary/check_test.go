@@ -2,6 +2,7 @@ package harnessboundary
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,11 +31,23 @@ func vocabulary(t *testing.T) map[string][]string {
 	t.Helper()
 	var v map[string][]string
 	readJSON(t, "vocabulary.json", &v)
-	for _, id := range harnessregistry.IDs() {
-		value := string(id)
-		if _, ok := v[value]; !ok {
-			v[value] = []string{value}
+	addID := func(id string) {
+		if id == "" {
+			return
 		}
+		for _, existing := range v[id] {
+			if existing == id {
+				return
+			}
+		}
+		v[id] = append(v[id], id)
+	}
+	for _, id := range harnessregistry.IDs() {
+		addID(string(id))
+	}
+	for _, spec := range harnessregistry.ManagedHomeSpecs() {
+		addID(spec.ID)
+		addID(spec.Alias)
 	}
 	return v
 }
@@ -64,6 +77,60 @@ func requireFinding(t *testing.T, findings []Finding, path string, line int) {
 		}
 	}
 	t.Fatalf("missing %s:%d finding: %v", path, line, findings)
+}
+
+func requireFindingID(t *testing.T, findings []Finding, path string, line int, id string) {
+	t.Helper()
+	for _, f := range findings {
+		if f.Path == path && f.Line == line && f.HarnessID == id && f.Rule == "harness_id_branch_outside_owner" {
+			return
+		}
+	}
+	t.Fatalf("missing %s:%d finding for managed-home ID %q: %v", path, line, id, findings)
+}
+
+func TestManagedHomeBranchVocabulary(t *testing.T) {
+	specs := harnessregistry.ManagedHomeSpecs()
+	if len(specs) == 0 {
+		t.Fatal("managed-home catalog is empty")
+	}
+	for _, spec := range specs {
+		if spec.ID == "" {
+			t.Fatal("managed-home catalog contains an empty ID")
+		}
+		t.Run(spec.ID, func(t *testing.T) {
+			t.Run("owning-adapter-positive", func(t *testing.T) {
+				root := t.TempDir()
+				rel := filepath.ToSlash(filepath.Join("internal", "harness", spec.ID, "adapter.go"))
+				source := fmt.Sprintf("package adapter\nfunc matchesManagedHome(id string) bool { return id == %q }\n", spec.ID)
+				if spec.Alias != "" {
+					source += fmt.Sprintf("func matchesManagedHomeAlias(id string) bool { return id == %q }\n", spec.Alias)
+				}
+				plant(t, root, rel, source)
+				findings, err := ScanBranches(root, vocabulary(t))
+				if err != nil || len(findings) != 0 {
+					t.Fatalf("owning adapter branch was refused: findings=%v err=%v", findings, err)
+				}
+			})
+
+			branches := []struct{ name, value string }{{"id", spec.ID}}
+			if spec.Alias != "" {
+				branches = append(branches, struct{ name, value string }{"alias", spec.Alias})
+			}
+			for _, branch := range branches {
+				t.Run("outside-owner-"+branch.name+"-refused", func(t *testing.T) {
+					root := t.TempDir()
+					rel := "internal/shared/managed_home_branch.go"
+					plant(t, root, rel, fmt.Sprintf("package shared\nfunc matchesManagedHome(id string) bool { return id == %q }\n", branch.value))
+					findings, err := ScanBranches(root, vocabulary(t))
+					if err != nil {
+						t.Fatal(err)
+					}
+					requireFindingID(t, findings, rel, 2, branch.value)
+				})
+			}
+		})
+	}
 }
 
 // The production scan accounts for remaining legacy policy, rejects every new
