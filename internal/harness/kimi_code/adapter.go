@@ -55,9 +55,13 @@ func ManagedHomeSpec() harnessapi.ManagedHomeSpec {
 		Passthrough: map[string][]harnessapi.PassthroughSpec{
 			"default": {
 				{
-					Path:           "credentials/kimi-code.json", // #nosec G101 -- relative path descriptor, not a secret.
+					// Symlink the credentials directory rather than the leaf file:
+					// kimi 2.8.1 refreshes credentials/kimi-code.json via atomic
+					// temp-file rename, which replaces a file-level symlink with
+					// a regular file on first run and causes credential conflict.
+					Path:           "credentials", // #nosec G101 -- relative path descriptor, not a secret.
 					Strategy:       "file-link",
-					FileLinkTarget: "credentials/kimi-code.json", // #nosec G101 -- relative path descriptor, not a secret.
+					FileLinkTarget: "credentials", // #nosec G101 -- relative path descriptor, not a secret.
 				},
 				{
 					Path:           "config.toml",
@@ -79,6 +83,8 @@ func ManagedHomeSpec() harnessapi.ManagedHomeSpec {
 		CredentialFileGuardPath: "credentials/kimi-code.json", // #nosec G101 -- relative path descriptor, not a secret.
 		VerifiedRelease:         "2.8.1",
 		Probe:                   []string{"kimi", "--version"},
+		SizeAdvisoryBytes:       32768,
+		GlobalContextCap:        "32768 bytes recommended for AGENTS.md (empirically observed on kimi 2.8.1)",
 		CredentialScope:         "file-backed per KIMI_CODE_HOME (credentials/kimi-code.json + config.toml, verified on kimi 2.8.1)",
 		FirstRunSteps:           "Launch via curator run kimi; for shared auth run `kimi login` once in native ~/.kimi-code; for isolated auth run `KIMI_CODE_HOME=<home> kimi login`.",
 		StatusNote:              "Kimi Code CLI (kimi 2.8.1): managed-home via KIMI_CODE_HOME; root context at AGENTS.md, skills at skills/, MCP at mcp.json; OAuth credentials in credentials/kimi-code.json and provider config in config.toml",

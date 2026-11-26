@@ -49,4 +49,32 @@ func TestKimiCodeCLIResolveAliasAndManagedHome(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(homePath, "credentials", "kimi-code.json")); err != nil {
 		t.Fatalf("credentials/kimi-code.json passthrough missing: %v", err)
 	}
+	credInfo, err := os.Lstat(filepath.Join(homePath, "credentials"))
+	if err != nil {
+		t.Fatalf("lstat credentials dir: %v", err)
+	}
+	if credInfo.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("credentials entry is not a symlink; atomic token refresh would break it")
+	}
+
+	// Simulate kimi 2.8.1 refreshing credentials/kimi-code.json via atomic temp-file rename.
+	tmpCred := filepath.Join(homePath, "credentials", "kimi-code.json.tmp")
+	if err := os.WriteFile(tmpCred, []byte(`{"token":"refreshed"}`), 0o600); err != nil {
+		t.Fatalf("write refreshed cred temp: %v", err)
+	}
+	if err := os.Rename(tmpCred, filepath.Join(homePath, "credentials", "kimi-code.json")); err != nil {
+		t.Fatalf("atomic rename refreshed cred: %v", err)
+	}
+	nativeBytes, err := os.ReadFile(filepath.Join(nativeKimi, "credentials", "kimi-code.json"))
+	if err != nil || string(nativeBytes) != `{"token":"refreshed"}` {
+		t.Fatalf("native credentials not updated through dir symlink: bytes=%q err=%v", string(nativeBytes), err)
+	}
+
+	// Second resolve must remain clean with zero environment_credential_conflict.
+	if code, _, stderr := runProfile(t, source, "env", "resolve", "kimi"); code != exitOK {
+		t.Fatalf("second resolve kimi after atomic credential refresh = %d\nstderr:\n%s", code, stderr)
+	}
+	if code, _, stderr := runProfile(t, source, "env", "resolve", "kimi", "--repair"); code != exitOK {
+		t.Fatalf("second resolve kimi --repair after atomic credential refresh = %d\nstderr:\n%s", code, stderr)
+	}
 }
