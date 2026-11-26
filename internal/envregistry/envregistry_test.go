@@ -23,8 +23,8 @@ func TestCodexCLI162VerifiedRelease(t *testing.T) {
 }
 
 func TestRegistryClosed(t *testing.T) {
-	if len(Registry) != 6 {
-		t.Fatalf("the revision-1 registry holds %d adapters, want 6", len(Registry))
+	if len(Registry) != 7 {
+		t.Fatalf("the revision-1 registry holds %d adapters, want 7", len(Registry))
 	}
 	seen := map[string]bool{}
 	for _, adapter := range Registry {
@@ -36,7 +36,7 @@ func TestRegistryClosed(t *testing.T) {
 			t.Fatalf("adapter %s names no home mechanism or root target", adapter.ID)
 		}
 	}
-	for _, id := range []string{ClaudeCode, CodexCLI, OpenCode, Pi, Muse, Antigravity} {
+	for _, id := range []string{ClaudeCode, CodexCLI, OpenCode, Pi, Muse, Antigravity, "kimi_code"} {
 		if !seen[id] {
 			t.Fatalf("adapter %s is missing from the registry", id)
 		}

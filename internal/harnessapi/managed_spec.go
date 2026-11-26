@@ -22,6 +22,7 @@ type ManagedHomeSpec struct {
 	ID                                string
 	Alias                             string
 	HomeTransport                     string
+	EnvVar                            string
 	ManagedOnly                       bool
 	NativeDefaultDir                  string
 	NativeHomeIgnoresEnv              bool

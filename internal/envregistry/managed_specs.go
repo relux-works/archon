@@ -20,6 +20,7 @@ func adapterFromManagedSpec(spec harnessapi.ManagedHomeSpec) Adapter {
 	adapter := Adapter{
 		ID:                                spec.ID,
 		HomeTransport:                     spec.HomeTransport,
+		EnvVar:                            spec.EnvVar,
 		ManagedOnly:                       spec.ManagedOnly,
 		NativeDefaultDir:                  spec.NativeDefaultDir,
 		NativeHomeIgnoresEnv:              spec.NativeHomeIgnoresEnv,

@@ -20,7 +20,7 @@ import (
 // adapters participate in the native skills ownership contract.
 func inPlaceSkillsDir(id string) string {
 	adapter, err := envregistry.ByID(id)
-	if err != nil || adapter.SkillsDir != "skills" {
+	if err != nil || adapter.ManagedOnly || adapter.SkillsDir != "skills" {
 		return profileSkillsSurfaceDir
 	}
 	if contract, err := harnessregistry.Lookup(harnessapi.ID(id)); err == nil && contract.Capabilities().Has(harnessapi.SkillProjection) {
