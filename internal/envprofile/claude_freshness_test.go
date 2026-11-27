@@ -11,12 +11,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // Real Resolve schedules a tool write after early validation. Successful merges

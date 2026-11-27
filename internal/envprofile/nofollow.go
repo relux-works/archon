@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // managedPath joins a path below root after checking each existing parent

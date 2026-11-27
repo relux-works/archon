@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // A real pre-Markdown Gate allowance cannot bypass either public gate after

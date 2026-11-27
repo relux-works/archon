@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/marker"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/marker"
 )
 
 func openProtectedStore(t *testing.T, home string) *buildcache.Store {

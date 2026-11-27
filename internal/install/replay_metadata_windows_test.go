@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,11 +15,11 @@ import (
 	"testing"
 	"unicode/utf16"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/snapshot"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/snapshot"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // Fresh production replay at roots 132/133 succeeds with exact locked bytes.

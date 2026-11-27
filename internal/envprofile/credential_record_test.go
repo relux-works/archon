@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // TestResolvePublishesCredentialMarkerThroughLockedJournal drives Resolve's

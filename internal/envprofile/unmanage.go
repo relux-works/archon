@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // UnmanageRequest selects native in-place environment surfaces to return to

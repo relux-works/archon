@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // TestMain keeps every git this package's tests run off the operator's

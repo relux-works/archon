@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/BurntSushi/toml"
-	"github.com/relux-works/curator/internal/projectadapter"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/projectadapter"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // This is a bounded research candidate, never product admission authority. The

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/audit"
-	"github.com/relux-works/curator/internal/snapshot"
-	"github.com/relux-works/curator/internal/sourcelock"
+	"github.com/relux-works/archon/internal/audit"
+	"github.com/relux-works/archon/internal/snapshot"
+	"github.com/relux-works/archon/internal/sourcelock"
 )
 
 const (

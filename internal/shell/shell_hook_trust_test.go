@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/hookapproval"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/hookapproval"
 )
 
 // hookTrustVector is the subset of conformance/v1/vectors/shell-hook-trust.json

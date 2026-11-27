@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 type acquisitionRunnerFixture struct {

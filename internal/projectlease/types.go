@@ -16,9 +16,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // ErrRevoked reports that the manager no longer authorizes a project lease.

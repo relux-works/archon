@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 const cliPathChild = "CURATOR_TEST_CLI_PATH_CHILD"

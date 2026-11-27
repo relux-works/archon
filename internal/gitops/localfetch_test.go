@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // localSiblingPair creates, under one physical root, a bare repository named

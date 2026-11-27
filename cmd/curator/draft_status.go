@@ -22,12 +22,12 @@ import (
 	"path/filepath"
 	"reflect"
 
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/opaquescan"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/opaquescan"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // errDraftManifestMoved fails a draft status check closed when the

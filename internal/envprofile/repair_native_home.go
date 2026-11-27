@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // A repair may seed from a native home only when its physical location is

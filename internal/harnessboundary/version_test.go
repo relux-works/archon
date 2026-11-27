@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"os/exec"
 	"path/filepath"
 	"strings"

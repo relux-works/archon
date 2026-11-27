@@ -12,10 +12,10 @@ import (
 	"testing"
 
 	"github.com/BurntSushi/toml"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/projectadapter"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/projectadapter"
 )
 
 type adapterOptions struct{ approval, mcp string }

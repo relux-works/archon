@@ -2,7 +2,7 @@ package envprofile
 
 import (
 	"encoding/json"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextlock"
 )
 
 // A local profile can install a repo-root skill containing research, board

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/config"
+	"github.com/relux-works/archon/internal/config"
 )
 
 // The real dispatcher emits exactly one bounded JSON object for content,

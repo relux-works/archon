@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/testcli"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/testcli"
 )
 
 // Draft literal-lane environment and ssh isolation (TASK-260920-3ccq6b).

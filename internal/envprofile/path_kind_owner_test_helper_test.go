@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/pathboundary"
+	"github.com/relux-works/archon/internal/pathboundary"
 )
 
 // forceWrongOwnerForTest injects a foreign owner identity for one path while

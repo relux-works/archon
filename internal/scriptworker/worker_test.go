@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/godriver"
+	"github.com/relux-works/archon/internal/godriver"
 )
 
 // rawWorker drives a real hidden-mode script worker process over the session

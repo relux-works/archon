@@ -11,10 +11,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/runtimestore"
-	"github.com/relux-works/curator/internal/skillruntime"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/runtimestore"
+	"github.com/relux-works/archon/internal/skillruntime"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 const (

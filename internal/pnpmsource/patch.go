@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 var unifiedHunkHeader = regexp.MustCompile(`^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@`)

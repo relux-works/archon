@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 // The metadata diagnostic distinguishes synthetic link shapes on non-Windows hosts,

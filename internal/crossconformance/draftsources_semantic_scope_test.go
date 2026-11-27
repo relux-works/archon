@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/sourcelock"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/sourcelock"
 )
 
 func init() {

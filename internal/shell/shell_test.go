@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/envfiles"
-	"github.com/relux-works/curator/internal/hookapproval"
+	"github.com/relux-works/archon/internal/envfiles"
+	"github.com/relux-works/archon/internal/hookapproval"
 )
 
 func TestDetectIsCrossPlatform(t *testing.T) {

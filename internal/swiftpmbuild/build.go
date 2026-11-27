@@ -14,12 +14,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/artifactpolicy"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/swiftpminterop"
-	"github.com/relux-works/curator/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/artifactpolicy"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/swiftpminterop"
+	"github.com/relux-works/archon/internal/swiftpmsource"
 )
 
 // Manager is the production entry point for SwiftPM planning, offline build,

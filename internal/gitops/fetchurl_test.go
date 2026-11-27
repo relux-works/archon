@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/identity"
+	"github.com/relux-works/archon/internal/identity"
 )
 
 // FetchURL refuses an empty or option-shaped endpoint before running git, and

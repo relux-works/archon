@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/harnessapi"
-	"github.com/relux-works/curator/internal/harnessregistry"
-	"github.com/relux-works/curator/internal/harnessvalue"
+	"github.com/relux-works/archon/internal/harnessapi"
+	"github.com/relux-works/archon/internal/harnessregistry"
+	"github.com/relux-works/archon/internal/harnessvalue"
 )
 
 const baselineHead = "267bbf477354f4f3d35c9530ec8da0503cd86b8a"
@@ -290,7 +290,7 @@ func TestNoHarnessBranches(t *testing.T) {
 		"native-path":     "package shared\nconst nativePath = \".codex/skills\"\n",
 		"gemini-path":     "package shared\nconst nativePath = \".gemini/skills\"\n",
 		"cursor-path":     "package shared\nconst nativePath = \".cursor/rules\"\n",
-		"concrete-import": "package shared\nimport _ \"github.com/relux-works/curator/internal/harness/cursor\"\n",
+		"concrete-import": "package shared\nimport _ \"github.com/relux-works/archon/internal/harness/cursor\"\n",
 	} {
 		t.Run(name, func(t *testing.T) {
 			root := t.TempDir()
@@ -380,9 +380,9 @@ import (
  "sort"
  "strconv"
  "strings"
- "github.com/relux-works/curator/internal/harnessapi"
- "github.com/relux-works/curator/internal/harnessvalue"
- "github.com/relux-works/curator/internal/harnessformats"
+ "github.com/relux-works/archon/internal/harnessapi"
+ "github.com/relux-works/archon/internal/harnessvalue"
+ "github.com/relux-works/archon/internal/harnessformats"
 )
 func lexical() string { return fmt.Sprintf("%s",filepath.Join("parent","native")) }
 `
@@ -398,8 +398,8 @@ func lexical() string { return fmt.Sprintf("%s",filepath.Join("parent","native")
 		"external-write":  {"os", `os.WriteFile("fixture/outside/output",nil,0600)`},
 		"process-launch":  {"os/exec", `exec.Command("fixture")`},
 		"network":         {"net/http", `http.Get("https://example.invalid")`},
-		"hidden-helper":   {"github.com/relux-works/curator/internal/envprofile", `envprofile.Current("fixture")`},
-		"registry-cycle":  {"github.com/relux-works/curator/internal/harnessregistry", `harnessregistry.IDs()`},
+		"hidden-helper":   {"github.com/relux-works/archon/internal/envprofile", `envprofile.Current("fixture")`},
+		"registry-cycle":  {"github.com/relux-works/archon/internal/harnessregistry", `harnessregistry.IDs()`},
 		"filesystem-path": {"path/filepath", `filepath.EvalSymlinks("fixture")`},
 		"format-output":   {"fmt", `fmt.Println("fixture")`},
 		"unsafe":          {"unsafe", `unsafe.Sizeof(1)`},
@@ -437,7 +437,7 @@ func lexical() string { return fmt.Sprintf("%s",filepath.Join("parent","native")
 
 func testSymlinkedAllowlistedHelper(t *testing.T) {
 	const adapter = `package claude_code
-import "github.com/relux-works/curator/internal/harnessvalue"
+import "github.com/relux-works/archon/internal/harnessvalue"
 func invoke() { harnessvalue.Run() }
 `
 	t.Run("regular-helper-positive", func(t *testing.T) {

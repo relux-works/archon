@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/relux-works/curator/internal/hookapproval"
-	"github.com/relux-works/curator/internal/manifest"
+	"github.com/relux-works/archon/internal/hookapproval"
+	"github.com/relux-works/archon/internal/manifest"
 )
 
 const hookUsage = `curator hook: approve project env files for the shell-hook trust gate (Manager profile §8)

@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/opaquescan"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/opaquescan"
 )
 
 func writeStoreTestFiles(t *testing.T, root string, files map[string][]byte) {

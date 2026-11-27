@@ -10,9 +10,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/identifiers"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/identifiers"
 )
 
 // TargetKind distinguishes copied script runtimes from immutable compiled

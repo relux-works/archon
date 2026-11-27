@@ -37,7 +37,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/stateread"
 	"time"
 )
 

@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/projectlease"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/projectlease"
 )
 
 // A real acquisition during executable enumeration invalidates the old mark

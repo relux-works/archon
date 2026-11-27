@@ -10,9 +10,9 @@ import (
 	"runtime"
 	"sort"
 
-	"github.com/relux-works/curator/internal/harnessapi"
-	"github.com/relux-works/curator/internal/harnessregistry"
-	"github.com/relux-works/curator/internal/staging"
+	"github.com/relux-works/archon/internal/harnessapi"
+	"github.com/relux-works/archon/internal/harnessregistry"
+	"github.com/relux-works/archon/internal/staging"
 )
 
 // Mirror is the staged adapter state of one installation.

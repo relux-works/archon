@@ -36,8 +36,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // InventoryAlgorithm is the local-snapshot-v1 algorithm identifier

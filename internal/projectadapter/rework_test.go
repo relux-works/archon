@@ -3,7 +3,7 @@ package projectadapter
 import (
 	"context"
 	"errors"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/stateread"
 	"os"
 	"path/filepath"
 	"reflect"

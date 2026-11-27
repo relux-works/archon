@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 // build_https selects the operator token that authenticates an HTTPS fetch of

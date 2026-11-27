@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // Named targets (lock, marker, store entry) fail closed when missing; only

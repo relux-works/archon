@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/swiftpmsource"
 )
 
 // H01: the conventional umbrella-header layout reproduces SwiftPM's automatic

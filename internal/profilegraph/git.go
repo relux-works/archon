@@ -13,9 +13,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/pkgversion"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/pkgversion"
 )
 
 // gitDB reads only object/refs families. It never loads repository config,

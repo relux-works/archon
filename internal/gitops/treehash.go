@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // PinnedCommitTree resolves a full commit ID to its tree ID using only the

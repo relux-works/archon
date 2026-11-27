@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/BurntSushi/toml"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/managerlock"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/managerlock"
 )
 
 func request(t *testing.T) CodexRequest {

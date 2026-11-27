@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/snapshot"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/snapshot"
 )
 
 // TestDraftSourcesSnapshotVectors drives the 3 pinned snapshot byte

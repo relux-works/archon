@@ -3,8 +3,8 @@ package harnessapi
 import (
 	"time"
 
-	upstream "github.com/relux-works/curator-runtimes/pkg/harnessapi"
-	"github.com/relux-works/curator/internal/harnessvalue"
+	upstream "github.com/relux-works/archon-pantheon/pkg/harnessapi"
+	"github.com/relux-works/archon/internal/harnessvalue"
 )
 
 const (

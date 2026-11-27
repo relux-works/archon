@@ -70,7 +70,7 @@ func TestMaterializeRemoteAllowlist(t *testing.T) {
 		{name: "local file remote", remote: "file:///tmp/curator.git"},
 		{name: "local path remote", remote: "/tmp/curator.git"},
 		{name: "case variant", remote: "https://GITHUB.com/relux-works/curator.git"},
-		{name: "trailing slash variant", remote: "https://github.com/relux-works/curator.git/"},
+		{name: "trailing slash variant", remote: "https://github.com/relux-works/archon.git/"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			valid := isAllowedCaptureRemote(test.remote)

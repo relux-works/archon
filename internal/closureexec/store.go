@@ -10,9 +10,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // PublishedHit is returned only after an independently derived expected input

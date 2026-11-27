@@ -18,9 +18,9 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // HeaderTypeLine is the generation-header type line.
@@ -28,7 +28,7 @@ const HeaderTypeLine = "curator-root-context-v2"
 
 // Fixed header lines (environments §5.1).
 const (
-	GeneratedLine = "generated: Curator Protocol environments revision 1 (https://github.com/relux-works/curator-spec)"
+	GeneratedLine = "generated: Curator Protocol environments revision 1 (https://github.com/relux-works/archon-spec)"
 	NoticeLine    = "notice: generated file; direct edits are unsupported and are detected as drift; update the source profile repository or its composed profiles instead"
 )
 

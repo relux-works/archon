@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 func twoRootCapture(t *testing.T, manager ManagerProfile, roots []string) Capture {

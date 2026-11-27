@@ -3,7 +3,7 @@
 package snapshot
 
 import (
-	"github.com/relux-works/curator/internal/staging"
+	"github.com/relux-works/archon/internal/staging"
 )
 
 // captureFileToken pins the physical identity of one admitted file at

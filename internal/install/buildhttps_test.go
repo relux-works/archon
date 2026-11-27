@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/gitcred"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/gitcred"
 )
 
 type fakeBuildHTTPSReader struct {

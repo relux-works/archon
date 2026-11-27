@@ -6,12 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/audit"
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/audit"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // strictAuditMember must ignore an opposite-capability verdict with the SAME

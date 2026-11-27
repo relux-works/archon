@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/relux-works/curator/internal/godriver"
+	"github.com/relux-works/archon/internal/godriver"
 )
 
 // RunWorker is the fixed hidden script-worker mode of the installed manager.

@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/relux-works/curator/internal/gitops"
+	"github.com/relux-works/archon/internal/gitops"
 	"io"
 	"os"
 	"os/exec"

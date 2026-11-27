@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/gitcred"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/gitcred"
 )
 
 // Revision-2 provenance sink end to end (repository-transport §7):

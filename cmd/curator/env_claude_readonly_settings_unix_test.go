@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envprofile"
+	"github.com/relux-works/archon/internal/envprofile"
 )
 
 // The real CLI opt-in creates the mandatory regular 0400 settings file;

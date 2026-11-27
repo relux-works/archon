@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // Golden vectors below were cross-checked against an independent Python

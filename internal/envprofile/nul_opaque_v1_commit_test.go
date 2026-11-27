@@ -13,15 +13,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/opaquescan"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/opaquescan"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // commitContextProfile installs a git-backed context profile through the

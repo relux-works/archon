@@ -16,13 +16,13 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/pkgversion"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/skillintegrity"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/pkgversion"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/skillintegrity"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // SchemaVersion is the frozen v1 lock schema retained for reads.

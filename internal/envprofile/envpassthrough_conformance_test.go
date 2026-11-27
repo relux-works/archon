@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/envfragment"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/envfragment"
 )
 
 // TestEnvironmentsEnvPassthroughVectors executes every case of the

@@ -18,9 +18,9 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	"github.com/relux-works/curator/internal/harnessapi"
-	"github.com/relux-works/curator/internal/harnessregistry"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/harnessapi"
+	"github.com/relux-works/archon/internal/harnessregistry"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // projectSources maps agents to project-relative config files (Spec §11.1).

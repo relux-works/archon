@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 // moduleRootsFixture is a frozen multi-module snapshot: one build root whose

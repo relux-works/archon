@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/projectadapter"
+	"github.com/relux-works/archon/internal/projectadapter"
 )
 
 // Claim: real retained I-COMP profile/project/skill output is copied byte-exact

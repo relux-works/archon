@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	manifestpkg "github.com/relux-works/curator/internal/manifest"
+	manifestpkg "github.com/relux-works/archon/internal/manifest"
 )
 
 // The declaration inputs a closure is resolved from are read in the window

@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/harnessregistry"
+	"github.com/relux-works/archon/internal/harnessregistry"
 )
 
 // Exception pins one preexisting source-policy occurrence.
@@ -225,8 +225,8 @@ func (index constantIndex) value(expr ast.Expr, sourceIndex int, visiting map[st
 				if imp.Name != nil {
 					alias = imp.Name.Name
 				}
-				if alias == ident.Name && strings.HasPrefix(path, "github.com/relux-works/curator/") {
-					name := strings.TrimPrefix(path, "github.com/relux-works/curator/") + "#" + e.Sel.Name
+				if alias == ident.Name && strings.HasPrefix(path, "github.com/relux-works/archon/") {
+					name := strings.TrimPrefix(path, "github.com/relux-works/archon/") + "#" + e.Sel.Name
 					return resolve(name, index.definitions[name])
 				}
 			}
@@ -472,14 +472,14 @@ func ApplyExceptions(findings []Finding, exceptions ExceptionSet) []Finding {
 
 var pureImports = map[string]bool{
 	"bytes": true, "encoding/json": true, "fmt": true, "path": true, "path/filepath": true, "sort": true, "strconv": true, "strings": true,
-	"github.com/relux-works/curator/internal/harnessapi":         true,
-	"github.com/relux-works/curator/internal/harnessvalue":       true,
-	"github.com/relux-works/curator/internal/harnessformats":     true,
-	"github.com/relux-works/curator-runtimes/pkg/harnessapi":     true,
-	"github.com/relux-works/curator-runtimes/pkg/harnessvalue":   true,
+	"github.com/relux-works/archon/internal/harnessapi":         true,
+	"github.com/relux-works/archon/internal/harnessvalue":       true,
+	"github.com/relux-works/archon/internal/harnessformats":     true,
+	"github.com/relux-works/archon-pantheon/pkg/harnessapi":     true,
+	"github.com/relux-works/archon-pantheon/pkg/harnessvalue":   true,
 }
 
-const upstreamSystemsPrefix = "github.com/relux-works/curator-runtimes/pkg/agentic/systems/"
+const upstreamSystemsPrefix = "github.com/relux-works/archon-pantheon/pkg/agentic/systems/"
 
 func isPureImport(name, sourcePath string) bool {
 	if pureImports[name] {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // FindingNUL is the stable opaque-NUL finding id shared by every v1

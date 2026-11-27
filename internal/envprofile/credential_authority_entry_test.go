@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // Every listed production entry refuses a schema-valid node home before any

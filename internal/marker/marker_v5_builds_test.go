@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildsource"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildsource"
 )
 
 func v5LocalBuild() Build {

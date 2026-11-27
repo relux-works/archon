@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/contextstore"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/contextstore"
 )
 
 // Selected plans omit siblings and discovery links; root selection remains a

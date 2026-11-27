@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/relux-works/curator/internal/identifiers"
+	"github.com/relux-works/archon/internal/identifiers"
 )
 
 // PreparedPublisher is I-LEASE's published prepared-lease publication method.

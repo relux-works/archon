@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 func TestDotfileManagerTableMatchesSpecFixture(t *testing.T) {

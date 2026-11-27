@@ -17,11 +17,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 const draftStatusPayload = `{"schema_version":2,"sources":{"s":{"path":"."}},"skills":[{"from":"s","directory":"skills","include":["review"]}]}`

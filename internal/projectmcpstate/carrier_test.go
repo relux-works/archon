@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/projectmcp"
-	"github.com/relux-works/curator/internal/sourcelock"
+	"github.com/relux-works/archon/internal/projectmcp"
+	"github.com/relux-works/archon/internal/sourcelock"
 )
 
 func testLock(t *testing.T) *Lock {

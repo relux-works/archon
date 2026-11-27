@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/envmarker"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/envmarker"
 )
 
 // Production entry points under test: Import, List. Native homes and the

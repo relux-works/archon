@@ -2,6 +2,6 @@
 
 package envprofile
 
-import "github.com/relux-works/curator/internal/transaction"
+import "github.com/relux-works/archon/internal/transaction"
 
 const skillProjectionReplacementKind = transaction.KindExchange

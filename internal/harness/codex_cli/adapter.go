@@ -1,10 +1,10 @@
 // Package codex_cli delegates the Codex CLI harness adapter to
-// github.com/relux-works/curator-runtimes/pkg/agentic/systems/codex.
+// github.com/relux-works/archon-pantheon/pkg/agentic/systems/codex.
 package codex_cli
 
 import (
-	"github.com/relux-works/curator-runtimes/pkg/agentic/systems/codex"
-	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/archon-pantheon/pkg/agentic/systems/codex"
+	"github.com/relux-works/archon/internal/harnessapi"
 )
 
 const ID harnessapi.ID = "codex_cli"

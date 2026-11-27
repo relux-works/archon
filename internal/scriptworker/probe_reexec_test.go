@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 // Every current test binary that transitively imports scriptworker must answer

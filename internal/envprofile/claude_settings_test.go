@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 // These native HOME values are references only; the managed fixture supplies

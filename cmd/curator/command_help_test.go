@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 func buildHelpCLI(t *testing.T) string {

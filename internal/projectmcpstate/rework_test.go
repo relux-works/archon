@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/projectmcp"
+	"github.com/relux-works/archon/internal/projectmcp"
 )
 
 // Rehashing every carrier digest cannot admit a resolved version outside its

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildcache"
 )
 
 // cacheRebuildWatchdog bounds the production install entry below. The

@@ -7,9 +7,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/contextaudit"
-	"github.com/relux-works/curator/internal/contextpkg"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/contextaudit"
+	"github.com/relux-works/archon/internal/contextpkg"
 )
 
 type contextDetectorCase struct {

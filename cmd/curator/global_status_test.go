@@ -10,13 +10,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 // globalPayload is the machine-readable document the machine-wide scope

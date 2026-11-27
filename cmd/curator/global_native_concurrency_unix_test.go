@@ -14,13 +14,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/manifest"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/manifest"
 )
 
 // This fixture-only shell barrier forwards real Git's arguments, streams and

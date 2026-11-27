@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 type script struct {

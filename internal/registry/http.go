@@ -19,8 +19,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // Cache lifetimes (Spec §13.5).

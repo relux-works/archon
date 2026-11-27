@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/audit"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/identity"
+	"github.com/relux-works/archon/internal/audit"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/identity"
 )
 
 // Production entry points under test: Install, Use.

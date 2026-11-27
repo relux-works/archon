@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 func gitLookPath() (string, error) { return exec.LookPath("git") }

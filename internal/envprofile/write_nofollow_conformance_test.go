@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 type writeNofollowVector struct {

@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // scopedSkill uses install's complete selected-skill validation, including

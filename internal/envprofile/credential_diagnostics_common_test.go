@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 // credentialPreimage reads only synthetic fixture bytes to detect mutation;

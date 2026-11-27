@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/mcp"
-	"github.com/relux-works/curator/internal/mcpnative"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/mcp"
+	"github.com/relux-works/archon/internal/mcpnative"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 func TestClaudeSharedSurfaceCharacterization(t *testing.T) {

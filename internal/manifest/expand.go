@@ -9,9 +9,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // ExpansionOptions supplies acquisition-owned Git trees and machine-owned

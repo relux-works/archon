@@ -13,12 +13,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/managerlock"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/managerlock"
 )
 
 func claudeFixture(t *testing.T, empty bool, withMCP bool) (fixture, ComposeRequest, CompositionPreview, string) {

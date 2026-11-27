@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/config"
+	"github.com/relux-works/archon/internal/config"
 )
 
 // The real CLI uses the selected source, produces a private candidate without

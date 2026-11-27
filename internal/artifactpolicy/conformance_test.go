@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"testing"
 
-	policyconformance "github.com/relux-works/curator/internal/artifactpolicy/conformance"
+	policyconformance "github.com/relux-works/archon/internal/artifactpolicy/conformance"
 )
 
 func TestReusableArtifactManifestV1ConformanceCorpus(t *testing.T) {

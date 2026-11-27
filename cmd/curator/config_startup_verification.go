@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/relux-works/curator/internal/config"
+	"github.com/relux-works/archon/internal/config"
 )
 
 func (c cli) cmdConfigStartupVerification(args []string) int {

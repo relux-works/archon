@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // v4Base is v3Base moved onto manifest schema 8. Marker v4 is marker v3 with

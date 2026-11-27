@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // TestVerdictCacheBindsSelectedDirectory pins the core §4.4 audit-cache

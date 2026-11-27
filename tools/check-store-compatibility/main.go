@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/relux-works/curator/internal/storecompatibility"
+	"github.com/relux-works/archon/internal/storecompatibility"
 )
 
 func main() {

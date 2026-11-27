@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
+	"github.com/relux-works/archon/internal/buildrepo"
 )
 
 // A package-provided ssh first on inherited PATH cannot become the selected

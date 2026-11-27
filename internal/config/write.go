@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 // Bootstrap writes a minimal schema 1 user configuration. Existing files are

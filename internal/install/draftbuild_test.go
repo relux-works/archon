@@ -17,13 +17,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/sourcelock"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/sourcelock"
 )
 
 const draftBuildPayload = `{"schema_version":2,"sources":{"s":{"path":"."}},"skills":[{"from":"s","directory":"skills","include":["*"]}]}`

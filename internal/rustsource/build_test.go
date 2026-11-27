@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 func TestBuildToolchainRegistrationStartsNoProcessBeforeC0(t *testing.T) {

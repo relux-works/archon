@@ -10,11 +10,11 @@ import (
 	"runtime"
 	"sort"
 
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // NativeHomeBindingsPath selects the native-home-bindings/1 sidecar for one

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/audit"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/audit"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // strictLocalProject resolves one local draft package and returns the

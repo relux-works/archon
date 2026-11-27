@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // writeNULCollisionPair builds the v1 framing collision: a NUL-bearing

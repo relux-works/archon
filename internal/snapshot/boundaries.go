@@ -25,10 +25,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/staging"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/staging"
 )
 
 // LocalAcquisition is a validated local package ready for capture: the

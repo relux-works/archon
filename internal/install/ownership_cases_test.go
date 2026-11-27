@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/marker"
+	"github.com/relux-works/archon/internal/marker"
 )
 
 type ownershipCase struct {

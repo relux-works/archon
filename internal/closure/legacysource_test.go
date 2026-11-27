@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/devsub"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/devsub"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // fetchLog records every endpoint the injected FetchRepo is asked to contact.

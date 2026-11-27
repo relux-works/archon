@@ -14,8 +14,8 @@ package contextmaterialize
 import (
 	"fmt"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextpkg"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextpkg"
 )
 
 // Admission diagnostics (environments §3.1, §5.7).

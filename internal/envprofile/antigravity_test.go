@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/envfragment"
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/envfragment"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 func TestAntigravityManagedHomeLifecycle(t *testing.T) {

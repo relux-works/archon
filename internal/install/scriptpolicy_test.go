@@ -12,15 +12,15 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/runtimestore"
-	"github.com/relux-works/curator/internal/scriptpolicy"
-	"github.com/relux-works/curator/internal/scriptworker"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/testgitenv"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/runtimestore"
+	"github.com/relux-works/archon/internal/scriptpolicy"
+	"github.com/relux-works/archon/internal/scriptworker"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/testgitenv"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 // errInjectedProbeFailure fails one native-control probe through the

@@ -9,9 +9,9 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 func TestPrintEnvStatusShowsCodexSeedPostureAndNames(t *testing.T) {

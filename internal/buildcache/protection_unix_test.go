@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildmeta"
 	"golang.org/x/sys/unix"
 )
 

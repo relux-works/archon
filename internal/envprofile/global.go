@@ -6,14 +6,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/manifest"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/manifest"
 )
 
 // DirectSkill is one machine-level direct skill declaration accepted by the

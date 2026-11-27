@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/gitops"
+	"github.com/relux-works/archon/internal/gitops"
 )
 
 // The manager propagates the typed refusal before creating its repository

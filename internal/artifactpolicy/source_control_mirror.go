@@ -8,8 +8,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 const sourceControlMirrorTransform = "source-control-mirror-v1"

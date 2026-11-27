@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/pathboundary"
+	"github.com/relux-works/archon/internal/pathboundary"
 )
 
 func writeCheckpointFixture(t *testing.T, directory string, signingKey *signer, version int, conflicting bool, validSignature bool) string {

@@ -16,7 +16,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 // sourcePackage is one reusable pure-source dependency payload. Every adapter

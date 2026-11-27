@@ -5,12 +5,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/envauthority"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/identity"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/envauthority"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/identity"
 )
 
 // VisitCompositionProfile retains default local verification for existing

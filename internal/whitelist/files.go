@@ -13,7 +13,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/identifiers"
+	"github.com/relux-works/archon/internal/identifiers"
 )
 
 // FileSelection adds relative file globs to the built-in skill context roots.

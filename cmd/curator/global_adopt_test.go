@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/globalbins"
-	"github.com/relux-works/curator/internal/runtimestore"
+	"github.com/relux-works/archon/internal/globalbins"
+	"github.com/relux-works/archon/internal/runtimestore"
 )
 
 type globalAdoptCLIFixture struct {

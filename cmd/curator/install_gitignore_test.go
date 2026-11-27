@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 // Drive main -> cli.install -> install.Project -> gitignore.Ensure with the

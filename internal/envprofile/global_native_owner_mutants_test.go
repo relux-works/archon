@@ -2,7 +2,7 @@ package envprofile
 
 import (
 	"encoding/json"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/godriver"
+	"github.com/relux-works/archon/internal/godriver"
 )
 
 // Each overlay removes one ownership condition for a bounded witness. A kill

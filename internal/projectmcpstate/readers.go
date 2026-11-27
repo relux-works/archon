@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/projectmcp"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/projectmcp"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // DecodePlan checks carrier structure, total unique pair ordering, closed

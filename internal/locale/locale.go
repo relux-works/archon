@@ -12,8 +12,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // Issue is one localization finding.

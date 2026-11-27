@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 // Workspace is a task-private clean execution layout. Cache is derived state,

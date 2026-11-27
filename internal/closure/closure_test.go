@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/devsub"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/devsub"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // harness builds skill repositories under a skills root and a machine home.

@@ -7,9 +7,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/contextstore"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/contextstore"
 )
 
 // This boundary witness exercises packageOf -> real Identity, not wire security.

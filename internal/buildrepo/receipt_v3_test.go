@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/registry"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/registry"
 )
 
 func testPackage() *buildmeta.Package {

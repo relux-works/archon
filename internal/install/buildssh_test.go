@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // externalRow is one planned external build repository, reduced to the state

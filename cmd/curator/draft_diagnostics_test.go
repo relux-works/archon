@@ -18,10 +18,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // Documented acquisition shapes (docs/cli.md, README.md). Absolute and

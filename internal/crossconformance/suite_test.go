@@ -8,17 +8,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/artifactpolicy"
-	policyconformance "github.com/relux-works/curator/internal/artifactpolicy/conformance"
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/crossconformance"
-	"github.com/relux-works/curator/internal/nodesource"
-	"github.com/relux-works/curator/internal/npmsource"
-	"github.com/relux-works/curator/internal/pnpmsource"
-	"github.com/relux-works/curator/internal/rustsource"
-	"github.com/relux-works/curator/internal/swiftpmsource"
-	"github.com/relux-works/curator/internal/yarnclassicsource"
-	"github.com/relux-works/curator/internal/yarnmodernsource"
+	"github.com/relux-works/archon/internal/artifactpolicy"
+	policyconformance "github.com/relux-works/archon/internal/artifactpolicy/conformance"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/crossconformance"
+	"github.com/relux-works/archon/internal/nodesource"
+	"github.com/relux-works/archon/internal/npmsource"
+	"github.com/relux-works/archon/internal/pnpmsource"
+	"github.com/relux-works/archon/internal/rustsource"
+	"github.com/relux-works/archon/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/yarnclassicsource"
+	"github.com/relux-works/archon/internal/yarnmodernsource"
 )
 
 // pathProfiles binds every delivered path to the exact adapter and profile

@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 // Inputs reproduce every row of the six original launcher witnesses. Their

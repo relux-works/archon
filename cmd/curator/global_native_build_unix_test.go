@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 const nativeBuildPauseMarker = ".curator-test-build-pause"

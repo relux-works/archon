@@ -16,13 +16,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // writeLegacyBuildSkill creates a normal registry skill for the production

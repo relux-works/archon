@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // Platform selects shim and path behavior; "unix" or "windows".

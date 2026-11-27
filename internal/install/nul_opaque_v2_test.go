@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/manifest"
-	markerpkg "github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/sourcelock"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/manifest"
+	markerpkg "github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/sourcelock"
 )
 
 // NUL fixture bytes shared with nul_opaque_test.go: the single-record tree

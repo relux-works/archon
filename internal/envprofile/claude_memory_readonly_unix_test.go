@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 // In both home forms, native-memory repair retains unrelated settings and the

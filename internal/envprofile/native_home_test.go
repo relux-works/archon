@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // These fixtures exercise production native selection/Resolve, not live homes.

@@ -16,7 +16,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/conformancecoverage"
 )
 
 func TestNetworkAndLocalSHA1SHA256RawObjectParity(t *testing.T) {

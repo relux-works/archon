@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 type generationErrorReader struct{ err error }

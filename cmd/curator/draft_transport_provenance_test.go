@@ -14,10 +14,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/install"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/install"
 )
 
 func TestProductionExternalDepsAssignsTransportProvenanceSink(t *testing.T) {

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io/fs"
 
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/pathboundary"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/pathboundary"
 )
 
 const (

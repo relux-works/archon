@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // Genuine v1 provisioning via Resolve, followed by the production credential

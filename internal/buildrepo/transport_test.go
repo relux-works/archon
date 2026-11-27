@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/gitcred"
+	"github.com/relux-works/archon/internal/gitcred"
 )
 
 // TestSemanticFallbackGateDecidesAllPublishedCases drives the §2 fallback

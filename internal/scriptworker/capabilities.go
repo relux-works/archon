@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/godriver"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/godriver"
 )
 
 // DeclaredCapabilities is the derivation input: the parsed declaration plus

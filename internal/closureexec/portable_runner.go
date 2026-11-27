@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // ManagerProcessRunner is the portable CLI process implementation. It reports

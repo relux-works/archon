@@ -8,15 +8,15 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // Request contains explicit selectors, never a request to discover arbitrary

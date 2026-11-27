@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/scopes"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/scopes"
 )
 
 // The machine-level hybrid manifest decides which declarations join a project's

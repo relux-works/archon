@@ -11,12 +11,12 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/pkgversion"
-	"github.com/relux-works/curator/internal/projectmcp"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/sourcelock"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/pkgversion"
+	"github.com/relux-works/archon/internal/projectmcp"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/sourcelock"
 )
 
 // Resolved binds a package declaration to exact acquired content and server.

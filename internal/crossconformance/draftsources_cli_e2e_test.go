@@ -17,12 +17,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/audit"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/runtimestore"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/testcli"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/audit"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/runtimestore"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/testcli"
 )
 
 // writeDraftScriptSkill writes one local draft package with a runnable

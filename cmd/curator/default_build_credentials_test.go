@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
+	"github.com/relux-works/archon/internal/buildrepo"
 )
 
 // Discovery strips inherited SSH selectors (a pure environment witness), and

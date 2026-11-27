@@ -4,7 +4,7 @@ package skillruntime
 
 import (
 	"encoding/json"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -54,7 +54,7 @@ func TestWindowsProfileRoutingPrivateWriterMutants(t *testing.T) {
 	// The original os.WriteFile 0600 and this creator both inherit the directory
 	// DACL. Preserve all subsequent write/close logic and every other creator.
 	after := "file, err := os.OpenFile(staged, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)"
-	privateImport := `"github.com/relux-works/curator/internal/privatedir"`
+	privateImport := `"github.com/relux-works/archon/internal/privatedir"`
 	if strings.Count(source, privateImport) != 1 {
 		t.Fatal("private creator import anchor is not unique")
 	}

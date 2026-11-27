@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // The CLI pin writer records the framing in force: a v2-writer pin is a

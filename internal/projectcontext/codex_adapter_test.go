@@ -10,13 +10,13 @@ import (
 	"testing"
 
 	"github.com/BurntSushi/toml"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/projectadapter"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/projectadapter"
 )
 
 // Claim: real registration, itemized approval and I-COMP render profile-first

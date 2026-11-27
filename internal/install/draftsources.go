@@ -10,17 +10,17 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/snapshot"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/snapshot"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // readManifestDocument reads one Skillfile. Schema 2 source declarations

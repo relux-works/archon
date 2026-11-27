@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // Global declaration, install and GC commands refuse node authority before locks,

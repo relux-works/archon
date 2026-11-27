@@ -8,9 +8,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // Closed go-v1 metadata identifiers.

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/moduleroots"
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/moduleroots"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 // writeSkill lays out a snapshot directory with a csk-skill.json and any

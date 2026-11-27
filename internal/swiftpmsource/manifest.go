@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 func normalizeManifest(manifest Manifest) (Manifest, error) {

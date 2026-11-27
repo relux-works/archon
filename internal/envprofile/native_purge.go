@@ -9,10 +9,10 @@ import (
 	"runtime"
 	"sort"
 
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // Native purge diagnostics. DiagProfilePurgePreflightRefused means the

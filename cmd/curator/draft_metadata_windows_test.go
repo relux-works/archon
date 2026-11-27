@@ -12,9 +12,9 @@ import (
 	"testing"
 	"unicode/utf16"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // The draft resolve/refresh caller preserves the clone's typed bound refusal

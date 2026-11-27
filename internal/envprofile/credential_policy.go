@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"sort"
 
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 // admitCredentialStore prevents a stored selector from silently becoming native

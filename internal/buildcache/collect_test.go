@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildmeta"
 )
 
 // newSweepStore builds a store whose manager home is provable protected state.

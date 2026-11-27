@@ -16,11 +16,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/artifactpolicy"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/nodesource"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/artifactpolicy"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/nodesource"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 type fixturePackage struct {

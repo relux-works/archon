@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // authoritativeLauncherCase is the published launcher contract. Only the field

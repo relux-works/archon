@@ -40,7 +40,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/relux-works/curator/internal/gitcred"
+	"github.com/relux-works/archon/internal/gitcred"
 )
 
 // CodeRepositoryEndpointUnavailable reports exhausted bounded resolution:

@@ -5,14 +5,14 @@ package envprofile
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 // The overlay instruments the real os.Lstat, including os.Rename's hidden

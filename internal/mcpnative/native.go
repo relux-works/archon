@@ -12,10 +12,10 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/projectmcp"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/projectmcp"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // Capability identifies the profile first-install ownership contract.

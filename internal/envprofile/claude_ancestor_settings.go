@@ -9,11 +9,11 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/claudememory"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/stateread"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/claudememory"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/stateread"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 type claudeAncestorSettingsPlan struct {

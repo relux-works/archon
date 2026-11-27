@@ -9,9 +9,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // SkillPlan is the closed profile-skill-plan v1 portable carrier (PSP01–05).

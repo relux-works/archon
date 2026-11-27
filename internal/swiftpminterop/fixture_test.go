@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/artifactpolicy"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/artifactpolicy"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/swiftpmsource"
 )
 
 type fixture struct {

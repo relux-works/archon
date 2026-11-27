@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // Protected publication retains the landed compensation capture for writes and

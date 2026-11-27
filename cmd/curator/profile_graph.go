@@ -7,10 +7,10 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/profilegraph"
-	"github.com/relux-works/curator/internal/version"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/profilegraph"
+	"github.com/relux-works/archon/internal/version"
 )
 
 func (c cli) cmdProfileGraph(args []string) int {

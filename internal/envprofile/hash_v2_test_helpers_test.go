@@ -3,7 +3,7 @@ package envprofile
 import (
 	"testing"
 
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 func enableV2WritersForTest(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/closureexec"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/closureexec"
 )
 
 // HomeLock is a caller-owned witness for the exclusive manager-home lock.

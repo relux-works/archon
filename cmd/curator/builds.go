@@ -11,13 +11,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // Stable currentness codes.

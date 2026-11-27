@@ -14,7 +14,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/conformancecoverage"
 )
 
 // toolchainCase is one authoritative toolchain identity vector.

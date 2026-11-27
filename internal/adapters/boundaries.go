@@ -14,8 +14,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/relux-works/curator/internal/harnessapi"
-	"github.com/relux-works/curator/internal/staging"
+	"github.com/relux-works/archon/internal/harnessapi"
+	"github.com/relux-works/archon/internal/staging"
 )
 
 // ProjectOutputRoots returns the managed output roots for a project: the

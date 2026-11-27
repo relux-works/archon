@@ -32,12 +32,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/stateread"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // SourceAuditSchemaVersion is the only source-audit wire version accepted.

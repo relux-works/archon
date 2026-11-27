@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/pathboundary"
+	"github.com/relux-works/archon/internal/pathboundary"
 )
 
 // A canonical external directory passes while managed overlap, foreign

@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/conformancecoverage"
 )
 
 // TestBuildSourceConformanceVectors drives the record digest and identity

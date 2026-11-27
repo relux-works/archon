@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/relux-works/curator/internal/config"
+	"github.com/relux-works/archon/internal/config"
 )
 
 // Each configured declaration must keep its own fields in the list, including

@@ -16,10 +16,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/artifactpolicy"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/artifactpolicy"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 var versionManifestPattern = regexp.MustCompile(`\APackage@swift-([0-9]+(?:\.[0-9]+){0,2})\.swift\z`)

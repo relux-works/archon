@@ -13,12 +13,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/marker"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/marker"
 )
 
 // External-build fixtures for the conformance suites: a fake toolchain,

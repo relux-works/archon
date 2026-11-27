@@ -4,9 +4,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // AttestResult is one re-check outcome (Spec §13.3, status --attest).

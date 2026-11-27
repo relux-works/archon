@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/skillintegrity"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/skillintegrity"
 )
 
 func TestProfileFileSelectionInstallUpdateAndProjectBoundedSource(t *testing.T) {

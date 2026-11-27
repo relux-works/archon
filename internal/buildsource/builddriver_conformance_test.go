@@ -12,7 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // buildSourceCase is one authoritative build-source identity vector.

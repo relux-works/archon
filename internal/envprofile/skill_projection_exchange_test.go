@@ -5,7 +5,7 @@ package envprofile
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // A separately running reader, synchronized at every transaction hook during

@@ -15,8 +15,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 func (engine *Engine) journalPath(transactionID string) string {

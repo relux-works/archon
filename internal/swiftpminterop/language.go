@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/swiftpmsource"
 )
 
 // Language is one closed SwiftPM-representable source language class.

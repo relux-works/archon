@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextmaterialize"
 )
 
 type repinFixture struct {

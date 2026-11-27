@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/startupverification"
+	"github.com/relux-works/archon/internal/startupverification"
 )
 
 // The unqualified editor refuses an ordinary valid source without changing it;

@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 const nativeHomeFallbackNotice = "Managed caller home is not a native origin; using the operator HOME default. This does not recover the prior native selector."

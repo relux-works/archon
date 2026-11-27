@@ -16,14 +16,14 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/pkgversion"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/startupverification"
-	"github.com/relux-works/curator/internal/stateread"
-	"github.com/relux-works/curator/internal/whitelist"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/pkgversion"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/startupverification"
+	"github.com/relux-works/archon/internal/stateread"
+	"github.com/relux-works/archon/internal/whitelist"
 )
 
 // File names fixed by the protocol.

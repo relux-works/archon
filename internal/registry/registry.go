@@ -18,10 +18,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // Record statuses (Spec §13.1).

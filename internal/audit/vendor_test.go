@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/capabilities"
+	"github.com/relux-works/archon/internal/capabilities"
 )
 
 // vendorFixture lays out the reproducing fixture of the vendor-inert-text

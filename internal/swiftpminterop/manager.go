@@ -3,7 +3,7 @@ package swiftpminterop
 import (
 	"context"
 
-	"github.com/relux-works/curator/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/swiftpmsource"
 )
 
 // Manager is the production entry point for the interop validation stage. It

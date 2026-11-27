@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // Collect removes unreferenced external receipt-v2 artifacts after grace and

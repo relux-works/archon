@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // deriveRegistryTransform independently derives Cargo 0.92 registry vendoring.

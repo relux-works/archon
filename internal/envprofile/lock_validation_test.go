@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // The real MCP writer may temporarily back up its own lock target. That

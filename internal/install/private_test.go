@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // isolateTempDir points every ephemeral allocation of one test at a directory

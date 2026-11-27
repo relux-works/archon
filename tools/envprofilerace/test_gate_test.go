@@ -29,7 +29,7 @@ func testOrdinaryGateUnion(t *testing.T, c testLane) {
 				}
 				write(".github/ci/"+name, string(data))
 			}
-			write("go.mod", "module github.com/relux-works/curator\n")
+			write("go.mod", "module github.com/relux-works/archon\n")
 			write("manifest.json", "{}\n")
 			write("ledger.tsv", fmt.Sprintf("internal/envprofile\tTestShard/native-required\t%s\t-\t-\tNative required child\n", c.goos))
 			var stream strings.Builder
@@ -49,7 +49,7 @@ if [ "$CONTROL" = unserved ]; then
   grep -v /internal/install "$2/plan-served.txt" >remaining.txt
   mv remaining.txt "$2/plan-served.txt"
 fi
-echo github.com/relux-works/curator/other >>"$2/plan-served.txt"
+echo github.com/relux-works/archon/other >>"$2/plan-served.txt"
 for plan in deferred excluded assert; do : >"$2/plan-$plan.txt"; done
 `)
 			write("fake-go", `#!/usr/bin/env bash
@@ -70,7 +70,7 @@ test)
   for p in $(cat packages.txt); do
     for arg in "$@"; do [ "$arg" != "$p" ] || exit 33; done
   done
-  printf '%s\n' '{"Action":"pass","Package":"github.com/relux-works/curator/other","Test":"TestOther"}' '{"Action":"pass","Package":"github.com/relux-works/curator/other","Elapsed":1}'
+  printf '%s\n' '{"Action":"pass","Package":"github.com/relux-works/archon/other","Test":"TestOther"}' '{"Action":"pass","Package":"github.com/relux-works/archon/other","Elapsed":1}'
   ;;
 *) exit 42 ;;
 esac

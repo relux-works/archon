@@ -11,16 +11,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/testgitenv"
-	"github.com/relux-works/curator/internal/testtoolchain"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/testgitenv"
+	"github.com/relux-works/archon/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 type nativeGlobalFixture struct {

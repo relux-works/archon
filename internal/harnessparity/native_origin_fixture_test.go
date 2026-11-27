@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // Resolve must reject native origins that overlap manager-owned environments before publication.

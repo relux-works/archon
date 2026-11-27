@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/conformancecoverage"
 )
 
 type executableIdentityVector struct {

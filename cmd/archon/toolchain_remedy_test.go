@@ -1,0 +1,59 @@
+package main
+
+import (
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"testing"
+
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/testtoolchain"
+)
+
+// TestInstallPrintsTheRemedyAVersionManagerSelectionEarns drives the whole
+// chain an operator with a version-manager toolchain takes: the driver refuses
+// the selection at its trust boundary, the install boundary renders that
+// refusal through its bounded, path-redacting rendering, and the command prints
+// it. A remedy is only worth attaching if it survives all three, so the
+// assertion is on what stderr actually says.
+func TestInstallPrintsTheRemedyAVersionManagerSelectionEarns(t *testing.T) {
+	t.Parallel()
+	realGo := testtoolchain.Go(t)
+	_, home := compiledProject(t)
+	launcher := "go"
+	if runtime.GOOS == "windows" {
+		launcher = "go.exe"
+	}
+	// A version-manager layout in the small: the selected launcher sits in a
+	// bin directory of its own and resolves to the real launcher under another
+	// root, which is what a goenv, asdf, or mise wrapper looks like here.
+	wrapperRoot := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(wrapperRoot, "bin"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	wrapper := filepath.Join(wrapperRoot, "bin", launcher)
+	if err := os.Symlink(realGo, wrapper); err != nil {
+		t.Skipf("this host cannot create the symbolic link the case needs: %v", err)
+	}
+	code, _, stderr := captureWithEnv(t, filepath.Join(home, "config.json"), map[string]string{
+		godriver.SelectionCuratorGo: wrapper,
+	}, "install", "app")
+	if code != exitFail {
+		t.Fatalf("install with a version-manager selection = %d, want %d\n%s", code, exitFail, stderr)
+	}
+
+	// The protocol string and the remedy reach the operator on one line, the
+	// remedy behind the string a reader matches on.
+	const want = "go-v1 toolchain_executable_mismatch: " +
+		"selected Go executable is not the regular executable under the derived GOROOT" +
+		`; set CURATOR_GO to the absolute path of the real GOROOT/bin/go (bin/go.exe on Windows)`
+	if !strings.Contains(stderr, want) {
+		t.Fatalf("install did not print the remedied diagnostic:\nwant to contain: %s\ngot:\n%s", want, stderr)
+	}
+	// Naming the explicit selector must preserve the closed selection rule:
+	// the manager still never searches PATH or downloads a toolchain.
+	if !strings.Contains(stderr, "Curator never searches PATH and never downloads a toolchain") {
+		t.Fatalf("the remedy displaced the closed selection rule:\n%s", stderr)
+	}
+}

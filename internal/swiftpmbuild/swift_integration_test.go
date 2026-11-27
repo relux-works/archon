@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/swiftpminterop"
+	"github.com/relux-works/archon/internal/swiftpminterop"
 )
 
 // One real tool vector keeps the planned command honest. The adapter tests own

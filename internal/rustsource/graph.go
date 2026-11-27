@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // CaptureGraph is selection-neutral: it intentionally contains no requested

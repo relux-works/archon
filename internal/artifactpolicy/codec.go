@@ -14,7 +14,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 var sha256Identity = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)

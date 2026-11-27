@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 func writeManifest(t *testing.T, text string) string {

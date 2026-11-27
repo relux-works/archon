@@ -32,7 +32,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // Closed §4.1.1 diagnostics for an enforced command. State and Severity are

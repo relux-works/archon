@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/artifactpolicy"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/artifactpolicy"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 func TestParseResolvedR01R03R07R09(t *testing.T) {

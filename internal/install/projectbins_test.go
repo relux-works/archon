@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/runtimestore"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/staging"
+	"github.com/relux-works/archon/internal/runtimestore"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/staging"
 )
 
 // A colliding foreign file refuses the complete install and preserves its

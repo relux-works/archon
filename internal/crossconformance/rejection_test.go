@@ -8,13 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/artifactpolicy"
-	policyconformance "github.com/relux-works/curator/internal/artifactpolicy/conformance"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/crossconformance"
-	"github.com/relux-works/curator/internal/rustsource"
-	"github.com/relux-works/curator/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/artifactpolicy"
+	policyconformance "github.com/relux-works/archon/internal/artifactpolicy/conformance"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/crossconformance"
+	"github.com/relux-works/archon/internal/rustsource"
+	"github.com/relux-works/archon/internal/swiftpmsource"
 )
 
 // proveRejectionMatrix runs the published cross-adapter rejection matrix. Each

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextlock"
 )
 
 // Each level/mode has an intact no-write control. Whole Git-entry absence

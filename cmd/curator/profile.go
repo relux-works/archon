@@ -6,9 +6,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 // profileUseUsage prints the two defined profile-use forms with the

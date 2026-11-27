@@ -10,7 +10,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/startupverification"
+	"github.com/relux-works/archon/internal/startupverification"
 )
 
 // validateStartupJSON preserves the numeric spelling before legacy config

@@ -225,7 +225,7 @@ func TestNonAccountHomeFixturePathRemainsUntouchedInJSONOutput(t *testing.T) {
 
 func TestSanitizeJSONPreservesGoEventContract(t *testing.T) {
 	hostPath := strings.Join([]string{"/", "home", "runner", "checkout", "internal", "fixture.go"}, "")
-	input := `{"Time":"2026-01-02T03:04:05Z","Action":"output","Package":"github.com/relux-works/curator/internal/ciartifact","Test":"TestSanitizedEvidence","Elapsed":0.25,"Output":"at ` + hostPath + ` TOKEN=secret-value GOAMD64=v3 runner.internal.invalid 192.0.2.44 environment_store_untrusted: store entry failed ownership check: fixture"}`
+	input := `{"Time":"2026-01-02T03:04:05Z","Action":"output","Package":"github.com/relux-works/archon/internal/ciartifact","Test":"TestSanitizedEvidence","Elapsed":0.25,"Output":"at ` + hostPath + ` TOKEN=secret-value GOAMD64=v3 runner.internal.invalid 192.0.2.44 environment_store_untrusted: store entry failed ownership check: fixture"}`
 	clean, found, err := sanitizeGoTestStream([]byte(input))
 	if err != nil {
 		t.Fatal("sanitize JSON:", err)

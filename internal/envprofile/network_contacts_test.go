@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextlock"
 )
 
 // Every pinned network-contact vector runs through the public Install and

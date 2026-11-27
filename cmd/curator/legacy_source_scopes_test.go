@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // declareGit writes a schema-1 Skillfile declaring one skill at tag v1 with

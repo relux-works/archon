@@ -7,13 +7,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // BuildOutcome is the stable per-command planner vocabulary. The values match

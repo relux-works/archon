@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/projectlease"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/projectlease"
 )
 
 type leaseAuthority struct{ c projectlease.Composition }

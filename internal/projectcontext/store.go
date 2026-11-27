@@ -13,12 +13,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 type binding struct {

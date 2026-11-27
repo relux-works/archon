@@ -1,0 +1,326 @@
+package main
+
+import (
+	"fmt"
+	"io"
+	"path/filepath"
+	"sort"
+
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/registry"
+)
+
+// printEnvStatus renders the profile × environment × surface matrix as
+// human-readable rows. Machine-readable consumers use --json.
+func printEnvStatus(stdout io.Writer, status *envprofile.Status) {
+	printSecurityPostureRows(stdout, status.SecurityPostureRows)
+	// §12.2: env status reports the locked require_current_profile
+	// requirement.
+	if status.RequireCurrentProfile != nil {
+		locked := "unlocked"
+		if status.RequireCurrentLocked {
+			locked = "locked"
+		}
+		_, _ = fmt.Fprintf(stdout, "require_current_profile: %s (%s)\n", *status.RequireCurrentProfile, locked)
+	}
+	_, _ = fmt.Fprintf(stdout, "require_source_signers: %t\n", status.RequireSourceSigners)
+	_, _ = fmt.Fprintf(stdout, "update_confirmation: %s (%s)\n", status.UpdateConfirmationRevision, status.UpdateConfirmationBehavior)
+	for _, row := range status.SourceSignerPosture {
+		state := row.State
+		if row.State == "enforced" {
+			state += " (" + row.Signer + ")"
+		}
+		current := "current"
+		if !row.Current {
+			current = "non-current"
+		}
+		if row.Verification == "unavailable" {
+			state += " verification=unknown"
+		} else if row.Verification != "" {
+			state += " verification=" + row.Verification
+		}
+		_, _ = fmt.Fprintf(stdout, "source_signers profile %s %s %s %s: %s, %s\n", row.Profile, row.Kind, row.Name, row.Source, state, current)
+		if row.Diagnostic != "" {
+			_, _ = fmt.Fprintf(stdout, "%s: %s\n", row.Diagnostic, row.Hint)
+		}
+	}
+	for _, warning := range status.ShellHookTrustWarnings {
+		_, _ = fmt.Fprintf(stdout, "shell-hook-trust: warning: %s\n", warning)
+	}
+	for _, diagnostic := range status.Diagnostics {
+		_, _ = fmt.Fprintf(stdout, "diagnostic %s: %s: %s\n", diagnostic.Code, diagnostic.Path, diagnostic.Detail)
+	}
+	for _, row := range status.ShellHookTrust {
+		_, _ = fmt.Fprintln(stdout, formatTrustRow(row))
+	}
+	// §12 posture: the active S4 profile with the effective
+	// passable_env_names, the machine-level warnings, and the §2.3
+	// surfacing rows for the current profile of each reported scope.
+	_, _ = fmt.Fprintf(stdout, "s4_profile: %s, passable_env_names: %s\n", status.S4Profile, formatPassable(status.PassableEnvNames))
+	_, _ = fmt.Fprintf(stdout, "codex-seed: revision %s (%s)\n", status.CodexSeedRule.Revision, status.CodexSeedRule.Provenance)
+	for _, warning := range status.Warnings {
+		_, _ = fmt.Fprintf(stdout, "warning: %s\n", warning)
+	}
+	for _, scope := range status.MCPDeclarations {
+		_, _ = fmt.Fprintf(stdout, "scope %s profile %s mcp-declarations:\n", scope.Scope, scope.Profile)
+		for _, row := range scope.Rows {
+			_, _ = fmt.Fprintln(stdout, row)
+		}
+	}
+	// Registry page-boundary posture follows the S6 shell-hook block and
+	// the §12 posture block, in the closed status-row order.
+	for _, row := range status.RegistryPosture {
+		_, _ = fmt.Fprintln(stdout, formatRegistryPosture(row))
+	}
+	for _, home := range status.Homes {
+		state := "current"
+		if !home.Current {
+			state = "non-current"
+		}
+		provisioned := "unprovisioned"
+		if home.Provisioned {
+			provisioned = "provisioned"
+		}
+		_, _ = fmt.Fprintf(stdout, "%s %s: %s, %s, mode %s, form %s, lock %s\n", home.Profile, home.Environment, state, provisioned, home.Mode, home.Form, shortHash(home.LockHash))
+		for _, surface := range home.Surfaces {
+			_, _ = fmt.Fprintf(stdout, "  surface %s: %s\n", surface.Key, surface.State)
+		}
+		for _, finding := range home.Findings {
+			_, _ = fmt.Fprintf(stdout, "  finding: %s\n", finding)
+		}
+		for _, warning := range home.Warnings {
+			_, _ = fmt.Fprintf(stdout, "  warning: %s\n", warning)
+		}
+		if len(home.Passthrough) > 0 {
+			_, _ = fmt.Fprintf(stdout, "  passthrough: %s\n", joinComma(home.Passthrough))
+		}
+		if len(home.Seeds) > 0 {
+			_, _ = fmt.Fprintf(stdout, "  seeds: %s\n", joinComma(home.Seeds))
+		}
+		if home.CodexSeedRecord != nil {
+			names := "none"
+			if len(home.NativeMCPServers) > 0 {
+				names = joinComma(home.NativeMCPServers)
+			}
+			_, _ = fmt.Fprintf(stdout, "  codex-seed-record: revision %s; native MCP servers %s (%s)\n", home.CodexSeedRecord.Revision, names, home.NativeMCPServersDisposition)
+		} else if home.NativeMCPServersDisposition == "unknown" {
+			_, _ = fmt.Fprintln(stdout, "  codex-seed-record: absent; native MCP servers unknown")
+		}
+		if len(home.SeedLinks) > 0 {
+			_, _ = fmt.Fprintf(stdout, "  seed-links: %s\n", joinComma(home.SeedLinks))
+		}
+		if len(home.SeededProjects) > 0 {
+			_, _ = fmt.Fprintf(stdout, "  seeded-projects: %s\n", joinComma(home.SeededProjects))
+		}
+		if !home.BackupsKnown {
+			_, _ = fmt.Fprintln(stdout, "  backups: unknown")
+		} else if home.Backups > 0 {
+			_, _ = fmt.Fprintf(stdout, "  backups: %d generations, oldest %s, newest %s\n", home.Backups, home.BackupsOldest, home.BackupsNewest)
+		}
+	}
+	for _, scope := range status.Scopes {
+		provisioned := "unknown"
+		if scope.ProvisionedKnown {
+			provisioned = "unprovisioned"
+			if scope.Provisioned {
+				provisioned = "provisioned"
+			}
+		}
+		_, _ = fmt.Fprintf(stdout, "scope %s: profile %s env %s native %s managed %s (%s)\n",
+			scope.Scope, scope.Profile, scope.Environment, scope.Native, scope.Managed, provisioned)
+		if scope.Diagnostic != nil {
+			_, _ = fmt.Fprintf(stdout, "  diagnostic %s: %s: %s\n", scope.Diagnostic.Code, scope.Diagnostic.Path, scope.Diagnostic.Detail)
+		}
+	}
+	for _, adapter := range status.Adapters {
+		_, _ = fmt.Fprintf(stdout, "tool %s: recorded %s detected %s\n", adapter.ID, adapter.Recorded, adapter.Detected)
+	}
+	for _, provider := range status.Providers {
+		_, _ = fmt.Fprintf(stdout, "provider %s: %s\n", provider.Name, describeProvider(provider))
+	}
+	for _, target := range status.Targets {
+		_, _ = fmt.Fprintf(stdout, "target %s (%s): participating=%v (%s); %s\n", target.ID, target.Adapter, target.Participating, target.Detail, target.Ungoverned)
+	}
+	for _, profile := range status.Profiles {
+		_, _ = fmt.Fprintf(stdout, "profile %s: lock %s, precedence winner=%s placement=%s, transitive_system_modules=%s\n",
+			profile.Profile, shortHash(profile.LockHash), profile.Precedence.Winner, profile.Precedence.Placement, profile.TransitiveSystemModules)
+		for _, member := range profile.Members {
+			_, _ = fmt.Fprintf(stdout, "  member %s %s weight %d\n", member.Kind, member.Name, member.Weight)
+		}
+		for _, dropped := range profile.DroppedSystemModules {
+			_, _ = fmt.Fprintf(stdout, "  dropped system module %s %s\n", dropped.Package, dropped.Path)
+		}
+	}
+	for _, id := range status.UnregisteredEnvironments {
+		_, _ = fmt.Fprintf(stdout, "unregistered environment in machine configuration: %s\n", id)
+	}
+	for _, orphan := range status.Orphans {
+		_, _ = fmt.Fprintf(stdout, "orphan: %s\n", orphan)
+	}
+	for _, note := range status.Notes {
+		_, _ = fmt.Fprintf(stdout, "note: %s\n", note)
+	}
+}
+
+func printSecurityPostureRows(stdout io.Writer, rows []config.SecurityPostureRow) {
+	for index, row := range rows {
+		if index == 0 && row.Gate == "security_posture" {
+			_, _ = fmt.Fprintf(stdout, "security_posture: %v (%s)\n", row.Value, row.Source)
+			continue
+		}
+		_, _ = fmt.Fprintf(stdout, "%s: %v (%s)\n", row.Gate, row.Value, row.Source)
+	}
+}
+
+// describeProvider renders one §12 umbrella provider row: the resolved
+// absolute provider path with its trust verdict. A refused or failed
+// provider row is non-current; the revision-A outside-roots warning row
+// stays current.
+func describeProvider(provider envprofile.ProviderState) string {
+	state := "current"
+	if !provider.Current {
+		state = "non-current"
+	}
+	switch provider.Verdict {
+	case envprofile.ProviderTrusted:
+		return fmt.Sprintf("%s (trusted, %s)", derefProvider(provider.Resolved), state)
+	case envprofile.ProviderOutsideTrustRoots:
+		return fmt.Sprintf("%s (%s, %s)", derefProvider(provider.Resolved), derefProvider(provider.Diagnostic), state)
+	case envprofile.ProviderRefused:
+		return fmt.Sprintf("%s (%s, %s)", derefProvider(provider.RefusedPath), derefProvider(provider.Diagnostic), state)
+	case envprofile.ProviderUnreadable:
+		return fmt.Sprintf("unreadable trust root %s (%s, %s)", derefProvider(provider.UnreadableDirectory), derefProvider(provider.Diagnostic), state)
+	default:
+		return fmt.Sprintf("missing (%s, %s)", derefProvider(provider.Diagnostic), state)
+	}
+}
+
+// derefProvider renders an optional provider field, never empty.
+func derefProvider(value *string) string {
+	if value == nil || *value == "" {
+		return "-"
+	}
+	return *value
+}
+
+// attachProviderPosture resolves the §12 umbrella provider rows for the
+// loaded machine configuration and folds their currency into the
+// matrix: a refused, missing, or unreadable provider row is
+// non-current, so env status --check fails while one stands.
+func attachProviderPosture(cfg *config.Config, status *envprofile.Status) {
+	var diagnostic *envprofile.StateDiagnostic
+	status.Providers, diagnostic = providerPostureForConfig(cfg, nil)
+	if diagnostic != nil {
+		status.Diagnostics = append(status.Diagnostics, *diagnostic)
+		status.NonCurrent = true
+	}
+	for _, provider := range status.Providers {
+		if !provider.Current {
+			status.NonCurrent = true
+		}
+	}
+}
+
+// attachRegistryPosture reads each enabled registry's existing §5 high-water
+// and page-boundary posture. An absent first-use state is informational;
+// unreadable or missing-after-use state is an error row and makes --check
+// fail, because registry operations cannot safely treat it as first use.
+func attachRegistryPosture(cfg *config.Config, status *envprofile.Status) {
+	status.RegistryPosture = readRegistryPosture(cfg)
+	for _, row := range status.RegistryPosture {
+		if row.Diagnostic != "" {
+			status.NonCurrent = true
+		}
+	}
+}
+
+func readRegistryPosture(cfg *config.Config) []registry.BoundaryPosture {
+	trusted := cfg.TrustedRegistries()
+	registries := make([]registry.Registry, 0, len(trusted))
+	for _, entry := range trusted {
+		registries = append(registries, registry.Registry{
+			Name: entry.Name, URL: entry.URL, PublicKeys: entry.PublicKeys,
+			BootstrapCheckpoint: entry.BootstrapCheckpoint, MirrorGroup: entry.MirrorGroup,
+		})
+	}
+	cacheDir := filepath.Join(cfg.Home(), "cache", "registry")
+	stateDir := registry.ReadOnlyStateDir(filepath.Join(cfg.Home(), "state", "registry"), cacheDir)
+	return registry.ReadBoundaryPostureWithPolicy(stateDir, registries, cfg.Audit.RegistryPolicy)
+}
+
+func formatRegistryPosture(row registry.BoundaryPosture) string {
+	verified := "no"
+	if row.LastBoundaryVerified {
+		verified = "yes"
+	}
+	var posture string
+	if row.HighWaterVersion == nil || row.HighWaterLogSize == nil {
+		posture = fmt.Sprintf("registry %s %s: no persisted high-water, last page boundary verified: %s", row.Name, row.URL, verified)
+	} else {
+		posture = fmt.Sprintf("registry %s %s: high-water version %d, log_size %d, last page boundary verified: %s",
+			row.Name, row.URL, *row.HighWaterVersion, *row.HighWaterLogSize, verified)
+	}
+	if row.BootstrapSource != "" {
+		posture += ", bootstrap source " + row.BootstrapSource
+	}
+	if row.BootstrapDiagnostic != "" {
+		posture += " (" + row.BootstrapDiagnostic + " " + row.BootstrapSeverity + ")"
+	}
+	if row.MirrorGroup != "" {
+		posture += ", mirror group " + row.MirrorGroup + " last comparison " + row.LastMirrorComparison
+		if row.LastMirrorComparisonLogSize != nil {
+			posture += fmt.Sprintf(" at log_size %d", *row.LastMirrorComparisonLogSize)
+		}
+		if row.MirrorDiagnostic != "" {
+			posture += " (" + row.MirrorDiagnostic + " " + row.MirrorSeverity + ")"
+		}
+	}
+	if row.Diagnostic != "" {
+		posture += ", status error: " + row.Diagnostic
+	}
+	return posture
+}
+
+func providerPostureForConfig(cfg *config.Config, pathOverride *string) ([]envprofile.ProviderState, *envprofile.StateDiagnostic) {
+	var projectBins []string
+	for _, project := range cfg.Projects {
+		projectBins = append(projectBins, filepath.Join(project.Path, ".agents", "bin"))
+	}
+	sort.Strings(projectBins)
+	return providerPostureWithPath(cfg.Home(), cfg.Env.ProviderDirectories, projectBins, pathOverride)
+}
+
+// formatPassable renders the effective passable_env_names: unbounded for
+// a nil list, otherwise the compact JSON array.
+func formatPassable(names []string) string {
+	if names == nil {
+		return "unbounded"
+	}
+	out := "["
+	for i, name := range names {
+		if i > 0 {
+			out += ","
+		}
+		out += `"` + name + `"`
+	}
+	return out + "]"
+}
+
+func shortHash(hash string) string {
+	if len(hash) > 19 {
+		return hash[:19] + "…"
+	}
+	return hash
+}
+
+func joinComma(values []string) string {
+	out := ""
+	for i, value := range values {
+		if i > 0 {
+			out += ", "
+		}
+		out += value
+	}
+	return out
+}

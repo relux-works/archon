@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 func TestBuildRootContextExclusionConformanceFixture(t *testing.T) {

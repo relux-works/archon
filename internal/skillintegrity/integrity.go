@@ -19,14 +19,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/whitelist"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/whitelist"
 )
 
 // Schema identifies the unsigned skill evidence format.

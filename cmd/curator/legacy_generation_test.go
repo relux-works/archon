@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/marker"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/marker"
 )
 
 func TestLegacyPackageStatusBindingAndRepair(t *testing.T) {

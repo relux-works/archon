@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // The physical /private/var path is an accepted direct binding while its /var

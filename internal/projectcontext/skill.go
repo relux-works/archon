@@ -7,11 +7,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/audit"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/hashing"
-	skillmanifest "github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/audit"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/hashing"
+	skillmanifest "github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 func (op *operation) skill(r registered, req Request) (Candidate, error) {

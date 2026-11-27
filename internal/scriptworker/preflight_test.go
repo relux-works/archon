@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/scriptpolicy"
+	"github.com/relux-works/archon/internal/scriptpolicy"
 )
 
 // errInjectedProbeFailureForTest fails one native-control probe through the

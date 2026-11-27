@@ -8,13 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envauthority"
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/projectmcpstate"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/envauthority"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/projectmcpstate"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // A real schema-valid orphan marker covers manager-wide authority rather than

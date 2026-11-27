@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 func writeTestFile(t *testing.T, root, path string, content []byte) {

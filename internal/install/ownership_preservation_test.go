@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/marker"
+	"github.com/relux-works/archon/internal/marker"
 )
 
 // Project must refuse every unowned stale sibling before publication, preserving

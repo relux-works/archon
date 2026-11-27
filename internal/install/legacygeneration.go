@@ -9,15 +9,15 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // legacyGeneration retains the §4 declaration binding outside the closed marker

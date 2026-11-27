@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // Current-lock copied-home drift is independent of source pin drift. Read-only

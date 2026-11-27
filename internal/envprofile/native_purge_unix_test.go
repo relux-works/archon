@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envmarker"
+	"github.com/relux-works/archon/internal/envmarker"
 )
 
 // A read-only parent on the final native adapter is rejected before the

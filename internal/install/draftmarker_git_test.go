@@ -8,15 +8,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/devsub"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/sourcelock"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/devsub"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/sourcelock"
 )
 
 // This suite proves the install-marker migration at the production entry

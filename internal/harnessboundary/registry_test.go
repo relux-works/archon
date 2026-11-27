@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/relux-works/curator/internal/harnessapi"
-	"github.com/relux-works/curator/internal/harnessregistry"
+	"github.com/relux-works/archon/internal/harnessapi"
+	"github.com/relux-works/archon/internal/harnessregistry"
 )
 
 func code(err error) string {

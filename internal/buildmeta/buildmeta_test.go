@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 const (

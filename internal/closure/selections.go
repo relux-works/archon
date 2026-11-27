@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/relux-works/curator/internal/devsub"
-	"github.com/relux-works/curator/internal/manifest"
+	"github.com/relux-works/archon/internal/devsub"
+	"github.com/relux-works/archon/internal/manifest"
 )
 
 // AcquireSelection is the acquisition boundary for a single expanded skill.

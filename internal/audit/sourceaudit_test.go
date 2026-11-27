@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 func jsonUnmarshal(payload []byte, destination any) error {

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/projectadapter"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/projectadapter"
 )
 
 // CompositionRecord is the closed project-composition/1 wire record. The

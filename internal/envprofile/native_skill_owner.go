@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // OwnsNativeSkill verifies a profile-owned native entry without adopting it.

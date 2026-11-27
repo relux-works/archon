@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/runtimestore"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/runtimestore"
 )
 
 // TestCollectRetainsDraftSourceV1Runtime proves the mark phase follows the

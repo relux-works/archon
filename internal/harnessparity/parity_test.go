@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/harnessregistry"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/harnessregistry"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 func TestMain(m *testing.M) {

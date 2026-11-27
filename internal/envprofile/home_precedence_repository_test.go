@@ -2,7 +2,7 @@ package envprofile
 
 import (
 	"fmt"
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envregistry"
 	"os"
 	"path/filepath"
 	"strings"

@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/stateread"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/stateread"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // ErrDestinationConflict reports that an existing commit-keyed cache entry

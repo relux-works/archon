@@ -12,7 +12,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/relux-works/curator/internal/identity"
+	"github.com/relux-works/archon/internal/identity"
 	"io"
 	"net/url"
 	"os"

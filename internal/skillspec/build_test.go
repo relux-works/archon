@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 const validBuildCommand = `"tool":{"type":"build","driver":"go-v1","source_dir":"build/cmd/tool"}`

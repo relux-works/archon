@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // DefaultSnapshotMaxAge is the staleness bound: an older reachable snapshot

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/swiftpmsource"
 )
 
 // errSettingShape is the verdict for a retained build-setting payload whose

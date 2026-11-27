@@ -12,11 +12,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/contextaudit"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/contextaudit"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 const (

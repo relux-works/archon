@@ -2,14 +2,14 @@ package envprofile
 
 import (
 	"encoding/json"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/audit"
+	"github.com/relux-works/archon/internal/audit"
 )
 
 type directoryMutation struct{ file, before, after string }

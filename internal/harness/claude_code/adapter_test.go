@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/relux-works/curator/internal/harnessapi"
-	"github.com/relux-works/curator/internal/harnessvalue"
+	"github.com/relux-works/archon/internal/harnessapi"
+	"github.com/relux-works/archon/internal/harnessvalue"
 )
 
 func claudeContext(t *testing.T, platform string, scope harnessapi.Scope) harnessapi.Context {

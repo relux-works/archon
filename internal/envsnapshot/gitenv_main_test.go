@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // Isolate all scratch Git repositories and native homes before fixture setup.

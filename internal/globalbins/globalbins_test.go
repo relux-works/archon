@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/runtimestore"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/runtimestore"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 func TestRefreshPublishesAndRemovesManagedUnixShims(t *testing.T) {

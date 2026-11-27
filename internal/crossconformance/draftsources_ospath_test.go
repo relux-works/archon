@@ -16,8 +16,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/testcli"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/testcli"
 )
 
 func TestDraftSourcesCLIProjectPathWithSpaceAndUnicode(t *testing.T) {

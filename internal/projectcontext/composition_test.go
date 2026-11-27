@@ -12,12 +12,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 func compositionFixture(t *testing.T, env string, skillSources map[string]string, system ...bool) fixture {

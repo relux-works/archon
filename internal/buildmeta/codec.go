@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // CanonicalBytes returns the exact CCJ-1 logical input bytes used to derive the

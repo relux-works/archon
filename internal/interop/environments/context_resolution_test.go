@@ -8,12 +8,12 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/pkgversion"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/pkgversion"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // vectorLock is the context-lock-v1 object as the vectors spell it.

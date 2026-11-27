@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/stateread"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/stateread"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // Snapshots below cover bytes, entry inventory/types and symlink targets;

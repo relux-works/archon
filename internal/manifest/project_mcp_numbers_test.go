@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/projectmcp"
+	"github.com/relux-works/archon/internal/projectmcp"
 )
 
 // Schema-3 dispatch precedes float conversion regardless of member order.

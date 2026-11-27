@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextaudit"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/manifest"
+	"github.com/relux-works/archon/internal/contextaudit"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/manifest"
 )
 
 // migrationRevisionFixture starts with a legacy branch declaration, then pins

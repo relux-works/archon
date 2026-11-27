@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/relux-works/curator/internal/envprofile"
+	"github.com/relux-works/archon/internal/envprofile"
 )
 
 // nativeHomeFlags accepts only explicitly named exact native directories. It

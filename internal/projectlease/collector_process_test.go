@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/scopes"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/scopes"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // Subprocess observation helper for internal admission tests: it acquires the

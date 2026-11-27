@@ -5,7 +5,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/relux-works/curator/internal/harnessboundary"
+	"github.com/relux-works/archon/internal/harnessboundary"
 )
 
 func main() {

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/envfragment"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/envfragment"
 )
 
 type securityPostureVector struct {

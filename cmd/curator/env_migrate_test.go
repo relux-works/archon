@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envmarker"
+	"github.com/relux-works/archon/internal/envmarker"
 )
 
 // These tests drive the production run() entry point for the env

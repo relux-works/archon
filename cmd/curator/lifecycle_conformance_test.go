@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 // The published manager-lifecycle document is the only source of expected

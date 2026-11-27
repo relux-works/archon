@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/pkgversion"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/pkgversion"
 )
 
 // contextVersionsVector mirrors vectors/context-versions.json (environments

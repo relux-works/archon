@@ -14,11 +14,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // Write creates a file inside a test-owned fixture tree.

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envmarker"
+	"github.com/relux-works/archon/internal/envmarker"
 )
 
 // The legacy purge entry fails before creating locks, journals or profiles and

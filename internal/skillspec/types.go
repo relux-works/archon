@@ -3,7 +3,7 @@
 // fallbacks.
 package skillspec
 
-import "github.com/relux-works/curator/internal/capabilities"
+import "github.com/relux-works/archon/internal/capabilities"
 
 // FileSelection declares relative include/exclude globs in agent-skill.json.
 type FileSelection struct {

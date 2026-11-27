@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/contextlock"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/contextlock"
 )
 
 func profileSkillEdge(present bool, hosts ...string) constraint {

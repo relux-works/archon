@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/envfragment"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/shell"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/envfragment"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/shell"
 )
 
 func securityPostureRevisions() config.SecurityPostureRevisions {

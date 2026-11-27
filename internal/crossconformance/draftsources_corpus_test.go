@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/conformancecoverage"
 )
 
 // skillfileSourcesPin is the exact curator-spec v1.0.0-rc.13 tag commit

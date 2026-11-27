@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 type graphBuild struct {

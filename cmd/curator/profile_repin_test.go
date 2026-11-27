@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envprofile"
+	"github.com/relux-works/archon/internal/envprofile"
 )
 
 func repinCommit(t *testing.T, repo string) string {

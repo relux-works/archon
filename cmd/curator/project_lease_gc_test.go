@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/projectlease"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/projectlease"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // The actual GC recovery entry point applies the project-lease commit policy:

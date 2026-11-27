@@ -117,7 +117,7 @@ func TestMalformedReplay(t *testing.T) {
 // Decoded-key duplicates cannot erase a fail action. A real Go event with
 // timestamp and elapsed metadata remains admitted by the closed event reader.
 func TestReplayEventDoesNotNormalizeDuplicateVerdicts(t *testing.T) {
-	valid := `{"Time":"2026-11-13T00:00:00Z","Action":"pass","Package":"github.com/relux-works/curator/internal/envprofile","Elapsed":0.1}`
+	valid := `{"Time":"2026-11-13T00:00:00Z","Action":"pass","Package":"github.com/relux-works/archon/internal/envprofile","Elapsed":0.1}`
 	if e, err := decodeEvent([]byte(valid)); err != nil || e.Action != "pass" {
 		t.Fatalf("native-shaped event refused: %+v %v", e, err)
 	}

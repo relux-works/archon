@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // packageTestCommit is one fixed full object id shared by the package

@@ -7,8 +7,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/config"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/config"
 )
 
 // ErrBuildSSHAborted reports an operator who ended the credential prompt

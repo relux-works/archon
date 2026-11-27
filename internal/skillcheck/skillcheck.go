@@ -12,10 +12,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/locale"
-	"github.com/relux-works/curator/internal/scriptpolicy"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/whitelist"
+	"github.com/relux-works/archon/internal/locale"
+	"github.com/relux-works/archon/internal/scriptpolicy"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/whitelist"
 )
 
 // Issue is one validation finding.

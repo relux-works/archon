@@ -1,0 +1,3099 @@
+// Command curator is the agent environment manager CLI (Spec §15).
+package main
+
+import (
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/term"
+
+	"bufio"
+	"context"
+	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"reflect"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/audit"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/devsub"
+	"github.com/relux-works/archon/internal/envauthority"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/gitcred"
+	"github.com/relux-works/archon/internal/gitignore"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/globalbins"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/opaquescan"
+	"github.com/relux-works/archon/internal/processcontext"
+	"github.com/relux-works/archon/internal/projectlease"
+	"github.com/relux-works/archon/internal/registry"
+	"github.com/relux-works/archon/internal/rustsource"
+	"github.com/relux-works/archon/internal/scopes"
+	"github.com/relux-works/archon/internal/scriptworker"
+	"github.com/relux-works/archon/internal/shell"
+	"github.com/relux-works/archon/internal/skillcheck"
+	"github.com/relux-works/archon/internal/stateread"
+	"github.com/relux-works/archon/internal/transaction"
+	"github.com/relux-works/archon/internal/ui"
+	"github.com/relux-works/archon/internal/version"
+)
+
+// Exit codes: 0 ok, 1 failure or blocked result, 2 usage.
+const (
+	exitOK    = 0
+	exitFail  = 1
+	exitUsage = 2
+)
+
+const usage = `curator: agent environment manager
+
+Usage:
+  curator <command> [arguments]
+
+Commands:
+  bootstrap [flags]         create the machine configuration
+  init [path]              create Skillfile.json and the managed gitignore block
+  add <name> ...           add or replace a skill declaration, then install
+  remove <name>            remove a skill declaration
+  install [path] [flags]   apply Skillfile.json (see install -h)
+  update                   fetch all source repositories under skills_root
+  upgrade [path]           fetch the selected dependency closure, then install
+  status [path] [flags]    manifest, installed, and compiled state (--check, --json, --attest)
+  list                     configured projects and declared skills
+  project <subcommand>     add | resolve | refresh
+  skill check <dir>        validate one skill package (--locale, --json)
+  skill validate-codex <dir> validate Codex SKILL.md content (--json)
+  global <subcommand>      init | add | remove | list | status (--check, --json) | install | adopt <command> [--dry-run] | update | upgrade
+  profile <subcommand>     install | list | use | update | remove | sync | compose (see profile install -h)
+  env <subcommand>         resolve | status | config | migrate | unmanage (see env resolve -h)
+  run <env-id> ...         umbrella dispatch to curator-run (see §11)
+  hybrid <subcommand>      add | remove | list | status
+  audit [target] [flags]   run audit, pin trust, or publish a signed record
+  gc                       remove unreferenced runtime entries
+  shell-init [shell]       print or cache an optional hook (auto, zsh, bash, powershell)
+  hook <subcommand>        approve | approvals | revoke (project env file trust)
+  ui                       terminal view over installed state
+  config <subcommand>      show | build-ssh | build-https (see config build-ssh -h, config build-https -h)
+  --version                print the curator version
+
+Environment operands accept claude and codex as aliases of claude_code and
+codex_cli; every output keeps the canonical id.
+`
+
+func main() {
+	// The hidden worker mode wins over launcher dispatch: the worker is a
+	// re-execution of the manager (or of a native launcher copy) with
+	// exactly this argument vector, and the launcher it re-executes is
+	// sidecar-paired by construction. Checking the sidecar first would
+	// redispatch the worker into a second launcher and recurse.
+	if len(os.Args) == 2 && os.Args[1] == scriptworker.WorkerMode {
+		os.Exit(scriptworker.RunWorker(os.Stdin, os.Stdout))
+	}
+	// The network-isolation availability probe re-executes the manager in
+	// this fixed hidden mode with the exact namespace flags the
+	// interpreter child would use; reaching it proves the host provides
+	// the control. It wins over launcher dispatch for the same reason the
+	// worker mode does.
+	if len(os.Args) == 2 && os.Args[1] == scriptworker.ScriptNetNSProbeMode {
+		os.Exit(scriptworker.RunNetNSProbe())
+	}
+	// The Landlock availability probe re-executes the manager in this
+	// fixed hidden mode with a manager-owned directory: the child
+	// performs the exact enforcement sequence the interpreter spawn
+	// would use and exits 0 only when every step succeeds. It wins over
+	// launcher dispatch for the same reason the worker mode does.
+	if len(os.Args) == 3 && os.Args[1] == scriptworker.ScriptLandlockProbeMode {
+		os.Exit(scriptworker.RunLandlockProbe(os.Args[2]))
+	}
+	// An enforced native launcher is a manager copy paired with an
+	// install-published sidecar: it replays the manager role for one
+	// script-worker-v1 invocation instead of running the CLI. The sidecar
+	// beside the executable is the whole signal.
+	if executable, err := os.Executable(); err == nil {
+		handled, code, dispatchErr := dispatchEnforcedShim(executable, os.Args[1:])
+		if dispatchErr != nil {
+			fmt.Fprintln(os.Stderr, dispatchErr)
+			os.Exit(code)
+		}
+		if handled {
+			os.Exit(code)
+		}
+	}
+	if handled, code := rustsource.DispatchInternalWorker(os.Args[1:], os.Stdin, os.Stdout); handled {
+		os.Exit(code)
+	}
+	if buildrepo.IsHTTPSBrokerInvocation(os.Args[0]) {
+		os.Exit(buildrepo.RunHTTPSCredentialBroker(os.Args[1:], os.Getenv, os.Stdout))
+	}
+	if buildrepo.IsSSHWrapperInvocation(os.Args[0]) {
+		os.Exit(buildrepo.RunSSHWrapper(os.Args, os.Getenv, os.Stdin, os.Stdout, os.Stderr))
+	}
+	// The fixed hidden go-v1 build worker is an implementation boundary, not a
+	// user-visible command surface. It is dispatched before any other parsing,
+	// requires exactly this one manager-owned argument, and is never reachable
+	// through a package file, manifest value, environment value, PATH lookup,
+	// shell, or user option.
+	if len(os.Args) == 2 && os.Args[1] == godriver.WorkerMode {
+		os.Exit(godriver.RunWorker(os.Stdin, os.Stdout))
+	}
+	// The fixed hidden script-worker-v1 worker dispatches at the top of
+	// main, before launcher dispatch: the worker re-executes a
+	// sidecar-paired launcher, so the sidecar check must not see it.
+	// Resolve the environment-backed user path once at the process boundary.
+	// The command core receives an explicit source so independent invocations
+	// never consult CURATOR_CONFIG themselves.
+	os.Exit(run(os.Args[1:], fileConfigSource(config.UserPath()), os.Stdout, os.Stderr))
+}
+
+// dispatchEnforcedShim preserves sidecar read failures at the production
+// executable boundary. An unreadable manager-published sidecar must not be
+// treated as the absence that selects ordinary CLI dispatch.
+func dispatchEnforcedShim(executable string, args []string) (bool, int, error) {
+	if _, ok, err := scriptworker.ShimSidecarFor(executable); err != nil {
+		return true, exitFail, err
+	} else if !ok {
+		return false, 0, nil
+	}
+	return true, runEnforcedShim(executable, args), nil
+}
+
+// configSource is the injectable configuration seam used by one CLI invocation.
+// Path is also used by commands that create config before it can be loaded.
+type configSource interface {
+	Path() string
+	Load(warn func(string)) (*config.Config, error)
+}
+
+type fileConfigSource string
+
+func (source fileConfigSource) Path() string { return string(source) }
+
+func (source fileConfigSource) Load(warn func(string)) (*config.Config, error) {
+	return config.Load(source.Path(), warn)
+}
+
+type cli struct {
+	context  context.Context
+	config   configSource
+	stdout   io.Writer
+	stderr   io.Writer
+	userHome func() (string, error)
+	// providerPathOverride is used by in-process CLI tests to make the
+	// status and umbrella paths hermetic without changing process PATH.
+	// Production callers leave it nil and use the host environment.
+	providerPathOverride *string
+	// unmanageBackupLstat and unmanageBackupReadDir are backup-inventory test
+	// seams; production commands leave them nil and envprofile uses stateread.
+	unmanageBackupLstat   func(string) (stateread.Metadata, error)
+	unmanageBackupReadDir func(string) (stateread.Directory, error)
+	// posture records whether this process tree has already printed the
+	// security_posture_permissive warning; nil means no nested dispatch
+	// needs the marker (in-process tests that build cli directly).
+	posture *postureState
+}
+
+// postureWarnedEnv is the internal marker a curator process exports to
+// the children it dispatches once the permissive-posture warning has been
+// printed. Its value must identify the child's immediate parent. An
+// intervening shell (curator run → shell → curator) breaks that binding,
+// so that grandchild warns again; suppression covers direct dispatch only.
+const postureWarnedEnv = "CURATOR_INTERNAL_POSTURE_WARNED"
+
+type postureState struct{ warned bool }
+
+// childEnviron returns the environment for a dispatched child process,
+// carrying the posture marker when this process tree already warned.
+func (c cli) childEnviron() []string {
+	environ := os.Environ()
+	// Replace any inherited marker rather than forwarding stale ancestry.
+	filtered := environ[:0]
+	for _, entry := range environ {
+		if !strings.HasPrefix(entry, postureWarnedEnv+"=") {
+			filtered = append(filtered, entry)
+		}
+	}
+	environ = filtered
+	if c.posture != nil && c.posture.warned {
+		environ = append(environ, postureWarnedEnv+"="+strconv.Itoa(os.Getpid()))
+	}
+	return environ
+}
+
+func (c cli) newFlagSet(name string) *flag.FlagSet {
+	flags := flag.NewFlagSet(name, flag.ContinueOnError)
+	flags.SetOutput(c.stderr)
+	return flags
+}
+
+// runEnforcedShim runs this process as an enforced native launcher: load
+// the operator-trusted interpreter bindings and hand the invocation to
+// the script worker session. A configuration that cannot load leaves the
+// bindings empty, so interpreter resolution refuses closed rather than
+// guessing. The launched command owns this process's output streams.
+func runEnforcedShim(executable string, args []string) int {
+	var interpreters map[string]string
+	var diagnosticsDir string
+	if loaded, err := config.Load(config.UserPath(), func(string) {}); err == nil {
+		interpreters = loaded.ScriptInterpreters
+		diagnosticsDir = loaded.ScriptDiagnosticsDir
+	}
+	stdinTerminal := false
+	if info, err := os.Stdin.Stat(); err == nil && info.Mode()&os.ModeCharDevice != 0 {
+		stdinTerminal = true
+	}
+	return scriptworker.RunShim(scriptworker.ShimRequest{
+		ExePath:         executable,
+		Args:            args,
+		Stdin:           os.Stdin,
+		StdinIsTerminal: stdinTerminal,
+		Stdout:          os.Stdout,
+		Stderr:          os.Stderr,
+		Environ:         os.Environ(),
+		Interpreters:    interpreters,
+		DiagnosticsDir:  diagnosticsDir,
+	})
+}
+
+// run executes one isolated CLI invocation. Its configuration source and
+// output writers are explicit so callers can run concurrent invocations without
+// mutating CURATOR_CONFIG, os.Stdout, or os.Stderr.
+func run(args []string, source configSource, stdout, stderr io.Writer) int {
+	ctx, stop := processcontext.Notify(context.Background())
+	defer stop()
+	command := cli{context: ctx, config: source, stdout: stdout, stderr: stderr, userHome: os.UserHomeDir, posture: &postureState{}}
+	return command.run(args)
+}
+
+func (c cli) run(args []string) int {
+	if len(args) == 0 {
+		_, _ = fmt.Fprint(c.stderr, usage)
+		return exitUsage
+	}
+	if rejectsTakeover(args) {
+		if len(args) > 1 && args[0] == "skill" && args[1] == "validate-codex" && !hasHelpFlag(args[2:]) {
+			for _, arg := range args[2:] {
+				if arg == "--" {
+					break
+				}
+				if arg == "--json" {
+					return c.cmdSkillValidateCodex(args[2:])
+				}
+			}
+		}
+		_, _ = fmt.Fprintln(c.stderr, "curator: --takeover applies only with --repair for env resolve; also available for profile install --use, profile use, profile sync, and profile update")
+		return exitUsage
+	}
+	if args[0] == "-h" || args[0] == "--help" {
+		_, _ = fmt.Fprint(c.stdout, usage)
+		return exitOK
+	}
+	if args[0] == "--version" {
+		_, _ = fmt.Fprintln(c.stdout, "curator "+version.String())
+		return exitOK
+	}
+	if args[0] == "help" {
+		if len(args) == 1 {
+			_, _ = fmt.Fprint(c.stdout, usage)
+			return exitOK
+		}
+		if command, _ := registeredCommand(args[1:]); command != nil {
+			_, _ = fmt.Fprint(c.stdout, command.helpText())
+			return exitOK
+		}
+		_, _ = fmt.Fprintf(c.stderr, "curator: unknown help topic %q\n", strings.Join(args[1:], " "))
+		return exitUsage
+	}
+	if command, _ := registeredCommand(args); command != nil && hasHelpFlag(args[1:]) {
+		_, _ = fmt.Fprint(c.stdout, command.helpText())
+		return exitOK
+	}
+	for _, command := range commandRegistry {
+		if command.name == args[0] && command.run != nil {
+			return command.run(c, args[1:])
+		}
+	}
+	return c.runProvider(args)
+}
+
+func (c cli) runProvider(args []string) int {
+	// Umbrella subcommand discovery (environments §11): an implemented
+	// subcommand always wins and discovery runs only for unknown names.
+	// The name must match the identifier grammar; anything else is a
+	// usage error, not a lookup. Discovery works without a loadable
+	// config: the trust check then assumes the source path's home, which
+	// is the root a future config there would own.
+	if identifiers.Valid(args[0]) {
+		home := filepath.Dir(c.config.Path())
+		var cfg *config.Config
+		if loaded, code := c.loadConfig(); code == exitOK {
+			cfg = loaded
+			home = cfg.Home()
+		}
+		return c.cmdUmbrella(cfg, home, args)
+	}
+	_, _ = fmt.Fprintf(c.stderr, "curator: unknown command %q\n\n%s", args[0], usage)
+	return exitUsage
+}
+
+func (c cli) loadConfig() (*config.Config, int) {
+	cfg, err := c.config.Load(func(message string) {
+		_, _ = fmt.Fprintln(c.stderr, "warning: "+message)
+	})
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		if errors.Is(err, config.ErrConfigNotFound) {
+			_, _ = fmt.Fprintln(c.stderr, "curator: "+configNotFoundHint)
+		}
+		return nil, exitFail
+	}
+	if warning := cfg.SecurityPostureWarning(); warning != "" {
+		parentWarned := os.Getppid() > 1 && os.Getenv(postureWarnedEnv) == strconv.Itoa(os.Getppid())
+		if parentWarned || (c.posture != nil && c.posture.warned) {
+			if c.posture != nil {
+				c.posture.warned = true
+			}
+			return cfg, exitOK
+		}
+		_, _ = fmt.Fprintln(c.stderr, "warning:", warning)
+		if c.posture != nil {
+			c.posture.warned = true
+		}
+	}
+	return cfg, exitOK
+}
+
+// configNotFoundHint tells a first-run operator how to create the global
+// config the refused command needs.
+const configNotFoundHint = "run `curator bootstrap --skills-root <dir>` first (see docs/cli.md#bootstrap)"
+
+const globalHelp = `usage: curator global <init|add|remove|list|status|install|adopt|update|upgrade> [flags]
+
+Manage machine-wide skill installations. Requires the global config:
+` + "run `curator bootstrap --skills-root <dir>` first (see docs/cli.md#bootstrap).\n"
+
+// wantsHelp answers group-level help without loading the global config.
+// Subcommand help must reach its own FlagSet with its original exit code.
+func wantsHelp(args []string) bool {
+	if len(args) == 0 {
+		return false
+	}
+	return args[0] == "-h" || args[0] == "--help" || args[0] == "help"
+}
+
+func projectRootArg(args []string) string {
+	for _, arg := range args {
+		if !strings.HasPrefix(arg, "-") {
+			if abs, err := filepath.Abs(arg); err == nil {
+				return abs
+			}
+			return arg
+		}
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return "."
+	}
+	return wd
+}
+
+// parseInterspersed lets commands accept flags before or after positional
+// arguments. The standard flag package stops at the first positional token,
+// while the informative CLI surface documents forms such as
+// `install <path> --dry-run` and `add <name> --tag <ref>` (Spec §15).
+func parseInterspersed(flags *flag.FlagSet, args []string) ([]string, error) {
+	var flagArgs, positional []string
+	for index := 0; index < len(args); index++ {
+		arg := args[index] // #nosec G602 -- index is bounded by the loop condition and only advanced after an explicit bounds check
+		if arg == "--" {
+			for trailing := index + 1; trailing < len(args); trailing++ {
+				positional = append(positional, args[trailing])
+			}
+			break
+		}
+		if arg == "-" || !strings.HasPrefix(arg, "-") {
+			positional = append(positional, arg)
+			continue
+		}
+
+		flagArgs = append(flagArgs, arg)
+		nameValue := strings.TrimLeft(arg, "-")
+		name, _, hasEquals := strings.Cut(nameValue, "=")
+		definition := flags.Lookup(name)
+		if definition == nil || hasEquals {
+			continue
+		}
+		if optional, ok := definition.Value.(interface{ AcceptsOptionalValue(string) bool }); ok &&
+			index+1 < len(args) && optional.AcceptsOptionalValue(args[index+1]) {
+			index++
+			flagArgs[len(flagArgs)-1] = arg + "=" + args[index]
+			continue
+		}
+		boolean, isBoolean := definition.Value.(interface{ IsBoolFlag() bool })
+		if isBoolean && boolean.IsBoolFlag() {
+			continue
+		}
+		if index+1 >= len(args) {
+			return nil, fmt.Errorf("flag needs an argument: %s", arg)
+		}
+		index++
+		flagArgs = append(flagArgs, args[index])
+	}
+	if err := flags.Parse(flagArgs); err != nil {
+		return nil, err
+	}
+	return positional, nil
+}
+
+type auditModeValue struct {
+	value string
+}
+
+func (value *auditModeValue) String() string { return value.value }
+
+func (value *auditModeValue) Set(raw string) error {
+	if raw == "true" {
+		raw = "advisory"
+	}
+	if raw != "advisory" && raw != "strict" {
+		return fmt.Errorf("audit mode must be advisory or strict")
+	}
+	value.value = raw
+	return nil
+}
+
+func (*auditModeValue) IsBoolFlag() bool { return true }
+
+func (*auditModeValue) AcceptsOptionalValue(raw string) bool {
+	return raw == "advisory" || raw == "strict"
+}
+
+func aliasFor(cfg *config.Config, projectRoot string) string {
+	for alias, project := range cfg.Projects {
+		if project.Path == projectRoot {
+			return alias
+		}
+	}
+	return filepath.Base(projectRoot)
+}
+
+type projectTarget struct {
+	Alias string
+	Root  string
+}
+
+func selectProjectTargets(cfg *config.Config, positional []string, all bool) ([]projectTarget, error) {
+	if all {
+		if len(positional) > 0 {
+			return nil, fmt.Errorf("--all cannot be combined with a project target")
+		}
+		aliases := make([]string, 0, len(cfg.Projects))
+		for alias := range cfg.Projects {
+			aliases = append(aliases, alias)
+		}
+		sort.Strings(aliases)
+		targets := make([]projectTarget, 0, len(aliases))
+		for _, alias := range aliases {
+			targets = append(targets, projectTarget{Alias: alias, Root: cfg.Projects[alias].Path})
+		}
+		if len(targets) == 0 {
+			return nil, fmt.Errorf("--all requested but no projects are configured")
+		}
+		return targets, nil
+	}
+	if len(positional) > 1 {
+		return nil, fmt.Errorf("expected at most one project target")
+	}
+	if len(positional) == 1 {
+		if project, present := cfg.Projects[positional[0]]; present {
+			return []projectTarget{{Alias: positional[0], Root: project.Path}}, nil
+		}
+	}
+	root := projectRootArg(positional)
+	root = nearestProjectRoot(root)
+	return []projectTarget{{Alias: aliasFor(cfg, root), Root: root}}, nil
+}
+
+func nearestProjectRoot(start string) string {
+	original := projectRootArg([]string{start})
+	root := original
+	if info, err := os.Stat(root); err == nil && !info.IsDir() {
+		root = filepath.Dir(root)
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(root, manifest.Name)); err == nil {
+			return root
+		}
+		parent := filepath.Dir(root)
+		if parent == root {
+			return original
+		}
+		root = parent
+	}
+}
+
+func (c cli) cmdBootstrap(args []string) int {
+	flags := c.newFlagSet("bootstrap")
+	skillsRoot := flags.String("skills-root", "", "directory containing skill repositories")
+	preferredLocale := flags.String("preferred-locale", "", "preferred locale")
+	defaultAgents := flags.String("default-agents", "codex_cli", "comma-separated default agents")
+	force := flags.Bool("force", false, "overwrite an existing configuration")
+	ifMissing := flags.Bool("if-missing", false, "create configuration only when absent")
+	nonInteractive := flags.Bool("non-interactive", false, "fail instead of prompting for missing values")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil || len(positional) > 0 {
+		return exitUsage
+	}
+	if *force && *ifMissing {
+		_, _ = fmt.Fprintln(c.stderr, "curator: bootstrap --if-missing and --force are mutually exclusive")
+		return exitUsage
+	}
+	path := c.config.Path()
+	if *ifMissing {
+		if _, statErr := os.Stat(path); statErr == nil {
+			_, _ = fmt.Fprintln(c.stdout, "kept existing config:", path)
+			return exitOK
+		} else if !os.IsNotExist(statErr) {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", statErr)
+			return exitFail
+		}
+	}
+	if *skillsRoot == "" && !*nonInteractive {
+		_, _ = fmt.Fprint(c.stderr, "skills_root: ")
+		reader := bufio.NewReader(os.Stdin)
+		value, readErr := reader.ReadString('\n')
+		if readErr == nil {
+			*skillsRoot = strings.TrimSpace(value)
+		}
+	}
+	if *skillsRoot == "" {
+		_, _ = fmt.Fprintln(c.stderr, "curator: bootstrap requires --skills-root")
+		return exitUsage
+	}
+	if err := config.Bootstrap(path, *skillsRoot, *preferredLocale, splitNonEmpty(*defaultAgents), *force); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	_, _ = fmt.Fprintln(c.stdout, "wrote", path)
+	_, _ = fmt.Fprintln(c.stdout, "shell profile changes are not required: agent skills can invoke project and global command shims directly")
+	_, _ = fmt.Fprintln(c.stdout, "optional bare commands for interactive use: curator shell-init --install")
+	return exitOK
+}
+
+func splitNonEmpty(value string) []string {
+	var result []string
+	for _, item := range strings.Split(value, ",") {
+		if trimmed := strings.TrimSpace(item); trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
+}
+
+func (c cli) cmdInit(args []string) int {
+	root := projectRootArg(args)
+	path, err := manifest.EnsureEmpty(root)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	entries := adapters.RequiredGitignoreEntries(sortedKnownAgents())
+	entries = append(entries, "Skillfile.dev.json")
+	if err := gitignore.Append(filepath.Join(root, ".gitignore"), entries); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	_, _ = fmt.Fprintln(c.stdout, "initialized", path)
+	return exitOK
+}
+
+func sortedKnownAgents() []string {
+	known := adapters.KnownAgents()
+	var agents []string
+	for agent := range known {
+		agents = append(agents, agent)
+	}
+	sort.Strings(agents)
+	return agents
+}
+
+func (c cli) cmdAdd(args []string) int {
+	flags := c.newFlagSet("add")
+	git := flags.String("git", "", "git clone URL")
+	source := flags.String("source", "", "source directory under skills_root")
+	tag := flags.String("tag", "", "git tag")
+	branch := flags.String("branch", "", "git branch")
+	revision := flags.String("revision", "", "git revision")
+	project := flags.String("project", "", "project alias or path")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil {
+		return exitUsage
+	}
+	if len(positional) < 1 {
+		_, _ = fmt.Fprintln(c.stderr, "curator: add requires a skill name")
+		return exitUsage
+	}
+	name := positional[0]
+	refKind, refValue := "", ""
+	for kind, value := range map[string]string{"tag": *tag, "branch": *branch, "revision": *revision} {
+		if value != "" {
+			if refKind != "" {
+				_, _ = fmt.Fprintln(c.stderr, "curator: specify exactly one of --tag, --branch, --revision")
+				return exitUsage
+			}
+			refKind, refValue = kind, value
+		}
+	}
+	if refKind == "" {
+		_, _ = fmt.Fprintln(c.stderr, "curator: specify exactly one of --tag, --branch, --revision")
+		return exitUsage
+	}
+	rootArgs := positional[1:]
+	if *project != "" {
+		rootArgs = []string{*project}
+	}
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	targets, targetErr := selectProjectTargets(cfg, rootArgs, false)
+	if targetErr != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", targetErr)
+		return exitUsage
+	}
+	root := targets[0].Root
+	if err := manifest.AddDecl(root, name, refKind, refValue, *git, *source); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	return c.cmdInstall([]string{root})
+}
+
+func (c cli) cmdRemove(args []string) int {
+	flags := c.newFlagSet("remove")
+	project := flags.String("project", "", "project alias or path")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil || len(positional) < 1 {
+		_, _ = fmt.Fprintln(c.stderr, "curator: remove requires a skill name")
+		return exitUsage
+	}
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	rootArgs := positional[1:]
+	if *project != "" {
+		rootArgs = []string{*project}
+	}
+	targets, targetErr := selectProjectTargets(cfg, rootArgs, false)
+	if targetErr != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", targetErr)
+		return exitUsage
+	}
+	if err := manifest.RemoveDecl(targets[0].Root, positional[0]); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	_, _ = fmt.Fprintln(c.stdout, "removed", positional[0])
+	return exitOK
+}
+
+func (c cli) installFlags(args []string) (install.Options, []string, bool, string, error) {
+	flags := c.newFlagSet("install")
+	appendDraftUsage(flags, c.stderr, "install")
+	all := flags.Bool("all", false, "operate on all configured projects")
+	dryRun := flags.Bool("dry-run", false, "plan work without modifying files")
+	fixGitignore := flags.Bool("fix-gitignore", false, "append missing managed gitignore entries")
+	strictTags := flags.Bool("strict-tags", false, "fail if an installed tag moved to another commit")
+	verbose := flags.Bool("verbose", false, "print detailed progress")
+	var auditMode auditModeValue
+	flags.Var(&auditMode, "audit", "run the audit gate in advisory or strict mode")
+	sshIdentity := flags.String("build-ssh-identity", "",
+		"identity file for external SSH build repositories (or "+install.EnvBuildSSHIdentity+")")
+	sshAgent := flags.String("build-ssh-agent", "",
+		"agent socket for external SSH build repositories, or \""+install.BuildSSHAgentAuto+
+			"\" for your own agent (or "+install.EnvBuildSSHAgent+")")
+	sshKnownHosts := flags.String("build-ssh-known-hosts", "",
+		"host keys external SSH build repositories are verified against (or "+install.EnvBuildSSHKnownHosts+")")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil {
+		return install.Options{}, nil, false, "", err
+	}
+	operationContext := c.context
+	if operationContext == nil {
+		operationContext = context.Background()
+	}
+	return install.Options{
+		Context: operationContext,
+		OnLockWait: func(scope string) {
+			_, _ = fmt.Fprintln(c.stderr, "curator: waiting for the", scope, "operation lock; another install may still be building")
+		},
+		DryRun: *dryRun, FixGitignore: *fixGitignore,
+		StrictTags: *strictTags, Verbose: *verbose,
+		BuildSSH: install.BuildSSHFlags{
+			Identity: *sshIdentity, Agent: *sshAgent, KnownHosts: *sshKnownHosts,
+		},
+	}, positional, *all, auditMode.value, nil
+}
+
+func (c cli) cmdInstall(args []string) int {
+	return c.cmdInstallMode(args, false)
+}
+
+func (c cli) cmdInstallMode(args []string, fetch bool) int {
+	opts, rest, all, auditMode, err := c.installFlags(args)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitUsage
+	}
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	postureOperation := "install"
+	if fetch {
+		postureOperation = "update"
+	}
+	if err := cfg.CheckSecurityPosture(postureOperation, false); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	if auditMode != "" {
+		cfgCopy := *cfg
+		cfgCopy.Audit = cfg.Audit
+		cfgCopy.Audit.Enabled = true
+		cfgCopy.Audit.Mode = auditMode
+		cfg = &cfgCopy
+	}
+	authority, err := preflightCLIExecution(opts.Context, cfg)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	opts.Build.Assurance = authority
+	targets, targetErr := selectProjectTargets(cfg, rest, all)
+	if targetErr != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", targetErr)
+		return exitUsage
+	}
+	opts.Fetch = fetch && !opts.DryRun
+	opts.Operation = install.OperationInstall
+	if fetch {
+		opts.Operation = install.OperationUpdate
+	}
+	opts.FetchedRepos = map[string]string{}
+	opts.External = productionExternalDeps(cfg, opts.DryRun)
+	opts.External.BuildSSH = install.CaptureBuildSSHSelection(cfg, opts.BuildSSH, os.Getenv)
+	opts.External.BuildSSH.Resolve = c.operatorBuildSSHResolver(cfg, opts.DryRun)
+	opts.External.BuildHTTPS.Resolve = c.operatorBuildHTTPSResolver(cfg, opts.DryRun)
+	exitCode := exitOK
+	for _, target := range targets {
+		result := install.Project(cfg, target.Root, target.Alias, opts)
+		c.printResult(result)
+		if !opts.DryRun {
+			c.printRepairNotices(result)
+		}
+		if result.Status == "failed" {
+			exitCode = exitFail
+		}
+	}
+	return exitCode
+}
+
+func (c cli) printResult(result install.Result) {
+	for _, message := range result.Messages {
+		_, _ = fmt.Fprintln(c.stdout, message)
+	}
+	for _, diagnostic := range result.Diagnostics {
+		severity := "warning"
+		if diagnostic.Severity == "error" {
+			severity = "error"
+		}
+		registries := strings.Join(diagnostic.Registries, ", ")
+		if registries == "" {
+			registries = "(none)"
+		}
+		artifacts := strings.Join(diagnostic.Artifacts, ", ")
+		if artifacts == "" {
+			artifacts = "(none)"
+		}
+		_, _ = fmt.Fprintf(c.stderr,
+			"curator: %s: GATE NOTICE %s: unreachable trusted registries: %s; artifacts resolved without registry evidence: %s\n",
+			severity, diagnostic.Code, registries, artifacts)
+	}
+	c.printResultErrors(result)
+}
+
+// printResultErrors reports the failure surface of a result: the redacted
+// failure text plus, when a go-v1 trust boundary refused, the operator guidance
+// that belongs to it — which selection mechanisms exist and which release
+// families this manager tested.
+func (c cli) printResultErrors(result install.Result) {
+	c.printFailures(result, "error:")
+}
+
+// printStatusRefusal is the read-only reporting form of the same surface.
+// `status` uses it when the refusal is already published per command in the
+// stable vocabulary: stdout stays one report document, and the same detail is
+// a warning on standard error rather than an error, because the command did
+// produce the report it was asked for.
+func (c cli) printStatusRefusal(result install.Result) {
+	c.printFailures(result, "warning:")
+}
+
+func (c cli) printFailures(result install.Result, prefix string) {
+	for _, message := range result.Errors {
+		_, _ = fmt.Fprintln(c.stderr, prefix, withDraftRemediation(message))
+	}
+	if guidance := goToolchainGuidance(result.BuildDiagnostic); guidance != "" {
+		_, _ = fmt.Fprintln(c.stderr, prefix, guidance)
+	}
+}
+
+func (c cli) cmdUpdate() int {
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	if err := cfg.CheckSecurityPosture("update", false); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	entries, err := os.ReadDir(cfg.SkillsRoot)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	failed := false
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		repo := filepath.Join(cfg.SkillsRoot, entry.Name())
+		if _, err := os.Stat(filepath.Join(repo, ".git")); err != nil {
+			continue
+		}
+		if err := gitops.Fetch(repo); err != nil {
+			_, _ = fmt.Fprintf(c.stderr, "warning: %s: %v\n", entry.Name(), err)
+			failed = true
+			continue
+		}
+		_, _ = fmt.Fprintln(c.stdout, "fetched", entry.Name())
+	}
+	if failed {
+		return exitFail
+	}
+	return exitOK
+}
+
+func (c cli) cmdStatus(args []string) int {
+	flags := c.newFlagSet("status")
+	appendDraftUsage(flags, c.stderr, "status")
+	all := flags.Bool("all", false, "operate on all configured projects")
+	check := flags.Bool("check", false, "exit non-zero unless every skill is up to date")
+	jsonOut := flags.Bool("json", false, "machine-readable output")
+	attest := flags.Bool("attest", false, "re-check installed skills against trusted registries")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil {
+		return exitUsage
+	}
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	securityPostureRows := curatorSecurityPostureRows(cfg)
+	authority, err := preflightCLIExecution(context.Background(), cfg)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	targets, targetErr := selectProjectTargets(cfg, positional, *all)
+	if targetErr != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", targetErr)
+		return exitUsage
+	}
+	if *attest {
+		exitCode := exitOK
+		for _, target := range targets {
+			if code := c.cmdStatusAttest(cfg, target.Root, target.Alias, *jsonOut); code != exitOK {
+				exitCode = code
+			}
+		}
+		return exitCode
+	}
+
+	// Shell-hook trust posture (Manager profile §8.6): one invocation-global
+	// row set over every recorded path plus the env files of the targets of
+	// this invocation. It is assessed once, printed once for humans, and
+	// repeated per target in the machine-readable document.
+	targetRoots := make([]string, 0, len(targets))
+	for _, target := range targets {
+		targetRoots = append(targetRoots, target.Root)
+	}
+	trustRows, trustWarnings, trustStateUnreadable := hookTrustPosture(cfg.Home(), targetRoots)
+	registryRows := readRegistryPosture(cfg)
+	registryStateUnreadable := false
+	for _, row := range registryRows {
+		if row.Diagnostic != "" {
+			registryStateUnreadable = true
+		}
+	}
+	providers, providerDiagnostic := providerPostureForConfig(cfg, c.providerPathOverride)
+	providersCurrent := providerDiagnostic == nil
+	for _, provider := range providers {
+		if !provider.Current {
+			providersCurrent = false
+		}
+	}
+
+	exitCode := exitOK
+	jsonResults := make([]map[string]any, 0, len(targets))
+	for _, target := range targets {
+		// Installed markers are fingerprinted before the read-only plan and
+		// again after classification, so compiled state that moved during the
+		// whole window is reported as such instead of silently deciding the
+		// verdict from a plan that was already stale.
+		scope := projectStatusScope(cfg, target.Root, target.Alias)
+		before := markerDigests(scope.stores...)
+		result := install.Project(cfg, target.Root, target.Alias, install.Options{Operation: install.OperationStatus, DryRun: true, Build: install.BuildDeps{Assurance: authority}, External: productionExternalDeps(cfg, true)})
+		if result.Status == "failed" {
+			// A read-only plan that refused, yet still described every compiled
+			// command it was asked about, has produced a currentness verdict — and
+			// reporting a verdict is not itself a failure. The rows below carry it
+			// in the stable vocabulary, and `--check` is the surface that turns a
+			// non-current verdict into a non-zero exit.
+			//
+			// Everything else keeps the historical behaviour exactly: a failure
+			// that describes no compiled command, or describes only some of them,
+			// reports the error and exits non-zero rather than publishing a
+			// silently partial report. A stale draft lock takes this path too:
+			// the row set cannot be derived from the new manifest without a
+			// collection rescan, which status must not do, so a stale lock is
+			// not a per-member verdict at all.
+			if !result.BuildsComplete {
+				c.printResult(result)
+				exitCode = exitFail
+				continue
+			}
+			c.printStatusRefusal(result)
+		}
+		if result.Status == "skipped" {
+			c.printResult(result)
+			if *check {
+				exitCode = exitFail
+			}
+			continue
+		}
+		facts := factsList(result.Builds)
+		var drift map[string]string
+		var builds []buildReport
+		if draftStatusApplies(target.Root) {
+			var driftErr error
+			drift, driftErr = draftStatusDrift(target.Root, scope.skillsDir, result.Attestations)
+			if driftErr != nil {
+				_, _ = fmt.Fprintln(c.stderr, "curator:", withDraftRemediation(driftErr.Error()))
+				exitCode = exitFail
+				continue
+			}
+			if len(facts) > 0 {
+				builds = classifyScopeBuilds(cfg, scope, facts, before, drift)
+			}
+		} else {
+			drift, builds = statusReport(cfg, scope, facts, before, result.LegacyPackages, result.LegacyLockSHA256)
+		}
+		// The shell-hook trust posture (Manager profile §8.6) extends
+		// the document additively under its own key; an all-approved
+		// posture is still posture, so the key is always present. The
+		// warnings (malformed lines, or an unreadable approval state)
+		// travel under their own key, present only when non-empty, so a
+		// JSON consumer sees the same read failures the human output
+		// prints.
+		payload := map[string]any{
+			"alias": target.Alias, "path": target.Root, "skills": drift,
+			"shell_hook_trust": trustRows, "providers": providers,
+			"security_posture_rows": securityPostureRows,
+		}
+		if len(registryRows) > 0 {
+			payload["registry_posture"] = registryRows
+		}
+		if providerDiagnostic != nil {
+			payload["provider_diagnostic"] = providerDiagnostic
+		}
+		if len(trustWarnings) > 0 {
+			payload["shell_hook_trust_warnings"] = trustWarnings
+		}
+		// A closure without compiled commands keeps the historical object
+		// exactly: no build key appears at all.
+		if len(builds) > 0 {
+			payload["builds"] = builds
+		}
+		jsonResults = append(jsonResults, payload)
+		if !*jsonOut {
+			names := make([]string, 0, len(drift))
+			for name := range drift {
+				names = append(names, name)
+			}
+			sort.Strings(names)
+			for _, name := range names {
+				_, _ = fmt.Fprintf(c.stdout, "%s: %s %s\n", target.Alias, name, drift[name])
+			}
+			for _, build := range builds {
+				_, _ = fmt.Fprintf(c.stdout, "%s: %s\n", target.Alias, build.Describe())
+			}
+		}
+		if *check && checkFailed(drift, builds) {
+			exitCode = exitFail
+		}
+	}
+	if !*jsonOut {
+		printSecurityPostureRows(c.stdout, securityPostureRows)
+		for _, warning := range trustWarnings {
+			_, _ = fmt.Fprintln(c.stdout, "shell-hook-trust: warning: "+warning)
+		}
+		for _, row := range trustRows {
+			_, _ = fmt.Fprintln(c.stdout, formatTrustRow(row))
+		}
+		for _, row := range registryRows {
+			_, _ = fmt.Fprintln(c.stdout, formatRegistryPosture(row))
+		}
+		if providerDiagnostic != nil {
+			_, _ = fmt.Fprintf(c.stdout, "provider diagnostic %s: %s: %s\n", providerDiagnostic.Code, providerDiagnostic.Path, providerDiagnostic.Detail)
+		}
+		for _, provider := range providers {
+			_, _ = fmt.Fprintf(c.stdout, "provider %s: %s\n", provider.Name, describeProvider(provider))
+		}
+	}
+	// A changed file, a recorded file whose bytes are missing or
+	// unreadable, or an unreadable approval state is non-current; an
+	// unapproved file whose bytes read stays a warning row and never fails
+	// the check (Spec §8.6).
+	if *check && hookTrustCheckFailed(trustRows, trustStateUnreadable) {
+		exitCode = exitFail
+	}
+	if *check && registryStateUnreadable {
+		exitCode = exitFail
+	}
+	if *check && !providersCurrent {
+		exitCode = exitFail
+	}
+	if *jsonOut {
+		var output any = jsonResults
+		if len(jsonResults) == 1 {
+			output = jsonResults[0]
+		}
+		payload, _ := json.MarshalIndent(output, "", "  ")
+		_, _ = fmt.Fprintln(c.stdout, string(payload))
+	}
+	return exitCode
+}
+
+// statusScope is one installed scope seen by the read-only currentness surface:
+// the declaration document it compares against, the store its own skills are
+// installed into, and every store a command it activates may live in.
+//
+// It exists so the project scope and the machine-wide scope share one
+// classification, one stable vocabulary, and one fail-closed verdict rather than
+// growing a second, weaker one.
+type statusScope struct {
+	alias        string
+	manifestRoot string
+	skillsDir    string
+	// stores is fingerprinted for the classification race window and searched
+	// for the installed directory of a compiled command's skill.
+	stores []string
+}
+
+// projectStatusScope is one project. It also reads the machine-level hybrid
+// store, because a hybrid declaration activates against a project and its
+// installed node is reachable from here.
+func projectStatusScope(cfg *config.Config, projectRoot, alias string) statusScope {
+	skillsDir := filepath.Join(projectRoot, ".agents", "skills")
+	return statusScope{
+		alias:        alias,
+		manifestRoot: projectRoot,
+		skillsDir:    skillsDir,
+		stores:       []string{skillsDir, scopes.HybridSkillsRoot(cfg.Home())},
+	}
+}
+
+// globalStatusScope is the machine-wide scope. It consults no hybrid store:
+// hybrid declarations activate against a project, never against the global
+// scope, and every node the global closure resolves — declared or transitively
+// reached — is installed into the global store itself.
+func globalStatusScope(cfg *config.Config) statusScope {
+	root := install.GlobalRoot(cfg.Home())
+	return statusScope{
+		alias:        "global",
+		manifestRoot: root,
+		skillsDir:    filepath.Join(root, "skills"),
+		stores:       []string{filepath.Join(root, "skills")},
+	}
+}
+
+// statusDrift compares declared skills with installed markers.
+func statusDrift(cfg *config.Config, projectRoot string) map[string]string {
+	return scopeStatusDrift(cfg, projectRoot, filepath.Join(projectRoot, ".agents", "skills"), nil, "")
+}
+
+// statusReport is the complete read-only currentness verdict of one scope: the
+// historical per-skill drift map plus one diagnostic row per compiled command
+// the closure activates.
+//
+// Compiled state can only demote a skill that every ordinary check already
+// accepted. A skill that is missing, tampered, unresolvable, or behind its
+// declaration keeps that more actionable code.
+func statusReport(
+	cfg *config.Config,
+	scope statusScope,
+	builds []buildFacts,
+	before map[string]string,
+	legacyPackages map[string]*marker.Package,
+	legacyLock string,
+) (map[string]string, []buildReport) {
+	drift := scopeStatusDrift(cfg, scope.manifestRoot, scope.skillsDir, legacyPackages, legacyLock)
+	if len(builds) == 0 {
+		return drift, nil
+	}
+	return drift, classifyScopeBuilds(cfg, scope, builds, before, drift)
+}
+
+// classifyScopeBuilds is the compiled half of a status verdict, shared by
+// the legacy and draft skill surfaces: it classifies every planned build
+// against installed markers and the protected cache, closes the
+// classification race window with a second look, and demotes drifted
+// skills. drift is updated in place.
+func classifyScopeBuilds(
+	cfg *config.Config,
+	scope statusScope,
+	builds []buildFacts,
+	before map[string]string,
+	drift map[string]string,
+) []buildReport {
+	bySkill := map[string][]buildFacts{}
+	var skills []string
+	for _, facts := range builds {
+		if _, seen := bySkill[facts.Skill]; !seen {
+			skills = append(skills, facts.Skill)
+		}
+		bySkill[facts.Skill] = append(bySkill[facts.Skill], facts)
+	}
+	sort.Strings(skills)
+
+	type verdict struct {
+		skill     string
+		installed string
+		facts     []buildFacts
+		state     string
+		rows      []buildReport
+	}
+	verdicts := make([]verdict, 0, len(skills))
+	for _, skill := range skills {
+		facts := bySkill[skill]
+		installed, present, installErr := installedSkillDir(scope, skill)
+		if installErr != nil {
+			state := stateUnresolvable
+			verdicts = append(verdicts, verdict{skill: skill, installed: installed, facts: facts,
+				state: state, rows: plannedRows(facts, state, "", installErr.Error())})
+			continue
+		}
+		if !present {
+			verdicts = append(verdicts, verdict{skill: skill, installed: installed, facts: facts,
+				state: stateNotInstalled,
+				rows: plannedRows(facts, stateNotInstalled, "",
+					"the compiled command belongs to a skill that is not installed")})
+			continue
+		}
+		state, rows := classifySkillBuildsFromDisk(installed, facts)
+		verdicts = append(verdicts, verdict{skill: skill, installed: installed, facts: facts, state: state, rows: rows})
+	}
+
+	// The second look closes the whole window: planning and every classification
+	// above have run, so compiled state that differs from the state this verdict
+	// was derived from makes the verdict stale, not authoritative. Both halves of
+	// that state are re-read — the install markers this run fingerprinted, and
+	// the protected cache evidence every compiled row was classified from —
+	// because either one can move on its own.
+	after := markerDigests(scope.stores...)
+	movedCache := recheckBuildCache(cfg.Home(), builds)
+	var reports []buildReport
+	for _, item := range verdicts {
+		if changed := changedDuringCheck(item.facts, before, after, item.installed, movedCache); changed != "" {
+			item.state = buildStateChanged
+			item.rows = plannedRows(item.facts, buildStateChanged, "", changed)
+		}
+		reports = append(reports, item.rows...)
+		demoteSkill(drift, item.skill, item.state)
+	}
+	return reports
+}
+
+// changedDuringCheck reports why one skill's compiled verdict is not
+// authoritative, or an empty string when nothing it was derived from moved.
+func changedDuringCheck(
+	facts []buildFacts,
+	before, after map[string]string,
+	installedDir string,
+	movedCache map[string]bool,
+) string {
+	if markerMoved(before, after, installedDir) {
+		return "the install marker changed while status was classifying it; re-run status"
+	}
+	for _, item := range facts {
+		if movedCache[item.Skill+"."+item.Command] {
+			return "protected build cache state changed while status was classifying it; re-run status"
+		}
+	}
+	return ""
+}
+
+// demoteSkill lowers one declared skill from up-to-date to a compiled-state
+// code. It never overwrites a code an ordinary check already produced.
+func demoteSkill(drift map[string]string, skill, state string) {
+	if state == "" || currentCode(state) {
+		return
+	}
+	if recorded, declared := drift[skill]; declared && recorded == stateUpToDate {
+		drift[skill] = state
+	}
+}
+
+// installedSkillDir resolves the store that holds one installed skill: the
+// scope's own context store, or another store the scope reads for a node no
+// declaration in it reaches.
+func installedSkillDir(scope statusScope, skill string) (string, bool, error) {
+	for _, store := range scope.stores {
+		candidate := filepath.Join(store, skill)
+		metadata, err := stateread.Stat(candidate)
+		if err != nil {
+			return candidate, true, err
+		}
+		if metadata.Kind == stateread.KindPresent {
+			return candidate, true, nil
+		}
+	}
+	return filepath.Join(scope.skillsDir, skill), false, nil
+}
+
+// legacyPackages and legacyLock carry the staged legacy-lane migration of
+// the read-only status plan (install.Result): the expected package per
+// migrated node plus the shared effective-lock digest. Package markers
+// compare against them exactly like the install currentness check.
+func scopeStatusDrift(cfg *config.Config, manifestRoot, skillsDir string, legacyPackages map[string]*marker.Package, legacyLock string) map[string]string {
+	drift := map[string]string{}
+	projectManifest, err := manifest.Load(manifestRoot)
+	if err != nil || projectManifest == nil {
+		return drift
+	}
+	for _, decl := range projectManifest.Skills {
+		if decl.Name == "" {
+			// Collection selectors derive their member names from the lock.
+			// This legacy drift surface has no declaration name to compare.
+			continue
+		}
+		installed := filepath.Join(skillsDir, decl.Name)
+		metadata, statErr := stateread.Stat(installed)
+		if statErr != nil {
+			drift[decl.Name] = stateUnresolvable
+			continue
+		}
+		if metadata.Kind == stateread.KindAbsent {
+			drift[decl.Name] = stateNotInstalled
+			continue
+		}
+		recorded, kind, readErr := marker.ReadState(installed)
+		if readErr != nil {
+			state, _ := markerReadFailure(installed, readErr)
+			drift[decl.Name] = state
+			continue
+		}
+		if kind == stateread.KindAbsent {
+			// Marker schema 1 stays readable, so an unchanged schema 1 through 5
+			// installation remains current under it. Only a marker the reader
+			// refuses reaches here, and the refusal itself carries the stable
+			// code: a schema this manager cannot read, a build driver outside the
+			// closed set, or an invalid document. A schema-1 marker that has to
+			// describe a compiled command is demoted later, by the build
+			// classification that can actually see the plan.
+			state, _ := markerRefusal(installed)
+			drift[decl.Name] = state
+			continue
+		}
+		// Spec §8 interim rule for v1 readers: a recorded v1 identity is
+		// never recomputed over NUL bytes. A v1-installed tree passed the
+		// install gate NUL-free, so NUL now means the tree drifted; the
+		// opaque refusal itself surfaces through the install-status error
+		// in this same invocation.
+		if err := opaquescan.RefuseNULV1(installed, recorded.ContentHashVersion()); err != nil {
+			drift[decl.Name] = stateContentDrift
+			continue
+		}
+		actualHash, err := hashing.ContentSHA256WithVersion(installed, nil, recorded.ContentHashVersion())
+		if err != nil || actualHash != recorded.ContentSHA256 {
+			drift[decl.Name] = stateContentDrift
+			continue
+		}
+		repo := filepath.Join(cfg.SkillsRoot, filepath.FromSlash(decl.Source))
+		resolved, err := gitops.Resolve(repo, decl.Ref.Kind, decl.Ref.Value)
+		if err != nil {
+			drift[decl.Name] = stateUnresolvable
+			continue
+		}
+		if recorded.Package != nil {
+			// A legacy-lane package marker (a schema-9 or
+			// subdirectory-selected installation under a schema-1
+			// Skillfile) compares against the staged effective
+			// plan exactly like the install currentness check:
+			// the recorded package and lock must equal the
+			// staged expectation. A changed declared ref is
+			// non-current even when it resolves to the same
+			// commit, because the staged lock binds the
+			// declaration (skillfile-sources §4). A commit-only
+			// comparison would admit that stale binding. A
+			// package with no staged expectation — the node no
+			// longer migrates, or the plan staged nothing — can
+			// never prove current and needs an install.
+			staged, ok := legacyPackages[decl.Name]
+			if !ok || staged == nil || legacyLock == "" ||
+				!reflect.DeepEqual(recorded.Package, staged) || recorded.LockSHA256 != legacyLock {
+				drift[decl.Name] = stateNeedsInstall
+			} else {
+				drift[decl.Name] = stateUpToDate
+			}
+			continue
+		}
+		if recorded.RefKind == decl.Ref.Kind && recorded.Ref == decl.Ref.Value && recorded.Commit == resolved.Commit {
+			drift[decl.Name] = stateUpToDate
+		} else {
+			drift[decl.Name] = stateNeedsInstall
+		}
+	}
+	return drift
+}
+
+func (c cli) cmdStatusAttest(cfg *config.Config, projectRoot, alias string, jsonOut bool) int {
+	trusted := cfg.TrustedRegistries()
+	registries := make([]registry.Registry, 0, len(trusted))
+	for _, entry := range trusted {
+		registries = append(registries, registry.Registry{Name: entry.Name, URL: entry.URL, PublicKeys: entry.PublicKeys})
+	}
+	cacheDir := filepath.Join(cfg.Home(), "cache", "registry")
+	stateDir := registry.ReadOnlyStateDir(filepath.Join(cfg.Home(), "state", "registry"), cacheDir)
+	fetch := registry.NewHTTPFetchWithPolicyReadOnly(
+		cacheDir,
+		stateDir,
+		registries,
+		time.Duration(cfg.Audit.CacheTTLSeconds)*time.Second,
+		time.Duration(cfg.Audit.OfflineGraceSeconds)*time.Second,
+		nil,
+	)
+	results := registry.AttestRoot(alias, filepath.Join(projectRoot, ".agents", "skills"), registries, fetch)
+	if jsonOut {
+		payload, _ := json.MarshalIndent(results, "", "  ")
+		_, _ = fmt.Fprintln(c.stdout, string(payload))
+	} else {
+		for _, item := range results {
+			suffix := ""
+			if item.Registry != "" {
+				suffix = " via " + item.Registry
+			}
+			if item.Detail != "" {
+				suffix += " (" + item.Detail + ")"
+			}
+			_, _ = fmt.Fprintf(c.stdout, "%s: %-24s %s%s\n", item.Scope, item.Skill, item.Result, suffix)
+		}
+	}
+	if registry.HasRevocation(results) {
+		return exitFail
+	}
+	return exitOK
+}
+
+func (c cli) cmdList() int {
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	aliases := make([]string, 0, len(cfg.Projects))
+	for alias := range cfg.Projects {
+		aliases = append(aliases, alias)
+	}
+	sort.Strings(aliases)
+	for _, alias := range aliases {
+		project := cfg.Projects[alias]
+		_, _ = fmt.Fprintf(c.stdout, "%s\t%s\n", alias, project.Path)
+		if projectManifest, err := manifest.Load(project.Path); err == nil && projectManifest != nil {
+			for _, decl := range projectManifest.Skills {
+				if decl.Name == "" {
+					continue
+				}
+				_, _ = fmt.Fprintf(c.stdout, "  %s %s %s\n", decl.Name, decl.Ref.Kind, decl.Ref.Value)
+			}
+		}
+	}
+	return exitOK
+}
+
+func (c cli) cmdProject(args []string) int {
+	if len(args) == 0 {
+		_, _ = fmt.Fprintln(c.stderr, "curator: project requires a subcommand: add, resolve, refresh, register, rebind, inspect, package, preview, approve, revoke")
+		return exitUsage
+	}
+	switch args[0] {
+	case "register", "rebind", "inspect", "package", "preview", "approve", "revoke":
+		return c.cmdProjectContext(args[0], args[1:])
+
+	case "add":
+		flags := c.newFlagSet("project add")
+		agentsRaw := flags.String("agents", "", "comma-separated target agents")
+		positional, err := parseInterspersed(flags, args[1:])
+		if err != nil || len(positional) != 2 {
+			_, _ = fmt.Fprintln(c.stderr, "curator: project add requires <alias> <path>")
+			return exitUsage
+		}
+		cfg, code := c.loadConfig()
+		if code != exitOK {
+			return code
+		}
+		agents := splitNonEmpty(*agentsRaw)
+		if len(agents) == 0 {
+			agents = cfg.DefaultAgents
+		}
+		if err := config.AddProject(cfg.Path, positional[0], positional[1], agents); err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		root, _ := filepath.Abs(positional[1])
+		if _, err := manifest.EnsureEmpty(root); err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		entries := append(adapters.RequiredGitignoreEntries(agents), "Skillfile.dev.json")
+		if err := gitignore.Append(filepath.Join(root, ".gitignore"), entries); err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		_, _ = fmt.Fprintf(c.stdout, "added project %s: %s\n", positional[0], root)
+		return exitOK
+	case "resolve", "refresh":
+		// The explicit -h surface describes schema-2 project resolution. The
+		// bare word "help" is never intercepted, so it keeps resolving
+		// as a project alias or path.
+		if len(args) > 1 && (args[1] == "-h" || args[1] == "--help") {
+			_, _ = fmt.Fprint(c.stdout, projectResolveUsage)
+			return exitOK
+		}
+		cfg, code := c.loadConfig()
+		if code != exitOK {
+			return code
+		}
+		positional := args[1:]
+		if len(positional) == 0 {
+			positional = []string{"."}
+		}
+		targets, err := selectProjectTargets(cfg, positional, false)
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitUsage
+		}
+		return c.cmdProjectResolve(cfg, targets[0], args[0])
+	default:
+		_, _ = fmt.Fprintf(c.stderr, "curator: unknown project subcommand %q\n", args[0])
+		return exitUsage
+	}
+}
+
+func (c cli) cmdSkillCheck(args []string) int {
+	flags := c.newFlagSet("skill check")
+	localeValue := flags.String("locale", "", "validate against a locale")
+	jsonOut := flags.Bool("json", false, "machine-readable output")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil {
+		return exitUsage
+	}
+	dir := projectRootArg(positional)
+	issues := skillcheck.Validate(dir, *localeValue)
+	if *jsonOut {
+		payload, _ := json.MarshalIndent(issues, "", "  ")
+		_, _ = fmt.Fprintln(c.stdout, string(payload))
+	} else {
+		for _, issue := range issues {
+			_, _ = fmt.Fprintln(c.stdout, skillcheck.Format(issue))
+		}
+		if len(issues) == 0 {
+			_, _ = fmt.Fprintln(c.stdout, dir+": ok")
+		}
+	}
+	if skillcheck.HasErrors(issues) {
+		return exitFail
+	}
+	return exitOK
+}
+
+func (c cli) cmdGlobal(args []string) int {
+	if len(args) == 0 {
+		_, _ = fmt.Fprintln(c.stderr, "curator: global requires a subcommand: init, add, remove, list, status, install, adopt, update, upgrade")
+		return exitUsage
+	}
+	if wantsHelp(args) {
+		_, _ = fmt.Fprint(c.stdout, globalHelp)
+		return exitOK
+	}
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	switch args[0] {
+	case "init", "add", "remove", "install", "adopt", "update", "upgrade":
+		if err := envauthority.Validate(cfg.Home()); err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+	}
+
+	if args[0] != "init" {
+		globalManifest, err := manifest.Load(install.GlobalRoot(cfg.Home()))
+		if err == nil && globalManifest != nil && globalManifest.SchemaVersion != manifest.SchemaVersion {
+			_, _ = fmt.Fprintf(c.stderr, "curator: global Skillfile schema %d is unsupported; global scope requires schema %d\n", globalManifest.SchemaVersion, manifest.SchemaVersion)
+			return exitFail
+		}
+	}
+	switch args[0] {
+	case "init":
+		path, err := install.GlobalInit(cfg.Home())
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		_, _ = fmt.Fprintln(c.stdout, "initialized", path)
+		return exitOK
+	case "add":
+		flags := c.newFlagSet("global add")
+		git := flags.String("git", "", "git clone URL")
+		tag := flags.String("tag", "", "git tag")
+		revision := flags.String("revision", "", "git revision")
+		branch := flags.String("branch", "", "git branch")
+		source := flags.String("source", "", "source directory under skills_root")
+		positional, err := parseInterspersed(flags, args[1:])
+		if err != nil || len(positional) < 1 {
+			return exitUsage
+		}
+		refKind, _ := pickRef(*tag, *branch, *revision)
+		if refKind == "" {
+			_, _ = fmt.Fprintln(c.stderr, "curator: specify exactly one of --tag, --branch, --revision")
+			return exitUsage
+		}
+		if *git == "" || *source != "" || refKind == "branch" {
+			_, _ = fmt.Fprintln(c.stderr, "curator: profile-scoped global add requires --git and exactly one of --tag or --revision")
+			return exitUsage
+		}
+		globalManifest, err := manifest.Load(install.GlobalRoot(cfg.Home()))
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		if globalManifest == nil {
+			_, _ = fmt.Fprintf(c.stderr, "curator: %s not found at %s; run 'curator global init' first\n", manifest.Name, manifest.PathIn(install.GlobalRoot(cfg.Home())))
+			return exitFail
+		}
+		return c.runGlobalInstallModeWithProfile(cfg, nil, false, &envprofile.DirectSkill{Name: positional[0], Git: *git, Tag: *tag, Revision: *revision})
+	case "install":
+		return c.runGlobalInstall(cfg, args[1:])
+	case "adopt":
+		return c.cmdGlobalAdopt(cfg, args[1:])
+	case "remove":
+		if len(args) < 2 {
+			return exitUsage
+		}
+		// Install holds this operation lock across profile and legacy publication.
+		// Serialize the declaration writer with that whole operation, before
+		// taking any home lock, so the publishers cannot consume different sets.
+		manager, err := managerlock.New(cfg.Home())
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		operation := manager.NewOperation(false)
+		defer func() { _ = operation.Close() }()
+		parent := c.context
+		if parent == nil {
+			parent = context.Background()
+		}
+		ctx, cancel := context.WithTimeout(parent, 30*time.Second)
+		defer cancel()
+		_, _ = fmt.Fprintln(c.stderr, "curator: acquiring the global operation lock (up to 30 seconds); another install may still be building")
+		if _, err := operation.AcquireProjects(ctx, install.GlobalRoot(cfg.Home())); err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator: acquire the global operation lock:", err)
+			return exitFail
+		}
+		lock, err := manager.AcquireHomeOnly(ctx, false)
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		defer func() { _ = lock.Close() }()
+		if err := envauthority.Validate(cfg.Home()); err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+
+		if err := manifest.RemoveDecl(install.GlobalRoot(cfg.Home()), args[1]); err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		return exitOK
+	case "list":
+		globalManifest, err := manifest.Load(install.GlobalRoot(cfg.Home()))
+		if err != nil || globalManifest == nil {
+			_, _ = fmt.Fprintln(c.stdout, "no global Skillfile; run 'curator global init'")
+			return exitOK
+		}
+		for _, decl := range globalManifest.Skills {
+			_, _ = fmt.Fprintf(c.stdout, "%s %s %s\n", decl.Name, decl.Ref.Kind, decl.Ref.Value)
+		}
+		return exitOK
+	case "status":
+		return c.cmdGlobalStatus(cfg, args[1:])
+	case "update":
+		return c.cmdUpdate()
+	case "upgrade":
+		return c.runGlobalInstallMode(cfg, args[1:], true)
+	}
+	_, _ = fmt.Fprintf(c.stderr, "curator: unknown global subcommand %q\n", args[0])
+	return exitUsage
+}
+
+func (c cli) cmdGlobalAdopt(cfg *config.Config, args []string) int {
+	flags := c.newFlagSet("global adopt")
+	dryRun := flags.Bool("dry-run", false, "verify the forwarding shim without changing files")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil || len(positional) != 1 {
+		if err == nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator: global adopt requires exactly one command")
+		}
+		return exitUsage
+	}
+	userHome, err := c.userHome()
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator: cannot resolve the user home:", err)
+		return exitFail
+	}
+	var result globalbins.Adoption
+	if *dryRun {
+		result, err = globalbins.Adopt(cfg.Home(), positional[0], "", nil, userHome, true)
+	} else {
+		// Refuse invalid requests before creating lock state. Once the read-only
+		// preflight succeeds, serialize the marker update with global install and
+		// repeat every check while holding the manager-home lock.
+		preview, previewErr := globalbins.Adopt(cfg.Home(), positional[0], "", nil, userHome, true)
+		if previewErr != nil {
+			err = previewErr
+		} else if preview.AlreadyManaged {
+			result = preview
+		} else {
+			manager, lockErr := managerlock.New(cfg.Home())
+			if lockErr != nil {
+				err = fmt.Errorf("open manager locks: %w", lockErr)
+			} else {
+				var lock *managerlock.HomeLock
+				lock, err = manager.AcquireHomeOnly(context.Background(), false)
+				if err == nil {
+					result, err = globalbins.Adopt(cfg.Home(), positional[0], "", nil, userHome, false)
+					if closeErr := lock.Close(); closeErr != nil && err == nil {
+						err = fmt.Errorf("release the manager-home lock: %w", closeErr)
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, err)
+		return exitFail
+	}
+	if result.AlreadyManaged {
+		_, _ = fmt.Fprintf(c.stdout, "global: command %q is already managed at %s\n", positional[0], result.Path)
+		return exitOK
+	}
+	if result.DryRun {
+		_, _ = fmt.Fprintf(c.stdout, "global: would adopt command %q at %s\n", positional[0], result.Path)
+		return exitOK
+	}
+	_, _ = fmt.Fprintf(c.stdout, "global: adopted command %q at %s (backup: %s)\n", positional[0], result.Path, result.Backup)
+	return exitOK
+}
+
+// cmdGlobalStatus is the read-only currentness surface of the machine-wide
+// scope. It carries the same contract as `curator status`: the same stable
+// codes, the same optional machine-readable document, and the same fail-closed
+// `--check`.
+//
+// Compiled currentness cannot be read off an install marker alone — the logical
+// key is a digest over the whole build input, and only a plan derives the
+// current one — so this command runs the same read-only global plan
+// `curator global install --dry-run` runs. That resolves the closure and passes
+// the read-only audit and registry gates; it runs no compiler and writes no
+// installation target, cache entry, or trust state.
+//
+// The pre-existing surface is preserved exactly. The declared-skill report is
+// still derived straight from install markers, never from the plan, so a global
+// scope without compiled commands prints the lines it always printed and still
+// exits zero — including when the plan itself refused. Reporting and verdict
+// stay separate here too: `--check` is the only surface that turns a
+// non-current, or an unprovable, verdict into a non-zero exit.
+//
+// The command is three phases — parse the request, acquire the plan once,
+// classify and render from it — so the whole reporting contract can be driven
+// from an already acquired plan without a second one being derived for it.
+func (c cli) cmdGlobalStatus(cfg *config.Config, args []string) int {
+	opts, code := c.parseGlobalStatusOptions(args)
+	if code != exitOK {
+		return code
+	}
+	authority, err := preflightCLIExecution(context.Background(), cfg)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	return c.reportGlobalStatus(cfg, opts, func(cfg *config.Config) (install.Result, bool) {
+		return c.globalStatusPlanWithAuthority(cfg, authority)
+	})
+}
+
+// globalStatusOptions is the parsed request of one `curator global status`
+// invocation: which document to render, and whether the verdict is fail-closed.
+type globalStatusOptions struct {
+	check   bool
+	jsonOut bool
+}
+
+// parseGlobalStatusOptions is the first phase. The machine-wide scope takes no
+// target: it is one scope, so a stray path is a usage error rather than
+// something silently ignored.
+func (c cli) parseGlobalStatusOptions(args []string) (globalStatusOptions, int) {
+	flags := c.newFlagSet("global status")
+	check := flags.Bool("check", false, "exit non-zero unless every skill and compiled command is current")
+	jsonOut := flags.Bool("json", false, "machine-readable output")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil {
+		return globalStatusOptions{}, exitUsage
+	}
+	if len(positional) > 0 {
+		_, _ = fmt.Fprintln(c.stderr, "curator: global status accepts flags only")
+		return globalStatusOptions{}, exitUsage
+	}
+	return globalStatusOptions{check: *check, jsonOut: *jsonOut}, exitOK
+}
+
+// globalStatusAcquire is the second phase: it produces the read-only plan the
+// compiled verdict is derived from, and reports whether compiled state stayed
+// unprovable. A command run always passes globalStatusPlan, so every invocation
+// classifies a plan this run acquired itself.
+type globalStatusAcquire func(*config.Config) (install.Result, bool)
+
+// reportGlobalStatus is the third phase: it classifies the acquired plan against
+// installed state, renders the requested document, and applies the fail-closed
+// verdict. Acquisition is a parameter so the phase can be driven from a plan
+// that was already acquired, without the classification, the rendering, or the
+// verdict differing in any way from a command run.
+func (c cli) reportGlobalStatus(cfg *config.Config, opts globalStatusOptions, acquire globalStatusAcquire) int {
+	scope := globalStatusScope(cfg)
+	// Installed markers are fingerprinted before the read-only plan and again
+	// after classification, so compiled state that moved during the whole window
+	// is reported as such instead of published as an authoritative verdict.
+	before := markerDigests(scope.stores...)
+	result, unprovable := acquire(cfg)
+	if result.Status == "failed" {
+		// The declared-skill report was still produced, so the refusal is a
+		// warning on standard error rather than an error, exactly as it is for a
+		// project status that still published every compiled row.
+		c.printStatusRefusal(result)
+	}
+
+	drift, builds := statusReport(cfg, scope, factsList(result.Builds), before, result.LegacyPackages, result.LegacyLockSHA256)
+	if opts.jsonOut {
+		// The machine-wide document carries no `path`: the scope has no
+		// operator-supplied root, `alias` already identifies it, and the manager
+		// home is never published. A scope without compiled commands produces the
+		// declared-skill document with no `builds` key at all.
+		payload := map[string]any{"alias": scope.alias, "skills": drift}
+		if len(builds) > 0 {
+			payload["builds"] = builds
+		}
+		document, _ := json.MarshalIndent(payload, "", "  ")
+		_, _ = fmt.Fprintln(c.stdout, string(document))
+	} else {
+		names := make([]string, 0, len(drift))
+		for name := range drift {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			_, _ = fmt.Fprintf(c.stdout, "%s: %s %s\n", scope.alias, name, drift[name])
+		}
+		for _, build := range builds {
+			_, _ = fmt.Fprintf(c.stdout, "%s: %s\n", scope.alias, build.Describe())
+		}
+	}
+	if opts.check && (unprovable || checkFailed(drift, builds)) {
+		return exitFail
+	}
+	return exitOK
+}
+
+// globalStatusPlan runs the read-only machine-wide plan and reports whether
+// compiled state stayed unprovable.
+//
+// Unprovable means the plan refused before it could describe every compiled
+// command the closure activates, so this run cannot even tell whether the scope
+// has compiled state. It never suppresses the declared-skill report; it is the
+// fail-closed input of `--check`. A scope with no machine-wide Skillfile is not
+// unprovable: it declares nothing and activates nothing.
+func (c cli) globalStatusPlan(cfg *config.Config) (install.Result, bool) {
+	return c.globalStatusPlanWithAuthority(cfg, install.NewPortableBuildAuthority())
+}
+
+func (c cli) globalStatusPlanWithAuthority(cfg *config.Config, authority *install.BuildAuthority) (install.Result, bool) {
+	userHome, err := c.userHome()
+	if err != nil {
+		result := install.Result{Alias: "global", Path: install.GlobalRoot(cfg.Home()), Status: "failed"}
+		result.Errors = append(result.Errors, fmt.Sprintf(
+			"could not resolve the user home the machine-wide scope mirrors into: %v", err))
+		return result, true
+	}
+	result := install.Global(cfg, userHome, install.Options{Operation: install.OperationStatus, DryRun: true, Build: install.BuildDeps{Assurance: authority}, External: productionExternalDeps(cfg, true)})
+	return result, result.Status == "failed" && !result.BuildsComplete
+}
+
+func (c cli) runGlobalInstall(cfg *config.Config, args []string) int {
+	return c.runGlobalInstallMode(cfg, args, false)
+}
+
+func (c cli) runGlobalInstallMode(cfg *config.Config, args []string, fetch bool) int {
+	return c.runGlobalInstallModeWithProfile(cfg, args, fetch, nil)
+}
+
+func (c cli) runGlobalInstallModeWithProfile(cfg *config.Config, args []string, fetch bool, addition *envprofile.DirectSkill) int {
+	opts, positional, all, auditMode, err := c.installFlags(args)
+	if err != nil || len(positional) != 0 || all {
+		if err == nil {
+			err = fmt.Errorf("global install accepts flags only")
+		}
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitUsage
+	}
+	if auditMode != "" {
+		cfgCopy := *cfg
+		cfgCopy.Audit = cfg.Audit
+		cfgCopy.Audit.Enabled = true
+		cfgCopy.Audit.Mode = auditMode
+		cfg = &cfgCopy
+	}
+	authority, err := preflightCLIExecution(opts.Context, cfg)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	opts.Build.Assurance = authority
+	opts.Fetch = fetch && !opts.DryRun
+	opts.Operation = install.OperationInstall
+	if fetch {
+		opts.Operation = install.OperationUpdate
+	}
+	opts.FetchedRepos = map[string]string{}
+	opts.External = productionExternalDeps(cfg, opts.DryRun)
+	opts.External.BuildSSH = install.CaptureBuildSSHSelection(cfg, opts.BuildSSH, os.Getenv)
+	opts.External.BuildSSH.Resolve = c.operatorBuildSSHResolver(cfg, opts.DryRun)
+	opts.External.BuildHTTPS.Resolve = c.operatorBuildHTTPSResolver(cfg, opts.DryRun)
+	userHome, err := c.userHome()
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	if len(args) == 0 && !opts.DryRun && !fetch {
+		opts.GlobalAddition = addition
+		opts.WithGlobalProfile = func(lock install.HomeLock, next func() install.Result) (install.Result, error) {
+			result := install.Result{Alias: "global", Path: install.GlobalRoot(cfg.Home())}
+			var legacyErr error
+			info, err := envprofile.GlobalSkillTransaction(cfg.Home(), envprofile.PolicyFromConfig(cfg), machineFromConfig(cfg), addition, c.profileNativeHomeResolver(), lock, func() error {
+				result = next()
+				if result.Status == "failed" {
+					legacyErr = fmt.Errorf("global legacy publication failed: %s", strings.Join(result.Errors, "; "))
+					return legacyErr
+				}
+				return nil
+			})
+			if err != nil {
+				result.Status = "failed"
+				if err != legacyErr {
+					return result, err
+				}
+			} else {
+				result.Messages = append(result.Messages, fmt.Sprintf("installed global skills from profile %s (lock %s)", info.Name, info.LockHash))
+			}
+			return result, nil
+		}
+	}
+	result := install.Global(cfg, userHome, opts)
+	c.printResult(result)
+	if !opts.DryRun {
+		c.printRepairNotices(result)
+	}
+	if result.Status == "failed" {
+		return exitFail
+	}
+	return exitOK
+}
+
+// operatorBuildSSHResolver supplies the interactive credential prompt when
+// this process actually has an operator in front of it.
+//
+// A dry run never returns one: it reports what a run would do, and persisting
+// a credential the operator was asked for mid-report would make the read-only
+// surface write. A non-interactive run never returns one either, which is the
+// fail-closed path: the precheck then names every uncovered repository and the
+// exact commands that would cover it.
+func (c cli) operatorBuildSSHResolver(cfg *config.Config, dryRun bool) install.BuildSSHResolver {
+	stderrFile, terminalOutput := c.stderr.(*os.File)
+	if dryRun || !terminalOutput || !attachedToTerminal(os.Stdin) || !attachedToTerminal(stderrFile) {
+		return nil
+	}
+	// The prompt speaks on stderr so a caller redirecting stdout still sees
+	// the questions it is being asked.
+	return install.InteractiveBuildSSHResolver(os.Stdin, c.stderr,
+		func(credential config.BuildSSHCredential) error {
+			_, err := config.SetBuildSSH(cfg.Path, credential)
+			return err
+		})
+}
+
+// operatorBuildHTTPSResolver offers unmatched HTTPS repositories an explicit
+// operator choice. A headless run keeps this nil and therefore continues over
+// anonymous HTTPS; a dry run remains read-only even on a terminal.
+func (c cli) operatorBuildHTTPSResolver(cfg *config.Config, dryRun bool) install.BuildHTTPSResolver {
+	stderrFile, terminalOutput := c.stderr.(*os.File)
+	if dryRun || !terminalOutput || !attachedToTerminal(os.Stdin) || !attachedToTerminal(stderrFile) {
+		return nil
+	}
+	access := gitcred.Access{}
+	return install.InteractiveBuildHTTPSResolver(os.Stdin, c.stderr,
+		func() (string, error) { return readBuildHTTPSToken(os.Stdin, c.stderr) },
+		persistPromptedBuildHTTPS(cfg, access))
+}
+
+func persistPromptedBuildHTTPS(cfg *config.Config, access gitcred.Access) install.PersistBuildHTTPS {
+	return func(ctx context.Context, credential config.BuildHTTPSCredential, secret string) error {
+		if credential.Token == config.TokenSourceKeyring {
+			host := gitcred.ScopeHost(credential.Scope)
+			if err := access.StoreScoped(ctx, credential.Scope, host, secret); err != nil {
+				return err
+			}
+			if _, err := config.SetBuildHTTPS(cfg.Path, credential); err != nil {
+				_ = access.DeleteScoped(ctx, credential.Scope, host)
+				return err
+			}
+			return nil
+		}
+		_, err := config.SetBuildHTTPS(cfg.Path, credential)
+		return err
+	}
+}
+
+// attachedToTerminal reports whether one standard stream is a real terminal.
+//
+// The character-device test alone is not enough: `< /dev/null` is a character
+// device, and treating it as a terminal would make a scripted run block on a
+// prompt nobody can answer instead of failing closed.
+func attachedToTerminal(file *os.File) bool {
+	return term.IsTerminal(file.Fd())
+}
+
+// productionExternalDeps binds schema-7 repository work to manager/operator
+// state. Discovery happens before package data is consulted; an unavailable
+// tool remains a zero-value fail-closed dependency and affects only closures
+// that actually activate go-repository-v1.
+func productionExternalDeps(cfg *config.Config, dryRun bool) install.ExternalDeps {
+	deps := install.ExternalDeps{GitTool: productionGitTool()}
+	// Read-only surfaces get the environment and configured scopes; a command
+	// that also parses --build-ssh-* flags overrides this with them.
+	deps.BuildSSH = install.CaptureBuildSSHSelection(cfg, install.BuildSSHFlags{}, os.Getenv)
+	deps.BuildHTTPS = install.CaptureBuildHTTPSSelection(cfg, os.Getenv)
+	// The draft transport switch is operator-owned process input, read once at
+	// the CLI boundary like every other ExternalDeps member. The machine policy
+	// and provider table live beside the manager configuration that was
+	// actually loaded; provider HTTPS secrets are read through the operator's
+	// own credential machinery.
+	deps.DraftTransportResolution = install.DraftTransportEnabled(os.Getenv)
+	deps.DraftPolicyPath = filepath.Join(cfg.Home(), config.SourcePolicyFileName)
+	deps.DraftProvidersPath = filepath.Join(cfg.Home(), config.SourceProvidersFileName)
+	deps.DraftProviderReader = gitcred.Access{}
+	// Sanitized resolved-lane provenance reaches the manager-home
+	// operation-diagnostics log, never a portable artifact. The sink is
+	// always assigned so a real opted-in acquisition records its
+	// canonical identity with the listed and resolved mirror provenance;
+	// unresolved acquisition never invokes it.
+	deps.DraftTransportTrace = install.DraftTransportProvenanceTrace(cfg.Home())
+	deps.AuditWarnings = func(_ context.Context, subject buildrepo.AuditSubject) ([]string, error) {
+		candidate := audit.Subject{
+			Name: subject.Declared.Repository, Source: subject.Declared.Identity,
+			Git: subject.Declared.Identity, Commit: subject.Effective.Commit,
+			Snapshot: subject.SnapshotRoot, SchemaVersion: 7,
+			Capabilities: capabilities.ImplicitNone(),
+			// Live repository admission audits the writer-version
+			// identity; only frozen v1 carriers keep the NUL rule.
+			HashVersion: hashing.WriteVersion(),
+		}
+		var auditWarnings, auditErrs []string
+		if dryRun {
+			auditWarnings, auditErrs = audit.GateReadOnly(cfg, []audit.Subject{candidate})
+		} else {
+			auditWarnings, auditErrs = audit.Gate(cfg, []audit.Subject{candidate})
+		}
+		if len(auditErrs) != 0 {
+			return auditWarnings, errors.New(strings.Join(auditErrs, "; "))
+		}
+		return auditWarnings, nil
+	}
+	return deps
+}
+
+func productionGitTool() buildrepo.GitTool {
+	gitPath, err := buildrepo.SelectTrustedExecutable("git", os.Getenv("CURATOR_BUILD_GIT_EXECUTABLE"), buildrepo.OperatorManagedExecutableRoots()...)
+	if err != nil {
+		return buildrepo.GitTool{SelectionError: buildrepo.TrustedExecutableSelectionError(fmt.Errorf("%w; configure CURATOR_BUILD_GIT_EXECUTABLE with an admitted absolute executable", err))}
+	}
+	run := func(args ...string) string {
+		command := exec.Command(gitPath, args...) // #nosec G204 G702 -- SelectTrustedExecutable rejects relative and managed paths; fixed discovery arguments, no shell.
+		command.Env = buildrepo.DiscoveryEnvironment(os.Environ())
+		output, runErr := command.Output()
+		if runErr != nil || len(output) > 4096 {
+			return ""
+		}
+		return strings.TrimSpace(string(output))
+	}
+	execPath := run("--exec-path")
+	version := run("--version")
+	if execPath == "" || version == "" {
+		return buildrepo.GitTool{}
+	}
+	execPath, err = filepath.EvalSymlinks(execPath)
+	if err != nil {
+		return buildrepo.GitTool{}
+	}
+	fingerprint, err := buildrepo.ExecutableFingerprint(gitPath)
+	if err != nil {
+		return buildrepo.GitTool{}
+	}
+	tool := buildrepo.GitTool{Executable: gitPath, Fingerprint: fingerprint, ExecPath: execPath, AllowedVersions: []string{version}}
+	if executable, executableErr := os.Executable(); executableErr == nil {
+		tool.AskPass = admittedOperatorFile(executable)
+		tool.SSHWrapper = tool.AskPass
+	}
+	return tool
+}
+
+func admittedOperatorFile(name string) string {
+	if name == "" {
+		return ""
+	}
+	resolved, err := filepath.EvalSymlinks(name)
+	if err != nil || !filepath.IsAbs(resolved) {
+		return ""
+	}
+	info, err := os.Lstat(resolved)
+	if err != nil || !info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
+		return ""
+	}
+	return resolved
+}
+
+func (c cli) cmdHybrid(args []string) int {
+	if len(args) == 0 {
+		_, _ = fmt.Fprintln(c.stderr, "curator: hybrid requires a subcommand: add, remove, list")
+		return exitUsage
+	}
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	switch args[0] {
+	case "add":
+		flags := c.newFlagSet("hybrid add")
+		git := flags.String("git", "", "git clone URL")
+		tag := flags.String("tag", "", "git tag")
+		revision := flags.String("revision", "", "git revision")
+		branch := flags.String("branch", "", "git branch")
+		targets := flags.String("targets", "", "comma-separated targets (alias, absolute path, or glob)")
+		target := flags.String("target", "", "target alias, absolute path, or glob")
+		positional, err := parseInterspersed(flags, args[1:])
+		if err != nil || len(positional) < 1 || (*targets == "" && *target == "") {
+			_, _ = fmt.Fprintln(c.stderr, "curator: hybrid add requires a name and --target or --targets")
+			return exitUsage
+		}
+		refKind, refValue := pickRef(*tag, *branch, *revision)
+		if refKind == "" {
+			_, _ = fmt.Fprintln(c.stderr, "curator: specify exactly one of --tag, --branch, --revision")
+			return exitUsage
+		}
+		targetValues := []string{*target}
+		if *targets != "" {
+			targetValues = strings.Split(*targets, ",")
+		}
+		if err := scopes.AddHybridDecl(cfg.Home(), positional[0], refKind, refValue, *git, targetValues); err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		return exitOK
+	case "remove":
+		if len(args) < 2 {
+			return exitUsage
+		}
+		if err := scopes.RemoveHybridDecl(cfg.Home(), args[1]); err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		return exitOK
+	case "list":
+		decls, err := scopes.LoadHybridDecls(cfg.Home())
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		for _, decl := range decls {
+			_, _ = fmt.Fprintf(c.stdout, "%s %s %s targets=%s\n", decl.Decl.Name, decl.Decl.Ref.Kind, decl.Decl.Ref.Value, strings.Join(decl.Targets, ","))
+		}
+		return exitOK
+	case "status":
+		decls, err := scopes.LoadHybridDecls(cfg.Home())
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		store := scopes.HybridSkillsRoot(cfg.Home())
+		for _, entry := range decls {
+			var state string
+			installed := filepath.Join(store, entry.Decl.Name)
+			recorded, kind, readErr := marker.ReadState(installed)
+			if readErr != nil {
+				state, _ = markerReadFailure(installed, readErr)
+			} else if kind == stateread.KindPresent {
+				// Spec §8 interim rule for v1 readers: refuse before
+				// recomputing a recorded v1 identity over NUL bytes.
+				if guardErr := opaquescan.RefuseNULV1(installed, recorded.ContentHashVersion()); guardErr != nil {
+					state = "content-drift"
+				} else if actual, hashErr := hashing.ContentSHA256WithVersion(installed, nil, recorded.ContentHashVersion()); hashErr != nil || actual != recorded.ContentSHA256 {
+					state = "content-drift"
+				} else {
+					state = "installed"
+				}
+			} else {
+				state = "not-installed"
+			}
+			_, _ = fmt.Fprintf(c.stdout, "%s %s targets=%s\n", entry.Decl.Name, state, strings.Join(entry.Targets, ","))
+		}
+		return exitOK
+	}
+	_, _ = fmt.Fprintf(c.stderr, "curator: unknown hybrid subcommand %q\n", args[0])
+	return exitUsage
+}
+
+func (c cli) cmdAudit(args []string) int {
+	flags := c.newFlagSet("audit")
+	all := flags.Bool("all", false, "audit all configured projects and global skills")
+	global := flags.Bool("global", false, "audit global skills")
+	jsonOut := flags.Bool("json", false, "machine-readable output")
+	allow := flags.String("allow", "", "pin trust for a content hash")
+	reason := flags.String("reason", "", "reason for --allow")
+	publish := flags.String("publish", "", "signed audit record (JSON file) to submit")
+	registryURL := flags.String("registry", "", "registry base URL for --publish")
+	token := flags.String("token", "", "auditor token for --publish (or CURATOR_REGISTRY_TOKEN)")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil {
+		return exitUsage
+	}
+	// N8: --allow presence is explicit, not inferred from its value: an
+	// explicitly supplied empty value is still a supplied non-digest and
+	// must refuse before any configuration or filesystem access. Plain
+	// `audit` without --allow keeps its existing behavior.
+	allowSupplied := false
+	flags.Visit(func(f *flag.Flag) {
+		if f.Name == "allow" {
+			allowSupplied = true
+		}
+	})
+	if allowSupplied {
+		if *reason == "" {
+			_, _ = fmt.Fprintln(c.stderr, "curator: --allow requires --reason")
+			return exitUsage
+		}
+		// N8: parse the supported content identity before any
+		// filesystem access; non-digests never reach config or pin state.
+		if _, err := hashing.ParseDigest(*allow); err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitUsage
+		}
+	}
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	if allowSupplied {
+		// New pins record the writer framing explicitly (Spec §8): a pin
+		// authorizes only the (version, digest) identity it was issued
+		// for, so legacy v1 pins never approve v2 reads. PinAtVersion
+		// re-validates the digest and the audit-namespace containment.
+		path, err := audit.PinAtVersion(cfg.Home(), *allow, hashing.WriteVersion(), *reason, os.Getenv("USER"))
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		_, _ = fmt.Fprintln(c.stdout, "pinned audit trust:", path)
+		return exitOK
+	}
+	if *publish != "" {
+		if *registryURL == "" {
+			_, _ = fmt.Fprintln(c.stderr, "curator: --publish requires --registry")
+			return exitUsage
+		}
+		bearer := *token
+		if bearer == "" {
+			bearer = os.Getenv("CURATOR_REGISTRY_TOKEN")
+		}
+		if bearer == "" {
+			_, _ = fmt.Fprintln(c.stderr, "curator: --publish requires --token or CURATOR_REGISTRY_TOKEN")
+			return exitUsage
+		}
+		payload, err := os.ReadFile(*publish) // #nosec G304 -- operator-supplied record path
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		response, err := registry.Publish(*registryURL, bearer, payload)
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitFail
+		}
+		_, _ = fmt.Fprintln(c.stdout, response)
+		return exitOK
+	}
+
+	cfgCopy := *cfg
+	cfgCopy.Audit = cfg.Audit
+	cfgCopy.Audit.Enabled = true
+	cfg = &cfgCopy
+	var targets []projectTarget
+	if *all {
+		if len(positional) > 0 || *global {
+			_, _ = fmt.Fprintln(c.stderr, "curator: --all cannot be combined with a target or --global")
+			return exitUsage
+		}
+		targets, err = selectProjectTargets(cfg, nil, true)
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitUsage
+		}
+		targets = append(targets, projectTarget{Alias: "global", Root: install.GlobalRoot(cfg.Home())})
+	} else if *global {
+		if len(positional) > 0 {
+			_, _ = fmt.Fprintln(c.stderr, "curator: --global cannot be combined with a project target")
+			return exitUsage
+		}
+		targets = []projectTarget{{Alias: "global", Root: install.GlobalRoot(cfg.Home())}}
+	} else {
+		targets, err = selectProjectTargets(cfg, positional, false)
+		if err != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+			return exitUsage
+		}
+	}
+
+	type auditOutput struct {
+		Scope          string                     `json:"scope"`
+		Warnings       []string                   `json:"warnings"`
+		Errors         []string                   `json:"errors"`
+		ScriptPolicies []audit.ScriptPolicyRecord `json:"script_policies"`
+	}
+	outputs := make([]auditOutput, 0, len(targets))
+	exitCode := exitOK
+	for _, target := range targets {
+		warnings, errors, policies := auditTarget(cfg, target)
+		outputs = append(outputs, auditOutput{Scope: target.Alias, Warnings: warnings, Errors: errors, ScriptPolicies: policies})
+		if len(errors) > 0 {
+			exitCode = exitFail
+		}
+		if !*jsonOut {
+			for _, record := range policies {
+				_, _ = fmt.Fprintf(c.stdout, "%s: %s\n", target.Alias, audit.FormatScriptPolicy(record))
+			}
+			for _, warning := range warnings {
+				_, _ = fmt.Fprintf(c.stdout, "%s: %s\n", target.Alias, warning)
+			}
+			for _, message := range errors {
+				_, _ = fmt.Fprintf(c.stderr, "%s: %s\n", target.Alias, message)
+			}
+			if len(warnings) == 0 && len(errors) == 0 {
+				_, _ = fmt.Fprintf(c.stdout, "%s: audit clean\n", target.Alias)
+			}
+		}
+	}
+	if *jsonOut {
+		payload, _ := json.MarshalIndent(outputs, "", "  ")
+		_, _ = fmt.Fprintln(c.stdout, string(payload))
+	}
+	return exitCode
+}
+
+func auditTarget(cfg *config.Config, target projectTarget) ([]string, []string, []audit.ScriptPolicyRecord) {
+	projectManifest, err := manifest.Load(target.Root)
+	if err != nil {
+		return nil, []string{err.Error()}, nil
+	}
+	if projectManifest == nil {
+		return nil, []string{"Skillfile.json not found"}, nil
+	}
+	substitutions := map[string]devsub.Substitution{}
+	if target.Alias != "global" {
+		substitutions, err = devsub.Load(target.Root)
+		if err != nil {
+			return nil, []string{err.Error()}, nil
+		}
+	}
+	nodes, err := closure.Build(closure.Options{
+		SkillsRoot: cfg.SkillsRoot, Home: cfg.Home(), AllowedSources: cfg.AllowedSources,
+	}, projectManifest, substitutions)
+	if err != nil {
+		return nil, []string{err.Error()}, nil
+	}
+	subjects := make([]audit.Subject, 0, len(nodes))
+	for _, node := range nodes {
+		directory := node.Directory
+		if directory == "" {
+			directory = "."
+		}
+		packageIdentity, _ := audit.SkillPackage(node.Identity, node.Decl.Source, node.Name, node.Resolved.Commit, directory)
+		subjects = append(subjects, audit.Subject{
+			Name: node.Name, Source: node.Decl.Source, Git: node.Decl.Git,
+			Commit: node.Resolved.Commit, Snapshot: node.Snapshot,
+			SchemaVersion: node.Spec.SchemaVersion, Capabilities: node.Spec.Capabilities,
+			Directory: node.Directory, Package: packageIdentity, Commands: node.Spec.Commands,
+			// The audit CLI reports what an install would trust:
+			// the writer-version identity.
+			HashVersion: hashing.WriteVersion(),
+		})
+	}
+	warnings, errs := audit.Gate(cfg, subjects)
+	return warnings, errs, audit.ScriptPolicyRecords(subjects)
+}
+
+// cmdGC runs maintenance under the exclusive manager-home mutation lock, so it
+// serializes with every install, rollback, and recovery. Incomplete
+// transactions are recovered first, and their build references are marked, so
+// an installation interrupted by a crash keeps the artifacts it will finish
+// with.
+func (c cli) cmdGC() int {
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	home := cfg.Home()
+	if err := envauthority.Validate(home); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	manager, err := managerlock.New(home)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	lock, err := manager.AcquireHomeOnly(context.Background(), false)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator: acquire the manager-home lock:", err)
+		return exitFail
+	}
+	result, err := collectUnderLock(home, lock, envprofile.PolicyFromConfig(cfg))
+	if closeErr := lock.Close(); closeErr != nil && err == nil {
+		err = fmt.Errorf("release the manager-home lock: %w", closeErr)
+	}
+	for _, warning := range result.Warnings {
+		_, _ = fmt.Fprintln(c.stderr, "curator: warning:", warning)
+	}
+	for _, entry := range result.RemovedRuntime {
+		_, _ = fmt.Fprintln(c.stdout, "removed runtime", entry)
+	}
+	for _, key := range result.RemovedBuilds {
+		_, _ = fmt.Fprintln(c.stdout, "removed build", key)
+	}
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	_, _ = fmt.Fprintf(c.stdout, "gc: %d runtime entr%s removed, %d build entr%s removed\n",
+		len(result.RemovedRuntime), pluralY(len(result.RemovedRuntime)),
+		len(result.RemovedBuilds), pluralY(len(result.RemovedBuilds)))
+	return exitOK
+}
+
+func collectUnderLock(home string, lock *managerlock.HomeLock, policy envprofile.Policy) (scopes.MaintenanceResult, error) {
+	if err := envprofile.PreflightCurrentPathSources(home, policy); err != nil {
+		return scopes.MaintenanceResult{}, err
+	}
+	engine, err := transaction.New(home, transaction.WithCommitCheck(projectlease.TransactionCheck(home)))
+	if err != nil {
+		return scopes.MaintenanceResult{}, fmt.Errorf("open the install transaction journal: %w", err)
+	}
+	if _, err := projectlease.RecoverUnderLock(home, lock, engine); err != nil {
+		return scopes.MaintenanceResult{}, fmt.Errorf("recover incomplete install transactions: %w", err)
+	}
+	journalKeys, err := engine.ReferencedBuildKeys(lock)
+	if err != nil {
+		return scopes.MaintenanceResult{}, fmt.Errorf("read in-flight build references: %w", err)
+	}
+	return scopes.Collect(scopes.MaintenanceRequest{Home: home, Lock: lock, JournalKeys: journalKeys})
+}
+
+func (c cli) cmdShellInit(args []string) int {
+	flags := c.newFlagSet("shell-init")
+	noGlobal := flags.Bool("no-global", false, "skip global env sourcing")
+	installHook := flags.Bool("install", false, "cache the hook and print its optional profile source command")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil || len(positional) > 1 {
+		_, _ = fmt.Fprintln(c.stderr, "curator: shell-init accepts at most one shell: auto, zsh, bash, powershell")
+		return exitUsage
+	}
+	shellName := "auto"
+	if len(positional) == 1 {
+		shellName = positional[0]
+	}
+	if shellName == "auto" {
+		shellName = shell.Detect(nil, "")
+	}
+	if shellName != "zsh" && shellName != "bash" && shellName != "powershell" {
+		_, _ = fmt.Fprintln(c.stderr, "curator: unsupported shell:", shellName)
+		return exitUsage
+	}
+	if *installHook {
+		hookPath, installErr := shell.InstallHook(shellName, filepath.Dir(c.config.Path()), !*noGlobal)
+		if installErr != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", installErr)
+			return exitFail
+		}
+		source, sourceErr := shell.SourceCommand(shellName, hookPath)
+		if sourceErr != nil {
+			_, _ = fmt.Fprintln(c.stderr, "curator:", sourceErr)
+			return exitFail
+		}
+		_, _ = fmt.Fprintln(c.stdout, "wrote", hookPath)
+		_, _ = fmt.Fprintln(c.stdout, "optional shell profile line:", source)
+		return exitOK
+	}
+	hook, err := shell.Hook(shellName, !*noGlobal)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitUsage
+	}
+	_, _ = fmt.Fprint(c.stdout, hook)
+	return exitOK
+}
+
+const configUsage = `curator config: inspect and edit the machine configuration
+
+Usage:
+  curator config show                  print the effective configuration
+  curator config launcher              print selected launcher metadata as JSON
+  curator config startup-verification [--json | --level 1..4]
+  curator config claude-auth <plan|apply|restore>
+                                       safely edit OAuth metadata references
+  curator config build-ssh <subcommand>
+                                       operator SSH credentials for external
+                                       build repositories (add | list | remove)
+  curator config build-https <subcommand>
+                                       operator HTTPS tokens for external
+                                       build repositories (add | login | list | remove)
+`
+
+const buildSSHUsage = `curator config build-ssh: operator SSH credentials for external build repositories
+
+Usage:
+  curator config build-ssh add <scope> [--agent [SOCKET]] [--identity PATH] [--known-hosts PATH]
+  curator config build-ssh list
+  curator config build-ssh remove <scope>
+
+A scope is a lowercase host optionally followed by '/'-separated path segments.
+It is matched against the canonical host/path identity of a build repository on
+whole-segment boundaries, and the longest matching scope wins: scope
+'git.example.com/portals' covers 'git.example.com/portals/app' and never
+'git.example.com/portals-other'.
+
+An entry names an agent, an identity file, or both:
+  --agent                  the agent socket the operator's environment provides
+  --agent SOCKET           a named agent socket
+  --identity PATH          an identity file offered to the destination
+  --agent --identity PATH  an agent pinned to that one identity
+  --known-hosts PATH       a known-hosts file for this scope
+Every path must be absolute or start with '~/'.
+
+add replaces whatever was recorded under the same scope; remove reports a scope
+that is not configured as an error; list prints one line per scope, sorted.
+
+Precedence: command-line flags override CURATOR_BUILD_SSH_* environment values,
+which override the scopes configured here. Credentials are operator-owned: no
+manifest, descriptor, repository, substitution, or marker can select them.
+
+An install that reaches an SSH build repository nothing covers stops before it
+fetches anything. With a terminal attached it lists the agent and ~/.ssh/*.pub
+files found on this host and asks which to record and under which scope; with
+no terminal, and on a dry run, it prints those same candidates as ready-to-run
+add commands and fails with build_repository_ssh_credential_missing.
+`
+
+func (c cli) cmdConfig(args []string) int {
+	if len(args) == 0 {
+		_, _ = fmt.Fprint(c.stderr, configUsage)
+		return exitUsage
+	}
+	switch args[0] {
+	case "show":
+		return c.cmdConfigShow()
+	case "claude-auth":
+		return c.cmdConfigClaudeAuth(args[1:])
+	case "launcher":
+		if len(args) != 1 {
+			_, _ = fmt.Fprintln(c.stderr, "curator: config launcher takes no arguments")
+			return exitUsage
+		}
+		return c.cmdConfigLauncher()
+	case "startup-verification":
+		return c.cmdConfigStartupVerification(args[1:])
+	case "build-ssh":
+		return c.cmdConfigBuildSSH(args[1:])
+	case "build-https":
+		return c.cmdConfigBuildHTTPS(args[1:])
+	case "-h", "--help", "help":
+		_, _ = fmt.Fprint(c.stdout, configUsage)
+		return exitOK
+	}
+	_, _ = fmt.Fprintf(c.stderr, "curator: unknown config subcommand %q\n\n%s", args[0], configUsage)
+	return exitUsage
+}
+
+// buildSSHAgentValue is the --agent selector. Bare, it selects the agent
+// socket the operator's environment provides; with a value it names one
+// socket. Only the affirmative spelling exists, matching the config grammar,
+// where "agent": false would be a second way to write an identity-only entry.
+type buildSSHAgentValue struct {
+	selected bool
+	socket   string
+}
+
+func (value *buildSSHAgentValue) String() string {
+	if value.socket != "" {
+		return value.socket
+	}
+	if value.selected {
+		return "true"
+	}
+	return ""
+}
+
+func (value *buildSSHAgentValue) Set(raw string) error {
+	switch raw {
+	case "true":
+		value.selected = true
+		return nil
+	case "false":
+		return fmt.Errorf("--agent %s", config.BuildSSHAgentRule)
+	}
+	if !config.ValidBuildSSHPath(raw) {
+		return fmt.Errorf("agent socket %s", config.BuildSSHPathRule)
+	}
+	value.selected, value.socket = true, raw
+	return nil
+}
+
+func (*buildSSHAgentValue) IsBoolFlag() bool { return true }
+
+// AcceptsOptionalValue claims the next token only when it reads as a socket
+// path, so `--agent <scope>` keeps the scope positional.
+func (*buildSSHAgentValue) AcceptsOptionalValue(raw string) bool {
+	return config.ValidBuildSSHPath(raw)
+}
+
+func (c cli) cmdConfigBuildSSH(args []string) int {
+	if len(args) == 0 {
+		_, _ = fmt.Fprint(c.stderr, buildSSHUsage)
+		return exitUsage
+	}
+	switch args[0] {
+	case "add":
+		return c.cmdConfigBuildSSHAdd(args[1:])
+	case "list":
+		return c.cmdConfigBuildSSHList()
+	case "remove":
+		return c.cmdConfigBuildSSHRemove(args[1:])
+	case "-h", "--help", "help":
+		_, _ = fmt.Fprint(c.stdout, buildSSHUsage)
+		return exitOK
+	}
+	_, _ = fmt.Fprintf(c.stderr, "curator: unknown config build-ssh subcommand %q\n\n%s", args[0], buildSSHUsage)
+	return exitUsage
+}
+
+func (c cli) cmdConfigBuildSSHAdd(args []string) int {
+	flags := c.newFlagSet("config build-ssh add")
+	agent := &buildSSHAgentValue{}
+	flags.Var(agent, "agent", "select an SSH agent, optionally by socket path")
+	identity := flags.String("identity", "", "identity file offered to the destination")
+	knownHosts := flags.String("known-hosts", "", "known-hosts file for this scope")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil {
+		return exitUsage
+	}
+	if len(positional) != 1 {
+		_, _ = fmt.Fprintln(c.stderr, "curator: config build-ssh add requires exactly one <scope>")
+		return exitUsage
+	}
+	credential := config.BuildSSHCredential{
+		Scope:       positional[0],
+		Agent:       agent.selected,
+		AgentSocket: agent.socket,
+		Identity:    *identity,
+		KnownHosts:  *knownHosts,
+	}
+	// Checked before the config is read, so a malformed invocation is a usage
+	// error rather than a failure attributed to the config file.
+	if err := config.ValidateBuildSSH(credential); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitUsage
+	}
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	replaced, err := config.SetBuildSSH(cfg.Path, credential)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	verb := "added"
+	if replaced {
+		verb = "replaced"
+	}
+	_, _ = fmt.Fprintf(c.stdout, "%s build_ssh scope %s: %s\n", verb, credential.Scope, formatBuildSSH(credential))
+	return exitOK
+}
+
+func (c cli) cmdConfigBuildSSHList() int {
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	scopes := cfg.BuildSSHScopes()
+	if len(scopes) == 0 {
+		// On stderr, so a caller parsing the listing sees an empty stdout
+		// rather than a line that names no scope.
+		_, _ = fmt.Fprintln(c.stderr, "curator: no build_ssh scopes are configured")
+		return exitOK
+	}
+	for _, scope := range scopes {
+		_, _ = fmt.Fprintf(c.stdout, "%s\t%s\n", scope, formatBuildSSH(cfg.BuildSSH[scope]))
+	}
+	return exitOK
+}
+
+func (c cli) cmdConfigBuildSSHRemove(args []string) int {
+	if len(args) != 1 || strings.HasPrefix(args[0], "-") {
+		_, _ = fmt.Fprintln(c.stderr, "curator: config build-ssh remove requires exactly one <scope>")
+		return exitUsage
+	}
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	if err := config.RemoveBuildSSH(cfg.Path, args[0]); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	_, _ = fmt.Fprintf(c.stdout, "removed build_ssh scope %s\n", args[0])
+	return exitOK
+}
+
+// formatBuildSSH renders one credential in the operator's own spelling, so a
+// listed line names the paths the config file carries rather than resolved
+// ones.
+func formatBuildSSH(credential config.BuildSSHCredential) string {
+	var parts []string
+	switch {
+	case credential.AgentSocket != "":
+		parts = append(parts, "agent="+credential.AgentSocket)
+	case credential.Agent:
+		parts = append(parts, "agent")
+	}
+	if credential.Identity != "" {
+		parts = append(parts, "identity="+credential.Identity)
+	}
+	if credential.KnownHosts != "" {
+		parts = append(parts, "known_hosts="+credential.KnownHosts)
+	}
+	return strings.Join(parts, " ")
+}
+
+const buildHTTPSUsage = `curator config build-https: operator HTTPS tokens for external build repositories
+
+Usage:
+  curator config build-https add <scope> (--git-credentials | --keyring | --token-env NAME) [--username NAME]
+  curator config build-https login <scope> [--username NAME]
+  curator config build-https list
+  curator config build-https remove <scope>
+
+A scope is a lowercase host optionally followed by '/'-separated path segments.
+It is matched against the canonical host/path identity of a build repository on
+whole-segment boundaries, and the longest matching scope wins: scope
+'git.example.com/portals' covers 'git.example.com/portals/app' and never
+'git.example.com/portals-other'.
+
+A token is never accepted as a command-line argument, and the config never
+stores one as a literal value. add names where the token is read from:
+  --git-credentials  the operator's own Git HTTPS credential for the scope's
+                      host, read through 'git credential fill'
+  --keyring           the token already stored for this scope by login
+  --token-env NAME    an environment variable read at process entry
+  --username NAME     sent alongside the resolved token; defaults to "token"
+
+login reads a token from a hidden prompt, or one line from stdin when it is
+not attached to a terminal, stores it through the operator's own Git
+credential machinery under a scope-namespaced entry, and selects it for the
+scope the same way 'add --keyring' would.
+
+add and login replace whatever was recorded under the same scope; remove
+reports a scope that is not configured as an error, and also deletes the
+scope's stored token when it selected one; list prints one line per scope,
+sorted, and reports whether the token it names actually resolves right now.
+
+Precedence: CURATOR_BUILD_HTTPS_TOKEN, optionally pinned to one host by
+CURATOR_BUILD_HTTPS_HOST, covers every repository on that host ahead of the
+scopes configured here; unset, or once that host is exhausted, the longest
+matching build_https scope applies; an HTTPS repository nothing covers is not
+an error, unlike SSH — it fetches anonymously. Credentials are operator-owned:
+no manifest, descriptor, repository, substitution, or marker can select them.
+
+Disclosure warning (Spec core §12.2): CURATOR_BUILD_HTTPS_TOKEN without
+CURATOR_BUILD_HTTPS_HOST is not bound to any one repository identity — it is
+offered to every private HTTPS build repository host this run reaches. Set
+CURATOR_BUILD_HTTPS_HOST to bind it to one host, or prefer a build_https
+scope, unless every one of those hosts is meant to receive that token.
+`
+
+func (c cli) cmdConfigBuildHTTPS(args []string) int {
+	if len(args) == 0 {
+		_, _ = fmt.Fprint(c.stderr, buildHTTPSUsage)
+		return exitUsage
+	}
+	switch args[0] {
+	case "add":
+		return c.cmdConfigBuildHTTPSAdd(args[1:])
+	case "login":
+		return c.cmdConfigBuildHTTPSLogin(args[1:])
+	case "list":
+		return c.cmdConfigBuildHTTPSList()
+	case "remove":
+		return c.cmdConfigBuildHTTPSRemove(args[1:])
+	case "-h", "--help", "help":
+		_, _ = fmt.Fprint(c.stdout, buildHTTPSUsage)
+		return exitOK
+	}
+	_, _ = fmt.Fprintf(c.stderr, "curator: unknown config build-https subcommand %q\n\n%s", args[0], buildHTTPSUsage)
+	return exitUsage
+}
+
+func (c cli) cmdConfigBuildHTTPSAdd(args []string) int {
+	flags := c.newFlagSet("config build-https add")
+	gitCredentials := flags.Bool("git-credentials", false,
+		"use the operator's own Git HTTPS credential for this scope's host")
+	keyring := flags.Bool("keyring", false, "use the token already stored for this scope (see login)")
+	tokenEnv := flags.String("token-env", "", "environment variable read for the token at process entry")
+	username := flags.String("username", "", "username sent alongside the resolved token")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil {
+		return exitUsage
+	}
+	if len(positional) != 1 {
+		_, _ = fmt.Fprintln(c.stderr, "curator: config build-https add requires exactly one <scope>")
+		return exitUsage
+	}
+	token, envName, err := pickBuildHTTPSSource(*gitCredentials, *keyring, *tokenEnv)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitUsage
+	}
+	credential := config.BuildHTTPSCredential{
+		Scope: positional[0], Token: token, TokenEnv: envName, Username: *username,
+	}
+	// Checked before the config is read, so a malformed invocation is a usage
+	// error rather than a failure attributed to the config file.
+	if err := config.ValidateBuildHTTPS(credential); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitUsage
+	}
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	replaced, err := config.SetBuildHTTPS(cfg.Path, credential)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	verb := "added"
+	if replaced {
+		verb = "replaced"
+	}
+	_, _ = fmt.Fprintf(c.stdout, "%s build_https scope %s: %s\n", verb, credential.Scope, formatBuildHTTPS(credential))
+	return exitOK
+}
+
+// pickBuildHTTPSSource resolves the add flags to exactly one config source, so
+// a request naming zero or several is a usage error rather than a silent
+// pick among them.
+func pickBuildHTTPSSource(gitCredentials, keyring bool, tokenEnv string) (token, env string, err error) {
+	count := 0
+	if gitCredentials {
+		token, count = config.TokenSourceGitCredentials, count+1
+	}
+	if keyring {
+		token, count = config.TokenSourceKeyring, count+1
+	}
+	if tokenEnv != "" {
+		env, count = tokenEnv, count+1
+	}
+	if count != 1 {
+		return "", "", errors.New(
+			"config build-https add requires exactly one of --git-credentials, --keyring, or --token-env")
+	}
+	return token, env, nil
+}
+
+func (c cli) cmdConfigBuildHTTPSLogin(args []string) int {
+	flags := c.newFlagSet("config build-https login")
+	username := flags.String("username", "", "username sent alongside the stored token")
+	positional, err := parseInterspersed(flags, args)
+	if err != nil {
+		return exitUsage
+	}
+	if len(positional) != 1 {
+		_, _ = fmt.Fprintln(c.stderr, "curator: config build-https login requires exactly one <scope>")
+		return exitUsage
+	}
+	scope := positional[0]
+	if !config.ValidBuildSSHScope(scope) {
+		_, _ = fmt.Fprintln(c.stderr, "curator: scope", scope, config.BuildSSHScopeRule)
+		return exitUsage
+	}
+	// The scope is validated, and the config is loaded, before a token is
+	// read: a doomed invocation must not first make the operator type a
+	// secret into a hidden prompt for nothing.
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	token, err := readBuildHTTPSToken(os.Stdin, c.stderr)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitUsage
+	}
+	access := gitcred.Access{}
+	if err := access.StoreScoped(context.Background(), scope, gitcred.ScopeHost(scope), token); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	credential := config.BuildHTTPSCredential{Scope: scope, Token: config.TokenSourceKeyring, Username: *username}
+	replaced, err := config.SetBuildHTTPS(cfg.Path, credential)
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	verb := "logged in and selected"
+	if replaced {
+		verb = "replaced the login for"
+	}
+	_, _ = fmt.Fprintf(c.stdout, "%s build_https scope %s: %s\n", verb, scope, formatBuildHTTPS(credential))
+	return exitOK
+}
+
+// readBuildHTTPSToken reads a token without ever accepting it as a
+// command-line argument, matching core 12.2: a hidden prompt when both ends
+// are a real terminal, otherwise one line from stdin, so a scripted login can
+// pipe a token in without echoing it to a terminal that is not there.
+func readBuildHTTPSToken(in *os.File, errOut io.Writer) (string, error) {
+	var raw string
+	errFile, terminalOutput := errOut.(*os.File)
+	if terminalOutput && attachedToTerminal(in) && attachedToTerminal(errFile) {
+		_, _ = fmt.Fprint(errOut, "token: ")
+		read, err := term.ReadPassword(in.Fd())
+		_, _ = fmt.Fprintln(errOut)
+		if err != nil {
+			return "", fmt.Errorf("reading token: %w", err)
+		}
+		raw = string(read)
+	} else {
+		scanner := bufio.NewScanner(in)
+		if !scanner.Scan() {
+			if err := scanner.Err(); err != nil {
+				return "", fmt.Errorf("reading token: %w", err)
+			}
+		}
+		raw = scanner.Text()
+	}
+	token := strings.TrimRight(raw, "\r\n")
+	if token == "" {
+		return "", errors.New("token must be a non-empty single line")
+	}
+	return token, nil
+}
+
+func (c cli) cmdConfigBuildHTTPSList() int {
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	scopes := cfg.BuildHTTPSScopes()
+	if len(scopes) == 0 {
+		// On stderr, so a caller parsing the listing sees an empty stdout
+		// rather than a line that names no scope.
+		_, _ = fmt.Fprintln(c.stderr, "curator: no build_https scopes are configured")
+		return exitOK
+	}
+	access := gitcred.Access{}
+	for _, scope := range scopes {
+		credential := cfg.BuildHTTPS[scope]
+		present := buildHTTPSPresent(context.Background(), access, credential)
+		_, _ = fmt.Fprintf(c.stdout, "%s\t%s present=%t\n", scope, formatBuildHTTPS(credential), present)
+	}
+	return exitOK
+}
+
+// buildHTTPSPresent reports whether the material one credential selection
+// names actually resolves right now: the stored token behind a keyring
+// selection can have been dropped by the operator's own credential store
+// since it was recorded, the same way the operator's own Git credential for a
+// git-credentials selection can have been removed, or a token_env variable
+// can have gone unset.
+func buildHTTPSPresent(ctx context.Context, access gitcred.Access, credential config.BuildHTTPSCredential) bool {
+	host := gitcred.ScopeHost(credential.Scope)
+	switch credential.Token {
+	case config.TokenSourceKeyring:
+		_, ok := access.ReadScoped(ctx, credential.Scope, host)
+		return ok
+	case config.TokenSourceGitCredentials:
+		_, ok := access.ReadHost(ctx, host)
+		return ok
+	default:
+		return credential.TokenEnv != "" && os.Getenv(credential.TokenEnv) != ""
+	}
+}
+
+func (c cli) cmdConfigBuildHTTPSRemove(args []string) int {
+	if len(args) != 1 || strings.HasPrefix(args[0], "-") {
+		_, _ = fmt.Fprintln(c.stderr, "curator: config build-https remove requires exactly one <scope>")
+		return exitUsage
+	}
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	credential := cfg.BuildHTTPS[args[0]]
+	if err := config.RemoveBuildHTTPS(cfg.Path, args[0]); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	if credential.Token == config.TokenSourceKeyring {
+		access := gitcred.Access{}
+		if !access.DeleteScoped(context.Background(), args[0], gitcred.ScopeHost(args[0])) {
+			_, _ = fmt.Fprintf(c.stderr,
+				"curator: warning: could not confirm the stored token for %s was removed\n", args[0])
+		}
+	}
+	_, _ = fmt.Fprintf(c.stdout, "removed build_https scope %s\n", args[0])
+	return exitOK
+}
+
+// formatBuildHTTPS renders one credential in the operator's own spelling —
+// where the token is read from, never the token itself — so a listed line
+// names the selection the config file carries rather than a resolved secret.
+func formatBuildHTTPS(credential config.BuildHTTPSCredential) string {
+	var parts []string
+	switch credential.Token {
+	case config.TokenSourceGitCredentials:
+		parts = append(parts, "source=git-credentials")
+	case config.TokenSourceKeyring:
+		parts = append(parts, "source=keyring")
+	}
+	if credential.TokenEnv != "" {
+		parts = append(parts, "token_env="+credential.TokenEnv)
+	}
+	if credential.Username != "" {
+		parts = append(parts, "username="+credential.Username)
+	}
+	return strings.Join(parts, " ")
+}
+
+func (c cli) cmdConfigShow() int {
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	payload, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	_, _ = fmt.Fprintln(c.stdout, string(payload))
+	return exitOK
+}
+
+func pickRef(tag, branch, revision string) (string, string) {
+	kind, value := "", ""
+	for k, v := range map[string]string{"tag": tag, "branch": branch, "revision": revision} {
+		if v != "" {
+			if kind != "" {
+				return "", ""
+			}
+			kind, value = k, v
+		}
+	}
+	return kind, value
+}
+
+func pluralY(n int) string {
+	if n == 1 {
+		return "y"
+	}
+	return "ies"
+}
+
+func (c cli) cmdUI() int {
+	cfg, code := c.loadConfig()
+	if code != exitOK {
+		return code
+	}
+	program := tea.NewProgram(ui.NewModel(ui.LoadState(cfg)), tea.WithOutput(c.stdout))
+	if _, err := program.Run(); err != nil {
+		_, _ = fmt.Fprintln(c.stderr, "curator:", err)
+		return exitFail
+	}
+	return exitOK
+}

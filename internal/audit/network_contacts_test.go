@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // The 40 pinned §9.1/§9.4 vectors drive Gate and GateReadOnly, including

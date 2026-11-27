@@ -13,10 +13,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/sourcelock"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/sourcelock"
 )
 
 // addCLISkillFilesAndRetag appends files to a CLI skill repository fixture

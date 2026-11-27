@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // Claim: pinned snapshots consumed by composition use a private staging root

@@ -15,7 +15,7 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/relux-works/curator/internal/identifiers"
+	"github.com/relux-works/archon/internal/identifiers"
 )
 
 const (

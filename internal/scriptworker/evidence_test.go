@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // evidenceMutationCase is one published capability_evidence_cases vector

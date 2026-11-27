@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 func claudeRepairFixture(t *testing.T, form string) (*managedFixture, ResolveRequest, string) {

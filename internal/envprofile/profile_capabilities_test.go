@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextlock"
 )
 
 func profileSkillRequest(caps string) string {

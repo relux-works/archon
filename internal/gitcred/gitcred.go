@@ -40,7 +40,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/identifiers"
+	"github.com/relux-works/archon/internal/identifiers"
 )
 
 // ValidProvider reports whether id is an admissible opaque authentication

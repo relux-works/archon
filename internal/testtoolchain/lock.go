@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/managerlock"
+	"github.com/relux-works/archon/internal/managerlock"
 )
 
 // This bounds each test's queue, not a legitimate package-wide hold: observed

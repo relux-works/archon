@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/profilegraph"
-	"github.com/relux-works/curator/internal/profilegraph/graphtest"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/profilegraph"
+	"github.com/relux-works/archon/internal/profilegraph/graphtest"
 )
 
 // Residual families include the original db3 witness, extension variants and

@@ -3,14 +3,14 @@ package projectlease
 import (
 	"context"
 	"encoding/json"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
 
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // Actual Acquire subprocess exits at durable preparation or binding install.

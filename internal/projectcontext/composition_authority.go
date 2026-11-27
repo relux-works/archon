@@ -10,11 +10,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/envauthority"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/envauthority"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // CompositionAuthority mirrors the I-LEASE contract until its owning package

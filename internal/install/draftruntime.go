@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/runtimestore"
-	"github.com/relux-works/curator/internal/sourcelock"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/runtimestore"
+	"github.com/relux-works/archon/internal/sourcelock"
 )
 
 // draftRuntimeKeys derives the protected runtime-store leaf of every locked

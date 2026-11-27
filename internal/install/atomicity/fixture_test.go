@@ -10,12 +10,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/runtimestore"
-	"github.com/relux-works/curator/internal/scopes"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/runtimestore"
+	"github.com/relux-works/archon/internal/scopes"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // env is one manager home, skill source root, and checkout. It mirrors the

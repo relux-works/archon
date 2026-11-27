@@ -15,8 +15,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildsource"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildsource"
 )
 
 const (

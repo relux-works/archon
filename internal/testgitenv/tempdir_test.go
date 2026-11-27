@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // Fixtures remain writable and cleanup removes a read-only object after the

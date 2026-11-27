@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/godriver"
+	"github.com/relux-works/archon/internal/godriver"
 )
 
 // The real install entry reaches production native-control preflight, refuses

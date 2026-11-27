@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/hookapproval"
-	"github.com/relux-works/curator/internal/shell"
+	"github.com/relux-works/archon/internal/hookapproval"
+	"github.com/relux-works/archon/internal/shell"
 )
 
 // These tests drive the production run() entry point for the closed approval

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // ProjectRoot resolves the actual launch checkout, ignoring ambient Git

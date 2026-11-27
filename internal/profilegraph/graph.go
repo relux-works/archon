@@ -9,13 +9,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 func itoa(n int) string { return strconv.Itoa(n) }

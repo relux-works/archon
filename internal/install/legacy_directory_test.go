@@ -7,13 +7,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/devsub"
-	"github.com/relux-works/curator/internal/gitops"
-	manifestpkg "github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/sourcelock"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/devsub"
+	"github.com/relux-works/archon/internal/gitops"
+	manifestpkg "github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/sourcelock"
 )
 
 // legacyDirectoryGit is the canonical network identity shared by the

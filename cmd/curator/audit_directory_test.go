@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/manifest"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/manifest"
 )
 
 // auditDirectoryProject lays out a schema-1 project whose schema-9 consumer

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/projectcontext"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/projectcontext"
 )
 
 // cmdProjectContext implements only registration and admission controls.

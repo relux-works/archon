@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/snapshot"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/snapshot"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 type projectBinTestImage struct {

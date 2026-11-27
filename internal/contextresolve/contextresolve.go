@@ -19,12 +19,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/pkgversion"
-	"github.com/relux-works/curator/internal/whitelist"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/pkgversion"
+	"github.com/relux-works/archon/internal/whitelist"
 )
 
 // Diagnostic codes (environments §1.1, §2.1, §6.1).

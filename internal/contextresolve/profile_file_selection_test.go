@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/whitelist"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/whitelist"
 )
 
 func profileSkillFilesEdge(selection *whitelist.FileSelection) constraint {

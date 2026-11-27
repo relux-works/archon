@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/testruntimes"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/testruntimes"
 )
 
 // pinProfileAdapterRuntimes puts the shared zero-exit runtime stand-ins ahead

@@ -1178,7 +1178,7 @@ func TestNativeCaptureFailureNamesPassThroughSanitizer(t *testing.T) {
 		{"failure events only", `if event.Action == "fail" && event.Test == "" {`},
 		{"name-only serialization", `fmt.Fprintf(&names, "CAPTURE_FAIL Package=%s Test=%s\n", failure.Package, failure.Test)`},
 		{"failing event carries withheld output control", "CAPTURE_PRIVATE_OUTPUT_CONTROL"},
-		{"static package allowlist in both programs", `const publicCapturePackage = "github.com/relux-works/curator/.temp/original-capture/harnessparity"`},
+		{"static package allowlist in both programs", `const publicCapturePackage = "github.com/relux-works/archon/.temp/original-capture/harnessparity"`},
 		{"static test root allowlist in both programs", `var publicTestRoots = map[string]struct{}{`},
 		{"unknown subtests reduce to an allowed root", `if _, ok := publicTestRoots[root]; ok {`},
 		{"auditor accepts every mapped root and subtest", `for publicName := range publicFailureSubtests {`},
@@ -1215,7 +1215,7 @@ func TestNativeCaptureFailureNamesPassThroughSanitizer(t *testing.T) {
 		!strings.Contains(text, `filepath.Join(paths.root, "test-output.raw.txt")`) {
 		t.Errorf("raw-output sentinel fixture count = %d, want exactly one self-check fixture", got)
 	}
-	if got := strings.Count(text, `const publicCapturePackage = "github.com/relux-works/curator/.temp/original-capture/harnessparity"`); got != 2 {
+	if got := strings.Count(text, `const publicCapturePackage = "github.com/relux-works/archon/.temp/original-capture/harnessparity"`); got != 2 {
 		t.Errorf("public failure package allowlist appears %d times, want one auditor and one sanitizer copy", got)
 	}
 	if got := strings.Count(text, `var publicFailureSubtests = func() map[string]struct{} {`); got != 2 {

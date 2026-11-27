@@ -9,14 +9,14 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/scopes"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/scopes"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // This suite proves the draft publication contract at the production entry

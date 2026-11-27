@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/relux-works/curator/internal/envauthority"
+	"github.com/relux-works/archon/internal/envauthority"
 )
 
 // RemoveOptions binds the exact native target set for an explicit purge.

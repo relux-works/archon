@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildmeta"
 )
 
 func TestInvalidInputsFailClosed(t *testing.T) {

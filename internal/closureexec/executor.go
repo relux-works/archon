@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 // EnforceObserveProvider is the pluggable authoritative process boundary.

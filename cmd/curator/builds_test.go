@@ -8,14 +8,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // testDigest builds a distinct, well-formed sha256 identity per seed so a

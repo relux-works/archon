@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/curatormutations"
+	"github.com/relux-works/archon/internal/curatormutations"
 )
 
 // The real shell entry point must consume the verified union, avoid rerunning
@@ -38,7 +38,7 @@ func TestGateUsesVerifiedShardUnion(t *testing.T) {
 				}
 				write(filepath.Join(".github/ci", file), string(data))
 			}
-			write("go.mod", "module github.com/relux-works/curator\n")
+			write("go.mod", "module github.com/relux-works/archon\n")
 			write("manifest.json", "{}\n")
 			write("ledger.tsv", "internal/envprofile\tTestShard/required\tlinux,darwin,windows\t-\t-\tRequired shard subcase\n")
 			classes, err := os.ReadFile("../../.github/ci/skip-classes.tsv")
@@ -49,7 +49,7 @@ func TestGateUsesVerifiedShardUnion(t *testing.T) {
 			write(".github/ci/suite-plan.sh", `#!/usr/bin/env bash
 set -eu
 mkdir -p "$2"
-printf '%s\n' github.com/relux-works/curator/internal/envprofile github.com/relux-works/curator/other >"$2/plan-served.txt"
+printf '%s\n' github.com/relux-works/archon/internal/envprofile github.com/relux-works/archon/other >"$2/plan-served.txt"
 for plan in deferred excluded assert; do : >"$2/plan-$plan.txt"; done
 `)
 			var stream strings.Builder
@@ -96,12 +96,12 @@ run)
   ;;
 test)
   for arg in "$@"; do
-    if [ "$arg" = github.com/relux-works/curator/internal/envprofile ]; then
+    if [ "$arg" = github.com/relux-works/archon/internal/envprofile ]; then
       echo 'envprofile must not run again after a verified union' >&2
       exit 33
     fi
   done
-  printf '%s\n' '{"Action":"pass","Package":"github.com/relux-works/curator/other","Test":"TestOther"}' '{"Action":"pass","Package":"github.com/relux-works/curator/other","Elapsed":1}'
+  printf '%s\n' '{"Action":"pass","Package":"github.com/relux-works/archon/other","Test":"TestOther"}' '{"Action":"pass","Package":"github.com/relux-works/archon/other","Elapsed":1}'
   ;;
 *) exit 42 ;;
 esac

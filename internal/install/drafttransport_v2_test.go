@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/gitcred"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/gitcred"
 )
 
 // Revision-2 bounded resolution and provenance through the production

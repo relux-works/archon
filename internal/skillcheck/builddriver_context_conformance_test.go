@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // TestBuildRootContentInContextVector proves the authoritative

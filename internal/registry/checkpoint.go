@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 var errBootstrapCheckpointSignature = errors.New("checkpoint signature failed verification")

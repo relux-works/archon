@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // ambiguousRegistry renders a registry whose consumers member is stated twice:

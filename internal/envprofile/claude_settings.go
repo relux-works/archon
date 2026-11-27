@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // Settings remain runtime-owned. Curator owns only its recorded exclusions.

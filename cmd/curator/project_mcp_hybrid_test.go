@@ -3,13 +3,13 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/testgitenv"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/scopes"
+	"github.com/relux-works/archon/internal/scopes"
 )
 
 // Hybrid schema 1 works through list/status/preview/install. Project-only

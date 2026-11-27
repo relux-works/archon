@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/manifest"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/manifest"
 )
 
 // auditLabelProject lays out a project declaring one single-command skill

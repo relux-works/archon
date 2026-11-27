@@ -8,7 +8,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 // buildDriverRejection is one authoritative rejection vector. Only the fields

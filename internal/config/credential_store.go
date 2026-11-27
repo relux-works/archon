@@ -1,9 +1,9 @@
 package config
 
 import (
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 // parseCredentialStore validates the v5 machine subtree. CLI aliases must

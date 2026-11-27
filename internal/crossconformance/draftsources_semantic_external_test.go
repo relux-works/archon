@@ -13,12 +13,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/stateread"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/stateread"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // External-evidence semantic rows (§11): each recorded field of an

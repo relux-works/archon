@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/staging"
+	"github.com/relux-works/archon/internal/staging"
 )
 
 // StageProject writes the project helper files below stageRoot and returns the

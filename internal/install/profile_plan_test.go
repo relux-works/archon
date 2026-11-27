@@ -10,12 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/godriver"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/godriver"
 )
 
 // The ordinary Go session re-execs its manager image. Give the fixture image

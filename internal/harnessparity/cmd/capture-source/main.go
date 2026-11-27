@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	captureSourceRemote = "https://github.com/relux-works/curator.git"
+	captureSourceRemote = "https://github.com/relux-works/archon.git"
 	workflowArchivePath = ".github/workflows/original-capture-native.yml"
 	fixtureArchiveRoot  = "testdata/originalcapture/"
 	legacyRegularType   = byte(0) // Legacy tar TypeRegA spelling remains accepted.

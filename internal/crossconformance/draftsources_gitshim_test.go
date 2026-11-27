@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	_ "embed"
 	"fmt"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/testcli"
+	"github.com/relux-works/archon/internal/testcli"
 )
 
 // The helper is invoked by the production CLI as its Git executable. Keeping

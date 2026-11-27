@@ -15,7 +15,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/relux-works/curator/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/swiftpmsource"
 )
 
 // Code is a stable diagnostic code. The interop stage deliberately shares one

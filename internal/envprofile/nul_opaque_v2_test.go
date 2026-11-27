@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/pathboundary"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/pathboundary"
 )
 
 // TestInstallAdmitsV1CollidingSkillTreesUnderV2 drives Install through

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/opaquescan"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/opaquescan"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 func writeFrozenTestFiles(t *testing.T, root string, files map[string][]byte) {

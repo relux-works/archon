@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/envprofile"
+	"github.com/relux-works/archon/internal/envprofile"
 	"strings"
 	"testing"
 )

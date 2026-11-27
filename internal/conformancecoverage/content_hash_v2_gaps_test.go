@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/registry"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/registry"
 )
 
 func isContentHashV2Gap(gap Gap) bool {

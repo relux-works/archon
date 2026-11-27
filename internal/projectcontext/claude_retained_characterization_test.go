@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/relux-works/curator/internal/projectadapter"
+	"github.com/relux-works/archon/internal/projectadapter"
 )
 
 func TestClaudeRetainedProjectContextSourceProvenanceAndProtectedControls(t *testing.T) {

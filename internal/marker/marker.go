@@ -19,16 +19,16 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/opaquescan"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/opaquescan"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // Name is the marker file name inside an installed skill directory.

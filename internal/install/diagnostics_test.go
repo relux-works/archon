@@ -10,7 +10,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/godriver"
+	"github.com/relux-works/archon/internal/godriver"
 )
 
 func TestRedactDiagnosticReplacesEveryAbsoluteLocation(t *testing.T) {

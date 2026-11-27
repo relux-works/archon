@@ -11,10 +11,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/pathboundary"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/pathboundary"
 )
 
 const pathKindAdmissionVector = "environments-path-kind-admission.json"

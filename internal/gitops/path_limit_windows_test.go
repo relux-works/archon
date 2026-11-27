@@ -12,7 +12,7 @@ import (
 	"testing"
 	"unicode/utf16"
 
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/testgitenv"
 	"golang.org/x/sys/windows"
 )
 

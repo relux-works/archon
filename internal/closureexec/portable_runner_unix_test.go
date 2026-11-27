@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 func TestPortableRunnerRejectsMutationOfImmutableAdmittedReplay(t *testing.T) {

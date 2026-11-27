@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // scriptSubject lays out a snapshot carrying one benign script and binds the

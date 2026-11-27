@@ -15,7 +15,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/identifiers"
+	"github.com/relux-works/archon/internal/identifiers"
 )
 
 var urlSchemes = map[string]bool{"ssh": true, "git": true, "http": true, "https": true}

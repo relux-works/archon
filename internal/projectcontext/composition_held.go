@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/pathboundary"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/pathboundary"
 )
 
 // readHeld borrows the caller's exclusive lock. The concrete unforgeable

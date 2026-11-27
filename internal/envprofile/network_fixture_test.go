@@ -1,7 +1,7 @@
 package envprofile
 
 import (
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/testgitenv"
 	"os"
 	"path/filepath"
 	"strings"

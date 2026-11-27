@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 func TestAdmitAcceptsDeclaredOnlyCommands(t *testing.T) {

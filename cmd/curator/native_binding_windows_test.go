@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // TestNativeHomeBindingCLIRejectsForeignMutationDACL proves a foreign-write

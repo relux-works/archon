@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextlock"
 )
 
 type sourceSignerVectorFile struct {

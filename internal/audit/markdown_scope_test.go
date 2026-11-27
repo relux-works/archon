@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 const markdownContact = "Read https://api.example.net/guide\n"

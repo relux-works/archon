@@ -13,7 +13,7 @@ import (
 	"unicode/utf8"
 )
 
-const replayPackage = "github.com/relux-works/curator/internal/envprofile"
+const replayPackage = "github.com/relux-works/archon/internal/envprofile"
 
 type event struct {
 	Action      string          `json:"Action"`

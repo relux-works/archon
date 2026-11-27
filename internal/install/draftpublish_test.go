@@ -10,13 +10,13 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/snapshot"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/snapshot"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // This suite proves the draft repair, refresh, and boundary contract at

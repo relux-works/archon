@@ -13,10 +13,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/opaquescan"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/opaquescan"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // Classes and diagnostics.

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 // native_home is a local sidecar knob, not an extension of an old machine

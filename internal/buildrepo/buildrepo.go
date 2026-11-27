@@ -17,10 +17,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/registry"
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/registry"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 const (

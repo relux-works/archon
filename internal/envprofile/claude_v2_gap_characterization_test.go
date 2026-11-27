@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 // These tests pin the Claude behaviors that harnessapi v1 cannot express.

@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/scriptpolicy"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/scriptpolicy"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 func runDerivedSession(t *testing.T, fixture *launchFixture) (Result, stubReport) {

@@ -21,7 +21,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/relux-works/curator/internal/pathboundary"
+	"github.com/relux-works/archon/internal/pathboundary"
 )
 
 // MarkerName is excluded from hashing by default.

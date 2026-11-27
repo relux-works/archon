@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/identity"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/identity"
 )
 
 // resolveOverlays builds the resolution overlays for profile from the

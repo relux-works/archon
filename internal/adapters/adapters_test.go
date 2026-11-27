@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/harnessapi"
-	"github.com/relux-works/curator/internal/harnessvalue"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/harnessapi"
+	"github.com/relux-works/archon/internal/harnessvalue"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 func makeSkill(t *testing.T, root, name string) {

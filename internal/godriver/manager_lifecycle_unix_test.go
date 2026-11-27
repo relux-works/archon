@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/processcontext"
+	"github.com/relux-works/archon/internal/processcontext"
 	"golang.org/x/sys/unix"
 )
 

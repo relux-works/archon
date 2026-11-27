@@ -20,8 +20,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/config"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/config"
 )
 
 // draftRemediation maps one stable error class to its sanitized operator

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // Read must reject non-number discriminators in canonical on-disk schema-4

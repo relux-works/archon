@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 func captureFixture(t *testing.T) (*managedFixture, MaterializeCaptureRequest) {

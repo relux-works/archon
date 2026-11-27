@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // Both publishers report staging cleanup failures, including alongside a

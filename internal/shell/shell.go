@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/relux-works/curator/internal/hookapproval"
+	"github.com/relux-works/archon/internal/hookapproval"
 )
 
 var hookFilenames = map[string]string{

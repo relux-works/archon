@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/harnessvalue"
+	"github.com/relux-works/archon/internal/harnessvalue"
 )
 
 // Constructor and accessor mutations cannot modify a spec; invalid oversized

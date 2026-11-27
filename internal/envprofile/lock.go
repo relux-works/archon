@@ -11,13 +11,13 @@ import (
 	"sort"
 	"time"
 
-	"github.com/relux-works/curator/internal/envauthority"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/projectlease"
-	"github.com/relux-works/curator/internal/skillruntime"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/envauthority"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/projectlease"
+	"github.com/relux-works/archon/internal/skillruntime"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // lockTimeout bounds one wait for the manager-home mutation lock. Tests

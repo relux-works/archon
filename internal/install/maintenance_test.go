@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/scopes"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/scopes"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // TestPostCommitMaintenanceRunsUnderTheHeldHomeLock proves the maintenance

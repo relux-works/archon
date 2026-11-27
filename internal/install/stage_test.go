@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/marker"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/marker"
 )
 
 // fakeSession stands in for a trusted Go session. Its root models the

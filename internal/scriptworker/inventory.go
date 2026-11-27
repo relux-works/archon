@@ -3,8 +3,8 @@ package scriptworker
 import (
 	"runtime"
 
-	"github.com/relux-works/curator/internal/scriptpolicy"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/scriptpolicy"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // Script inventory, probing, and capability evidence for the enforced

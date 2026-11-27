@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // gpgv verifies against a pre-existing public-only keyring through a signature

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
+	"github.com/relux-works/archon/internal/buildrepo"
 )
 
 // These cases exercise real Git and upload-pack through a capture SSH fixture

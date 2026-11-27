@@ -11,13 +11,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/profilegraph"
-	"github.com/relux-works/curator/internal/profilegraph/graphtest"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/profilegraph"
+	"github.com/relux-works/archon/internal/profilegraph/graphtest"
 )
 
 func writeFixture(t *testing.T, root, rel string, raw []byte) {

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/profilegraph/graphtest"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/profilegraph/graphtest"
 )
 
 // Real Git produces both REF_DELTA and OFS_DELTA packs in isolated fixtures.

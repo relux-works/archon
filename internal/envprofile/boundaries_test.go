@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // Profile path-source behavior follows environments §1 and remains outside

@@ -3,8 +3,8 @@ package swiftpminterop
 import (
 	"testing"
 
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/swiftpmsource"
 )
 
 // S02: a Swift target depending on a nested C target keeps separate capture

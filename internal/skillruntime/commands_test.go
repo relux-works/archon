@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 type testAdmission struct {

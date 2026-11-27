@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
+	"github.com/relux-works/archon/internal/buildrepo"
 )
 
 func providersDoc(providers string) string {

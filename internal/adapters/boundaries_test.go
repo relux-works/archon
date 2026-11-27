@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/staging"
+	"github.com/relux-works/archon/internal/staging"
 )
 
 func TestProjectOutputRootsCoverManagedTrees(t *testing.T) {

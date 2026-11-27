@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/BurntSushi/toml"
-	"github.com/relux-works/curator/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextmaterialize"
 )
 
 // Each editor inserts absent records while preserving foreign entry bytes and

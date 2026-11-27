@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 // SourceKind preserves SwiftPM's source-control location kind. The two kinds

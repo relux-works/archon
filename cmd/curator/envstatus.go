@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/registry"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/registry"
 )
 
 // printEnvStatus renders the profile × environment × surface matrix as

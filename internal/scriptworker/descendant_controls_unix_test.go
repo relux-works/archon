@@ -5,7 +5,7 @@ package scriptworker
 import (
 	"encoding/json"
 	"errors"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"os"
 	"os/exec"
 	"path/filepath"

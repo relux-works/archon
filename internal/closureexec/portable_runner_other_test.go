@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 func realPortableFixture(t *testing.T, script string) (*Executor, DerivationPermit, map[closuregraph.ID]AdmittedInput, *ManagerProcessRunner) {

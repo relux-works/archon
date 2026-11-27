@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/skillintegrity"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/skillintegrity"
 )
 
 // A newly extracted inspection snapshot has the same private boundary as a

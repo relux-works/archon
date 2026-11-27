@@ -1,10 +1,10 @@
 // Package antigravity delegates the Antigravity managed-home adapter to
-// github.com/relux-works/curator-runtimes/pkg/agentic/systems/agy.
+// github.com/relux-works/archon-pantheon/pkg/agentic/systems/agy.
 package antigravity
 
 import (
-	"github.com/relux-works/curator-runtimes/pkg/agentic/systems/agy"
-	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/archon-pantheon/pkg/agentic/systems/agy"
+	"github.com/relux-works/archon/internal/harnessapi"
 )
 
 const ID harnessapi.ID = "antigravity"

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/conformancecoverage"
 )
 
 // Schema-2 conformance drivers. Every manager-config-v2 and

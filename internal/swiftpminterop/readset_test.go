@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/swiftpmsource"
 )
 
 // Portable assurance reports not-observed honestly instead of claiming a

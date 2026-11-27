@@ -9,10 +9,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // Production entry point under test: Install. Every fixture builds paths

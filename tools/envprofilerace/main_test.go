@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/ciartifact"
+	"github.com/relux-works/archon/internal/ciartifact"
 	"gopkg.in/yaml.v3"
 )
 

@@ -1,6 +1,6 @@
 package harnessapi
 
-import upstream "github.com/relux-works/curator-runtimes/pkg/harnessapi"
+import upstream "github.com/relux-works/archon-pantheon/pkg/harnessapi"
 
 const OperationNotPorted = upstream.OperationNotPorted
 

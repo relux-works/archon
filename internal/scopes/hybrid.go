@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/stateread"
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/stateread"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 // HybridDecl is a hybrid skill declaration with its activation targets.

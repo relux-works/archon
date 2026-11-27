@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 func wantBuildArgv(artifact string) []string {

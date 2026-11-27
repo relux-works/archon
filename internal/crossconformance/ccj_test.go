@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/crossconformance"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/crossconformance"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // The independent scanner must accept exactly the canonical form and reject

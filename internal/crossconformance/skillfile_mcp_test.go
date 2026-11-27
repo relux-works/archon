@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/projectmcp"
-	"github.com/relux-works/curator/internal/projectmcpstate"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/projectmcp"
+	"github.com/relux-works/archon/internal/projectmcpstate"
 )
 
 const skillfileMCPPin = "dbea3ee0bb8716cb4fcef758609717c10557ceff"

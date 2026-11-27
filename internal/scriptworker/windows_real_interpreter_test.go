@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/scriptpolicy"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/scriptpolicy"
 )
 
 // TestWindowsRealInterpretersRunDeclaredExec qualifies the Windows manager

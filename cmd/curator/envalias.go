@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 // CLI environment aliases (manager profile §12.1): the command-line

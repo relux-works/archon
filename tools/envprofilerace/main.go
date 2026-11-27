@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/relux-works/curator/internal/storecompatibility"
+	"github.com/relux-works/archon/internal/storecompatibility"
 	"hash/fnv"
 	"io"
 	"os"
@@ -23,7 +23,7 @@ import (
 const hashShardCount = 8
 const shardCount = hashShardCount + 1
 const ownershipControls = "TestGlobalNativeOwnershipNarrowingControls"
-const pkg = "github.com/relux-works/curator/internal/envprofile"
+const pkg = "github.com/relux-works/archon/internal/envprofile"
 const timeout = "60m"
 const marginSeconds = 1800
 

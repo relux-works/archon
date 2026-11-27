@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/crossconformance"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/crossconformance"
 )
 
 // The published corpus is an accepted research artifact. This gate proves the

@@ -6,9 +6,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/projectadapter"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/projectadapter"
 )
 
 // ClaudeProfileDocumentSource is the I-COMP profile-only handoff. Its owner

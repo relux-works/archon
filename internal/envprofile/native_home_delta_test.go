@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 // An XDG seed parent may contain the machine home: only its selected children

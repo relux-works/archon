@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // MetadataView distinguishes the selection-neutral and exact active derivations.

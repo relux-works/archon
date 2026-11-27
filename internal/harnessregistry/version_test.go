@@ -2,7 +2,7 @@ package harnessregistry
 
 import (
 	"errors"
-	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/archon/internal/harnessapi"
 	"testing"
 )
 

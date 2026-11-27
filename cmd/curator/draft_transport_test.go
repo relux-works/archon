@@ -22,13 +22,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/gitcred"
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/testgitenv"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/gitcred"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/testgitenv"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 const (

@@ -16,8 +16,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/managerlock"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/managerlock"
 )
 
 // requireLinkCapability skips the row when the host cannot create the

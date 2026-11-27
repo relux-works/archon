@@ -6,10 +6,10 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // ReadProjection consumes one bounded machine file but decodes only selected

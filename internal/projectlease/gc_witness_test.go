@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/relux-works/curator/internal/managerlock"
+	"github.com/relux-works/archon/internal/managerlock"
 )
 
 type assertOnlyLock struct{}

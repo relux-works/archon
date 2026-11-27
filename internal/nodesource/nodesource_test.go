@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 func id(seed string) closuregraph.ID {

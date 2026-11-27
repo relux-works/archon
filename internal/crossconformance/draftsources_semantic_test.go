@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/conformancecoverage"
 )
 
 // draftSemanticDrivers maps every pinned semantic case id to the row

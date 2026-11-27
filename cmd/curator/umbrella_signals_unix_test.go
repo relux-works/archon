@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 const umbrellaSignalProvider = `package main

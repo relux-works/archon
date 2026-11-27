@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // ShortTempDir keeps Windows Git cache fixtures inside the qualified metadata

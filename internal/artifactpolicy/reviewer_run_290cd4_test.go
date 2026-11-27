@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/artifactpolicy/conformance"
+	"github.com/relux-works/archon/internal/artifactpolicy/conformance"
 )
 
 func TestManagerSelectedToolchainModeMutationStopsAdapterExecution(t *testing.T) {

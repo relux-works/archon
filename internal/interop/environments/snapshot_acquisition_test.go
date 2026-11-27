@@ -14,9 +14,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // snapshotAcquisitionCase mirrors one case of vectors/snapshot-acquisition.json.

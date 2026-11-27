@@ -1,7 +1,7 @@
 package envfragment
 
 import (
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envregistry"
 	"path/filepath"
 	"strings"
 	"testing"

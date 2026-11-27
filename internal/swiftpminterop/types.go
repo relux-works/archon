@@ -3,9 +3,9 @@ package swiftpminterop
 import (
 	"context"
 
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/swiftpmsource"
 )
 
 // ProfileID reuses the SwiftPM source profile: the interop stage is a later

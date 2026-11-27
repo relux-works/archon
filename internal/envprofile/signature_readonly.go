@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 var errSignerVerificationUnavailable = errors.New("signer_verification_unavailable")

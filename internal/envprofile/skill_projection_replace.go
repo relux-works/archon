@@ -2,7 +2,7 @@
 
 package envprofile
 
-import "github.com/relux-works/curator/internal/transaction"
+import "github.com/relux-works/archon/internal/transaction"
 
 // Windows retains its recoverable backup/install sequence: directory symlink
 // replacement does not provide the Unix atomic name-exchange contract.

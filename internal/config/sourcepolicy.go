@@ -37,12 +37,12 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/gitcred"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/gitcred"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 // SourcePolicyFileName is the machine policy filename beside the manager

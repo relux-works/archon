@@ -12,9 +12,9 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/identifiers"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/identifiers"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/unicode/norm"
 )

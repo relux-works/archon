@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // Dispatch before m.Run and fixture setup: the transport protocol contains only

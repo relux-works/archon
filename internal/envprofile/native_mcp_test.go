@@ -13,15 +13,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/mcpnative"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/mcpnative"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 func nativeWriterFixture(t *testing.T) (*managedFixture, ProfileMCPRequest) {

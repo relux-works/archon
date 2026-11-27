@@ -6,16 +6,16 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/opaquescan"
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/stateread"
-	"github.com/relux-works/curator/internal/transaction"
-	"github.com/relux-works/curator/internal/whitelist"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/opaquescan"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/stateread"
+	"github.com/relux-works/archon/internal/transaction"
+	"github.com/relux-works/archon/internal/whitelist"
 )
 
 // The publication revision is independent of the audit ruleset: it versions

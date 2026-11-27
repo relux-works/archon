@@ -7,8 +7,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 // build_ssh selects the operator SSH credentials used to reach an external

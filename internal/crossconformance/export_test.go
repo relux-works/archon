@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/crossconformance"
+	"github.com/relux-works/archon/internal/crossconformance"
 )
 
 const exportGoldenPath = "testdata/cross-adapter-protocol-export.json"

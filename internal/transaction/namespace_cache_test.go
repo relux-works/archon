@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/relux-works/curator/internal/staging"
+	"github.com/relux-works/archon/internal/staging"
 )
 
 // countingResolver wraps canonicalNamespacePath and records every walk by

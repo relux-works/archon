@@ -3,10 +3,10 @@ package manifest
 import (
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 // Source is the closed acquisition union. Path is literal native filesystem

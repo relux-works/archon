@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/relux-works/curator/internal/codexskillcheck"
+	"github.com/relux-works/archon/internal/codexskillcheck"
 )
 
 // Parse the entire recognized handler before inspecting its input. In

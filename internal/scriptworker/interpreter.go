@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/scriptpolicy"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/scriptpolicy"
 )
 
 // Closed interpreter identifiers of protocol 1.0. Admitting another

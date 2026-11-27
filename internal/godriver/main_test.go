@@ -12,9 +12,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/testgitenv"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/testgitenv"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 // identityProbeMode is a test-only second hidden mode. It exists so a test can

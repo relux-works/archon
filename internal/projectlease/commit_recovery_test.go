@@ -12,8 +12,8 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 type collectProbe struct {

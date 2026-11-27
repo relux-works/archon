@@ -9,7 +9,7 @@ import (
 	"io/fs"
 	"sync"
 
-	"github.com/relux-works/curator/internal/schemaregexp"
+	"github.com/relux-works/archon/internal/schemaregexp"
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 

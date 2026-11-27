@@ -4,8 +4,8 @@ import (
 	"encoding/base64"
 	"sort"
 
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 const gitDerivationSchemaID = "rust-git-projection-v1"

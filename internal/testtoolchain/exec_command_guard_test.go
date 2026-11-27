@@ -65,7 +65,7 @@ func TestGoToolchainTestCommandGuardPlants(t *testing.T) {
 import (
   "os/exec"
   "testing"
-  "github.com/relux-works/curator/internal/testtoolchain"
+  "github.com/relux-works/archon/internal/testtoolchain"
 )
 func TestPlant(t *testing.T) {
   command := exec.Command(testtoolchain.Go(t), "test", "./...")
@@ -84,7 +84,7 @@ func TestPlant(t *testing.T) {
 import (
   "os/exec"
   "testing"
-  "github.com/relux-works/curator/internal/testtoolchain"
+  "github.com/relux-works/archon/internal/testtoolchain"
 )
 func TestPlant(t *testing.T) {
   _ = exec.Command(testtoolchain.Go(t), "test", "./...")

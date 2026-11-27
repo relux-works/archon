@@ -15,8 +15,8 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/schemaregexp"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/schemaregexp"
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 

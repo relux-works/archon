@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/relux-works/curator/internal/crossconformance"
-	"github.com/relux-works/curator/internal/rustsource"
+	"github.com/relux-works/archon/internal/crossconformance"
+	"github.com/relux-works/archon/internal/rustsource"
 )
 
 // rustTargets are the two exact native targets the same Cargo lock superset is

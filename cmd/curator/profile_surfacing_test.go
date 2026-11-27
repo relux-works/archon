@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envprofile"
+	"github.com/relux-works/archon/internal/envprofile"
 )
 
 // These tests drive the §2.3 surfacing rows and the §2.2 empty-allowlist

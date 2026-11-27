@@ -6,16 +6,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/globalbins"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/runtimestore"
-	"github.com/relux-works/curator/internal/skillruntime"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/globalbins"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/runtimestore"
+	"github.com/relux-works/archon/internal/skillruntime"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // stageProfileRuntime reuses ordinary closed runtime targets and verified cache

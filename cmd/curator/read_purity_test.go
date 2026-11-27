@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/privatedir"
 	"os"
 	"path/filepath"
 	"strings"

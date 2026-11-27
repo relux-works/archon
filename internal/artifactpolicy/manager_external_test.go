@@ -15,8 +15,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/artifactpolicy"
-	"github.com/relux-works/curator/internal/artifactpolicy/conformance"
+	"github.com/relux-works/archon/internal/artifactpolicy"
+	"github.com/relux-works/archon/internal/artifactpolicy/conformance"
 )
 
 func TestCentralManagerSelectsFingerprintsAndRechecksRuntimeGoToolchain(t *testing.T) {

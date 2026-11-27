@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/staging"
+	"github.com/relux-works/archon/internal/staging"
 )
 
 // boundaryCommitRequest drives the real serialized publisher with caller

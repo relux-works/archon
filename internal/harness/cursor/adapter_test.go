@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/archon/internal/harnessapi"
 )
 
 func refusalCode(err error) string {

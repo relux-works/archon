@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/relux-works/curator/internal/moduleroots"
+	"github.com/relux-works/archon/internal/moduleroots"
 )
 
 // This file carries the driver's half of Spec §4.2.3, first-party module

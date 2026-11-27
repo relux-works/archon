@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 var errInjectedSharingViolation = errors.New("injected sharing violation")

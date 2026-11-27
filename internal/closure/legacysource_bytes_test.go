@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/devsub"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/devsub"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // symlinkSiblingFixture is the review's two-repository shape: the bare

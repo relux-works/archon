@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 // Both build entry points use the configured Go executable even with no Go

@@ -11,10 +11,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/relux-works/curator/internal/envauthority"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/staging"
+	"github.com/relux-works/archon/internal/envauthority"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/staging"
 )
 
 // Engine owns journals beneath one manager home. It does not acquire locks;

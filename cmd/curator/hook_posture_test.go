@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/hookapproval"
+	"github.com/relux-works/archon/internal/hookapproval"
 )
 
 // These tests drive the production run() entry point for the §8.6 posture

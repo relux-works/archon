@@ -12,16 +12,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/envauthority"
-	"github.com/relux-works/curator/internal/hookapproval"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/projectlease"
-	"github.com/relux-works/curator/internal/scopes"
-	"github.com/relux-works/curator/internal/skillruntime"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/envauthority"
+	"github.com/relux-works/archon/internal/hookapproval"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/projectlease"
+	"github.com/relux-works/archon/internal/scopes"
+	"github.com/relux-works/archon/internal/skillruntime"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // HomeLock is the exclusive manager-home mutation witness. It is held from

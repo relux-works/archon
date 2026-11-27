@@ -8,14 +8,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/stateread"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/stateread"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // Export is one actual exposed command and its admitted provider.

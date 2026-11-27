@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/install"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/install"
 )
 
 // resolveCLIProvider is the platform-neutral installation seam for a future

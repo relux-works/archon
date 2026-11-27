@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // ScriptRuntimeSpec is the complete active script runtime needed at one skill

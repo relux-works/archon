@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/closureexec"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/closureexec"
 )
 
 // StagedBuild is one privately staged build output. Path stays inside the

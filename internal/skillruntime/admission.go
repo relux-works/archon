@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // Unavailable is the required Slice A B1 diagnostic for non-current profiles.

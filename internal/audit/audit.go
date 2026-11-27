@@ -20,15 +20,15 @@ import (
 
 	"golang.org/x/net/idna"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/opaquescan"
-	"github.com/relux-works/curator/internal/scriptpolicy"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/whitelist"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/opaquescan"
+	"github.com/relux-works/archon/internal/scriptpolicy"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/whitelist"
 )
 
 // Severities and decisions (Spec §12.1, §12.2).

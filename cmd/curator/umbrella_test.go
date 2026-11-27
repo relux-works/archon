@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/globalbins"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/globalbins"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // These tests drive the production §11 lookup: resolveProvider directly

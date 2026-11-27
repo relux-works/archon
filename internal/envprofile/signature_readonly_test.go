@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/gitops"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/gitops"
 )
 
 // Real SSH commit/tag signatures verify through the local transport, tampered signed bytes

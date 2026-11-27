@@ -17,7 +17,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"github.com/relux-works/curator/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildmeta"
 )
 
 // Claim: a real non-root sweep ignores inaccessible foreign credentials, keeps

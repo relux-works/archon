@@ -14,13 +14,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/runtimestore"
-	"github.com/relux-works/curator/internal/scopes"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/runtimestore"
+	"github.com/relux-works/archon/internal/scopes"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // TestGCPreservesRuntimeOnUncertainMarks drives run(gc) with production locks

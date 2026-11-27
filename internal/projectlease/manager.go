@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/privatedir"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/stateread"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/stateread"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 func (m *Manager) resolve(ctx context.Context, held managerlock.Held, ref, sha, owner string) (Composition, error) {

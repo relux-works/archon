@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/manifest"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/manifest"
 )
 
 // Private compilation holds the global project lock, leaves the home lock

@@ -16,9 +16,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/privatedir"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/unicode/norm"
 )

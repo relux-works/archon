@@ -6,14 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/artifactpolicy"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/crossconformance"
-	"github.com/relux-works/curator/internal/npmsource"
-	"github.com/relux-works/curator/internal/rustsource"
-	"github.com/relux-works/curator/internal/swiftpmbuild"
-	"github.com/relux-works/curator/internal/yarnclassicsource"
+	"github.com/relux-works/archon/internal/artifactpolicy"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/crossconformance"
+	"github.com/relux-works/archon/internal/npmsource"
+	"github.com/relux-works/archon/internal/rustsource"
+	"github.com/relux-works/archon/internal/swiftpmbuild"
+	"github.com/relux-works/archon/internal/yarnclassicsource"
 )
 
 // The integration package owns no process boundary of its own. This extends

@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/whitelist"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/whitelist"
 )
 
 func fixture(t *testing.T) (string, Identity) {

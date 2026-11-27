@@ -17,8 +17,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // MaxRecord bounds protected records; the remaining constants bound source inventories and rendering.

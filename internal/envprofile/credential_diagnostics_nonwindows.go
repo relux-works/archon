@@ -5,7 +5,7 @@ package envprofile
 import (
 	"os"
 
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // inspectCredentialLink performs metadata-only inspection. It never opens the

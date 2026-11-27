@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // This optional exact-release oracle executes the distributed matcher and

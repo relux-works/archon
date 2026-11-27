@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // Fixed refusals never reproduce rejected configuration values or store errors.

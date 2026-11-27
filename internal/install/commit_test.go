@@ -13,14 +13,14 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/scopes"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/scopes"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // sharedState is a digest of every class of state one installation commits.

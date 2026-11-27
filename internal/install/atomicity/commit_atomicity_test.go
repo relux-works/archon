@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/scopes"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/scopes"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // sweepScenario is one complete installation shape the fault sweep walks. Each

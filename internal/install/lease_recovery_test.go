@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/projectlease"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/projectlease"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // The default install recovery engine applies the project-lease policy instead

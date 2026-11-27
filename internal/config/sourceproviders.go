@@ -26,10 +26,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/gitcred"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/gitcred"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 // SourceProvidersFileName is the machine provider-table filename beside

@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 // deriveBoundaries turns every selected consumer-to-C-family target edge into

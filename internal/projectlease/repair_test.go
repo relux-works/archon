@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 func releaseForRepair(t *testing.T, f fixture) {

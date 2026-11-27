@@ -8,14 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // Production data-flow proof for the local-source boundary guard: every

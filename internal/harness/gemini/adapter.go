@@ -1,10 +1,10 @@
 // Package gemini delegates the Gemini harness adapter to
-// github.com/relux-works/curator-runtimes/pkg/agentic/systems/gemini.
+// github.com/relux-works/archon-pantheon/pkg/agentic/systems/gemini.
 package gemini
 
 import (
-	"github.com/relux-works/curator-runtimes/pkg/agentic/systems/gemini"
-	"github.com/relux-works/curator/internal/harnessapi"
+	"github.com/relux-works/archon-pantheon/pkg/agentic/systems/gemini"
+	"github.com/relux-works/archon/internal/harnessapi"
 )
 
 const ID harnessapi.ID = "gemini"

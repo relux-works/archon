@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/contextaudit"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/hashing"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/contextaudit"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/hashing"
 )
 
 // TestPolicyFromConfigCarriesEnvGates drives the production PolicyFromConfig

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/testruntimes"
+	"github.com/relux-works/archon/internal/testruntimes"
 )
 
 type activationTreeEntry struct {

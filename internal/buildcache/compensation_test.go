@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildmeta"
 )
 
 // failAt hooks the named mutation boundaries. Every listed point fails, every

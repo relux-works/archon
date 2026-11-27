@@ -7,7 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/relux-works/curator/internal/envmarker"
+	"github.com/relux-works/archon/internal/envmarker"
 	"os"
 	"path/filepath"
 	"strings"

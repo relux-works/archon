@@ -5,13 +5,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/pkgversion"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/pkgversion"
 )
 
 type offlineSource struct{ b *build }

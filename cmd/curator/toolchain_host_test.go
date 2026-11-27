@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 // TestHostGoToolchainIsSelectableOnAnInventoryPlatform pins the one precondition

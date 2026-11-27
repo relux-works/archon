@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"sort"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 // BuildToolRole is the closed set of physical native Rust build components.

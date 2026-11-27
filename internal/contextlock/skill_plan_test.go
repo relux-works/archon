@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/protocoljson"
 	"strings"
 	"testing"
 )

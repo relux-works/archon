@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/relux-works/curator/internal/skillintegrity"
-	"github.com/relux-works/curator/internal/startupverification"
+	"github.com/relux-works/archon/internal/skillintegrity"
+	"github.com/relux-works/archon/internal/startupverification"
 )
 
 // SkillIntegritySchemaVersion extends lock4 without adopting lock5 skill plans.

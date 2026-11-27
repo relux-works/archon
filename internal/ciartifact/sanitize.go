@@ -56,7 +56,7 @@ var (
 )
 
 const (
-	curatorModulePath  = "github.com/relux-works/curator"
+	curatorModulePath  = "github.com/relux-works/archon"
 	redactedPath       = "[redacted path]"
 	redactedAssignment = "[redacted]"
 	redactedHostname   = "[redacted hostname]"

@@ -16,8 +16,8 @@ import (
 	"testing/synctest"
 	"time"
 
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 func TestRegistryOutageClassificationExcludesOtherFailures(t *testing.T) {

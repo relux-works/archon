@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/identity"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/identity"
 )
 
 // refreshCheckout refreshes an existing legacy checkout (skills root or dev

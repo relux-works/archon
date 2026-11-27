@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/relux-works/curator/internal/closuregraph"
+	"github.com/relux-works/archon/internal/closuregraph"
 )
 
 // AssuranceMode is the closed execution assurance selection.

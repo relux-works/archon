@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // Windows verifiers accept regular pathname inputs. Public verification bytes

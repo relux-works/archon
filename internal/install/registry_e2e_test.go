@@ -15,16 +15,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/identity"
-	markerpkg "github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/registry"
-	"github.com/relux-works/curator/internal/snapshot"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/identity"
+	markerpkg "github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/registry"
+	"github.com/relux-works/archon/internal/snapshot"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // registryFixture describes how the fake registry stamps and serves its

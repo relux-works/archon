@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/pathboundary"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/pathboundary"
 )
 
 // DiagNativeHomeBindingRequired refuses an absent or inadmissible native target.

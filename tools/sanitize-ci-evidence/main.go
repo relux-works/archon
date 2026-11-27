@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/relux-works/curator/internal/ciartifact"
+	"github.com/relux-works/archon/internal/ciartifact"
 )
 
 func main() {

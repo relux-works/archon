@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/startupverification"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/startupverification"
 )
 
 func startupChanged() error {

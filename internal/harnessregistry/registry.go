@@ -1,10 +1,10 @@
 // Package harnessregistry delegates the closed compile-time harness catalog to
-// github.com/relux-works/curator-runtimes/pkg/harnessregistry.
+// github.com/relux-works/archon-pantheon/pkg/harnessregistry.
 package harnessregistry
 
 import (
-	upstream "github.com/relux-works/curator-runtimes/pkg/harnessregistry"
-	"github.com/relux-works/curator/internal/harnessapi"
+	upstream "github.com/relux-works/archon-pantheon/pkg/harnessregistry"
+	"github.com/relux-works/archon/internal/harnessapi"
 )
 
 const DefaultID harnessapi.ID = upstream.DefaultID

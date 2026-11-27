@@ -15,9 +15,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // Version is the fragment version emitted by this manager release.

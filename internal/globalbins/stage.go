@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/relux-works/curator/internal/runtimestore"
-	"github.com/relux-works/curator/internal/staging"
+	"github.com/relux-works/archon/internal/runtimestore"
+	"github.com/relux-works/archon/internal/staging"
 )
 
 // Forwarding is the staged user-bin mirror of one global installation.

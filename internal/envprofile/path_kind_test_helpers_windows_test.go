@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/relux-works/curator/internal/pathboundary"
+	"github.com/relux-works/archon/internal/pathboundary"
 	"golang.org/x/sys/windows"
 )
 

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/curatormutations"
+	"github.com/relux-works/archon/internal/curatormutations"
 )
 
 func windowsFixtureInventory() map[string][]string {

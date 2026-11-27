@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 const pathMCPManifest = `{"schema_version":1,"name":"figma-devmode","version":"1.2.0","server":{"transport":"stdio","command":"npx","args":["-y","figma-developer-mcp","--stdio"],"env_names":["FIGMA_API_KEY"],"environments":["claude_code","codex_cli","opencode"]}}` + "\n"

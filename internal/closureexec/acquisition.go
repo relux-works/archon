@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 const (

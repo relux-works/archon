@@ -3,7 +3,7 @@ package godriver
 import (
 	"sort"
 
-	"github.com/relux-works/curator/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildmeta"
 )
 
 // Stable execution-boundary diagnostics of Manager Profile section 2.2.1. They

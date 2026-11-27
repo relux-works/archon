@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/gitcred"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/gitcred"
 )
 
 const (

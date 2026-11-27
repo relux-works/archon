@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/marker"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/marker"
 )
 
 // writeLegacyBuildSkill writes one schema-9 skill declaring a local go-v1

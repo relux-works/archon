@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/swiftpminterop"
-	"github.com/relux-works/curator/internal/swiftpmsource"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/swiftpminterop"
+	"github.com/relux-works/archon/internal/swiftpmsource"
 )
 
 // executionPolicyID is the exact C5 execution policy this stage plans under.

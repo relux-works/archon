@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // ID is a domain-separated SHA-256 identity encoded as sha256:<lower-hex>.

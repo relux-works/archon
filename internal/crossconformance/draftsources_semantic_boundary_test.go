@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/snapshot"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/snapshot"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // Boundary semantic rows (protocol/skillfile-sources.md §1): every case

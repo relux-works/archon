@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envmarker"
+	"github.com/relux-works/archon/internal/envmarker"
 )
 
 // Production entry points under test: Install, Use, Sync, List,

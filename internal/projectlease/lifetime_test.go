@@ -3,8 +3,8 @@ package projectlease
 import (
 	"context"
 	"errors"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/transaction"
 	"os"
 	"os/exec"
 	"path/filepath"

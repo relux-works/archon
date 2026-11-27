@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextaudit"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/opaquescan"
-	"github.com/relux-works/curator/internal/pathboundary"
+	"github.com/relux-works/archon/internal/contextaudit"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/opaquescan"
+	"github.com/relux-works/archon/internal/pathboundary"
 )
 
 // TestInstallBlocksBothV1CollidingSkillTrees drives Install through

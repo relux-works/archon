@@ -18,8 +18,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/marker"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/marker"
 )
 
 func TestDraftSourcesCLIInstallRestoresPriorState(t *testing.T) {

@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/identifiers"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/identifiers"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/unicode/norm"
 )

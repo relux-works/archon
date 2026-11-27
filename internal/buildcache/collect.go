@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/closureexec"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/closureexec"
 )
 
 // DefaultGrace is Curator's documented build-cache grace period. An

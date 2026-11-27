@@ -1,7 +1,7 @@
 package artifactpolicy
 
 import (
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/privatedir"
 
 	"context"
 	"crypto/sha256"

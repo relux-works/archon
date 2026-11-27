@@ -7,7 +7,7 @@ package capabilities
 import (
 	"strings"
 
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 // Manifest is a parsed capability declaration. Zero-value list fields mean

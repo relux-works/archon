@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/relux-works/curator/internal/gitops"
+	"github.com/relux-works/archon/internal/gitops"
 )
 
 func gitRun(t *testing.T, dir string, args ...string) {

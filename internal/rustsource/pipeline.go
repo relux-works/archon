@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/artifactpolicy"
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/artifactpolicy"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // cargoToolchain is the C0-bound physical Cargo implementation admitted by

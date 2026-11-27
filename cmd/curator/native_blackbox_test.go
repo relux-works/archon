@@ -18,11 +18,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/testcli"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/testcli"
 )
 
 func TestNativeBlackboxExternalBuildLifecycle(t *testing.T) {

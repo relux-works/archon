@@ -14,8 +14,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/rustsource"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/rustsource"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 func TestRawCaptureAPIContainsNoAuthorityOrDerivedSeam(t *testing.T) {

@@ -21,10 +21,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 func writeCLISkill(t *testing.T, dir, name string) {

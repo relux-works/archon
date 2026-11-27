@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/profilegraph"
-	"github.com/relux-works/curator/internal/profilegraph/graphtest"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/profilegraph"
+	"github.com/relux-works/archon/internal/profilegraph/graphtest"
 )
 
 // Both builders must establish the real lock boundary, including when a

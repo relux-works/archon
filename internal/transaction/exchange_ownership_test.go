@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/managerlock"
+	"github.com/relux-works/archon/internal/managerlock"
 )
 
 // The real Engine must not publish after its boundary callback returns under a

@@ -7,15 +7,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/artifactpolicy"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/crossconformance"
-	"github.com/relux-works/curator/internal/nodesource"
-	"github.com/relux-works/curator/internal/npmsource"
-	"github.com/relux-works/curator/internal/pnpmsource"
-	"github.com/relux-works/curator/internal/yarnclassicsource"
-	"github.com/relux-works/curator/internal/yarnmodernsource"
+	"github.com/relux-works/archon/internal/artifactpolicy"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/crossconformance"
+	"github.com/relux-works/archon/internal/nodesource"
+	"github.com/relux-works/archon/internal/npmsource"
+	"github.com/relux-works/archon/internal/pnpmsource"
+	"github.com/relux-works/archon/internal/yarnclassicsource"
+	"github.com/relux-works/archon/internal/yarnmodernsource"
 )
 
 // nodeCapture is the manager-neutral result of running one Node manager's

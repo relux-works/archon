@@ -1,6 +1,6 @@
 package contextmaterialize
 
-import "github.com/relux-works/curator/internal/contextlock"
+import "github.com/relux-works/archon/internal/contextlock"
 
 // Part records a renderer-owned part or an exact module occurrence. Slot is
 // the original manifest position, including modules excluded by a selector.

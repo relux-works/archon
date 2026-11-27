@@ -9,14 +9,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextaudit"
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/contextpkg"
-	"github.com/relux-works/curator/internal/contextresolve"
-	"github.com/relux-works/curator/internal/hashing"
-	sourceidentity "github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/pkgversion"
+	"github.com/relux-works/archon/internal/contextaudit"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/contextpkg"
+	"github.com/relux-works/archon/internal/contextresolve"
+	"github.com/relux-works/archon/internal/hashing"
+	sourceidentity "github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/pkgversion"
 )
 
 type offlineSource struct {

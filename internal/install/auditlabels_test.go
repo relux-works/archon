@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/scriptworker"
+	"github.com/relux-works/archon/internal/scriptworker"
 )
 
 // schema7ScriptSkill creates a tagged schema-7 skill whose single script

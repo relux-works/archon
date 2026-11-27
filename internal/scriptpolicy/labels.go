@@ -3,7 +3,7 @@ package scriptpolicy
 import (
 	"sort"
 
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 // Closed script audit warning classes (manager profile §7). Both are always

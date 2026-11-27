@@ -5,8 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/relux-works/curator/internal/envfragment"
-	"github.com/relux-works/curator/internal/envmarker"
+	"github.com/relux-works/archon/internal/envfragment"
+	"github.com/relux-works/archon/internal/envmarker"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,10 +15,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/testtoolchain"
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 

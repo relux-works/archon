@@ -3,8 +3,8 @@ package projectlease
 import (
 	"fmt"
 
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // RecoverUnderLock shares the conservative lifecycle transition between every

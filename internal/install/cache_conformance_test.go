@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/conformancecoverage"
 )
 
 // The published build-driver document is the only source of expected values in

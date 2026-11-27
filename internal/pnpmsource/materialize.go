@@ -14,11 +14,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/artifactpolicy"
-	"github.com/relux-works/curator/internal/closureexec"
-	"github.com/relux-works/curator/internal/closuregraph"
-	"github.com/relux-works/curator/internal/nodesource"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/artifactpolicy"
+	"github.com/relux-works/archon/internal/closureexec"
+	"github.com/relux-works/archon/internal/closuregraph"
+	"github.com/relux-works/archon/internal/nodesource"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // ExecutionContext supplies the shared protected executor and exact C0/C5 authority.

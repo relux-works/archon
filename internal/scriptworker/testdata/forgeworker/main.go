@@ -31,7 +31,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/relux-works/curator/internal/godriver"
+	"github.com/relux-works/archon/internal/godriver"
 )
 
 type inventoryInput struct {

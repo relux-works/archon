@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/mcpnative"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/mcpnative"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // The real dispatcher exposes a separate profile carrier and read-only status.

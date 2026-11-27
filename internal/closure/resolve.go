@@ -7,16 +7,16 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/devsub"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/opaquescan"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/snapshot"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/whitelist"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/devsub"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/opaquescan"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/snapshot"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/whitelist"
 )
 
 // DraftResolveConfig carries the explicit inputs of one draft source

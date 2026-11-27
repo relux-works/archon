@@ -13,7 +13,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/curatormutations"
+	"github.com/relux-works/archon/internal/curatormutations"
 )
 
 // All ordinary lanes share discovery, partitioning, execution and admission.
@@ -39,9 +39,9 @@ func ordinaryConfig(lane, goos string) (testLane, error) {
 }
 
 var ordinaryPackages = []string{
-	"github.com/relux-works/curator/internal/envprofile",
-	"github.com/relux-works/curator/internal/install",
-	"github.com/relux-works/curator/cmd/curator",
+	"github.com/relux-works/archon/internal/envprofile",
+	"github.com/relux-works/archon/internal/install",
+	"github.com/relux-works/archon/cmd/curator",
 }
 
 func splitOrdinaryPackageTests(packagePath string, names []string) (curatormutations.Inventory, error) {

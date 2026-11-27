@@ -2,9 +2,9 @@ package envprofile
 
 import (
 	"bytes"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/transaction"
 	"os"
 	"path/filepath"
 	"runtime"

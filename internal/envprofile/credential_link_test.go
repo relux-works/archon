@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envregistry"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envregistry"
 )
 
 // TestSharedToIsolatedRemovesStaleLink is row (a): a shared→isolated turn

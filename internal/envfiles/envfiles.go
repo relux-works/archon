@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/hookapproval"
+	"github.com/relux-works/archon/internal/hookapproval"
 )
 
 // Names of the generated helper files inside a scope's env directory.

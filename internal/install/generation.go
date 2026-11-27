@@ -9,9 +9,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/relux-works/curator/internal/devsub"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/scopes"
+	"github.com/relux-works/archon/internal/devsub"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/scopes"
 )
 
 // A declaration document is one shared file whose *bytes* select installed

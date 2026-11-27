@@ -16,12 +16,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/devsub"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/identity"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/snapshot"
+	"github.com/relux-works/archon/internal/devsub"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/identity"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/snapshot"
 )
 
 // ProjectEdge is the synthetic consumer name for direct Skillfile entries.

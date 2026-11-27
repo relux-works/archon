@@ -16,17 +16,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/adapters"
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/conformancecoverage"
-	"github.com/relux-works/curator/internal/envfiles"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/registry"
-	"github.com/relux-works/curator/internal/scopes"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/adapters"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/conformancecoverage"
+	"github.com/relux-works/archon/internal/envfiles"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/registry"
+	"github.com/relux-works/archon/internal/scopes"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 // authoritativeDryRunCase is the published no-mutation contract. Only the field

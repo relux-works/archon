@@ -7,8 +7,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/relux-works/curator/internal/harnessapi"
-	"github.com/relux-works/curator/internal/harnessregistry"
+	"github.com/relux-works/archon/internal/harnessapi"
+	"github.com/relux-works/archon/internal/harnessregistry"
 )
 
 const ownershipSourceHead = "643e727edd2db21307ca6d8c0332935e33d50ac8"

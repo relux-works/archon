@@ -12,13 +12,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextmaterialize"
-	"github.com/relux-works/curator/internal/envmarker"
-	"github.com/relux-works/curator/internal/envprofile"
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/pathboundary"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextmaterialize"
+	"github.com/relux-works/archon/internal/envmarker"
+	"github.com/relux-works/archon/internal/envprofile"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/pathboundary"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 type museRootVector struct {
@@ -142,7 +142,7 @@ func TestMuseRootContextVectors(t *testing.T) {
 			if !ok {
 				t.Fatal("missing lock root")
 			}
-			want := fmt.Sprintf("<!--\ncurator-root-context-v2\nroot: acme 1.0.0 %s\nmember: acme 1.0.0 %s weight 0\nprecedence: winner=higher-weight placement=winner-last\nlock: %s\ngenerated: Curator Protocol environments revision 1 (https://github.com/relux-works/curator-spec)\nnotice: generated file; direct edits are unsupported and are detected as drift; update the source profile repository or its composed profiles instead\n-->\n", root.Pin(), root.Pin(), hash)
+			want := fmt.Sprintf("<!--\ncurator-root-context-v2\nroot: acme 1.0.0 %s\nmember: acme 1.0.0 %s weight 0\nprecedence: winner=higher-weight placement=winner-last\nlock: %s\ngenerated: Curator Protocol environments revision 1 (https://github.com/relux-works/archon-spec)\nnotice: generated file; direct edits are unsupported and are detected as drift; update the source profile repository or its composed profiles instead\n-->\n", root.Pin(), root.Pin(), hash)
 			if tc.Body != "" {
 				want += "\n---\n\n## Context: acme 1.0.0\n\n" + tc.Body
 			}

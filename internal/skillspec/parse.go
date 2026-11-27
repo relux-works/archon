@@ -12,12 +12,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/identifiers"
-	"github.com/relux-works/curator/internal/moduleroots"
-	"github.com/relux-works/curator/internal/protocoljson"
-	"github.com/relux-works/curator/internal/verr"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/identifiers"
+	"github.com/relux-works/archon/internal/moduleroots"
+	"github.com/relux-works/archon/internal/protocoljson"
+	"github.com/relux-works/archon/internal/verr"
 )
 
 var (

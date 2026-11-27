@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/harnessapi"
-	"github.com/relux-works/curator/internal/harnessregistry"
+	"github.com/relux-works/archon/internal/harnessapi"
+	"github.com/relux-works/archon/internal/harnessregistry"
 )
 
 // These modes are reachable only in this test executable. Children carry no

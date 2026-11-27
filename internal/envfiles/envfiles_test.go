@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/hookapproval"
+	"github.com/relux-works/archon/internal/hookapproval"
 )
 
 // assertManagerRecorded proves a manager write left an approved_by manager

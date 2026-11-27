@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextstore"
+	"github.com/relux-works/archon/internal/contextstore"
 )
 
 // pathSourceGit runs git inside dir, skipping when git is unavailable.

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 const unrelatedGOROOTChildMarker = "CURATOR_TEST_UNRELATED_GOROOT_CHILD_MARKER"

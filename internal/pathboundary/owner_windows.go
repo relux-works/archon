@@ -12,7 +12,7 @@ import (
 
 	"golang.org/x/sys/windows"
 
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 const mutationRights windows.ACCESS_MASK = windows.GENERIC_WRITE | windows.GENERIC_ALL |

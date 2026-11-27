@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/manifest"
+	"github.com/relux-works/archon/internal/manifest"
 )
 
 func selectionProject(t *testing.T, root string, names []string, requirements map[string]map[string]any) *manifest.Manifest {

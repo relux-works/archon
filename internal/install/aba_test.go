@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/adapters"
-	devsubpkg "github.com/relux-works/curator/internal/devsub"
-	manifestpkg "github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/scopes"
+	"github.com/relux-works/archon/internal/adapters"
+	devsubpkg "github.com/relux-works/archon/internal/devsub"
+	manifestpkg "github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/scopes"
 )
 
 // A one-way mutation of a declaration document is not the whole race. Every

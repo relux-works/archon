@@ -110,7 +110,7 @@ func testPhysicalSourceLocations(t *testing.T) {
 		lines      []int
 	}{
 		{"computed-ID", "const selected=\"cla\"+\"ude_code\"\nfunc choose(id string)bool{return id==selected}\n", []int{3, 4}},
-		{"concrete-import", "import _ \"github.com/relux-works/curator/internal/harness/codex_cli\"\n", []int{3}},
+		{"concrete-import", "import _ \"github.com/relux-works/archon/internal/harness/codex_cli\"\n", []int{3}},
 		{"generated-directive", "//go:generate fixture\n", []int{3}},
 	} {
 		t.Run(row.name, func(t *testing.T) {

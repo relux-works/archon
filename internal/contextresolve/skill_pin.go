@@ -1,6 +1,6 @@
 package contextresolve
 
-import "github.com/relux-works/curator/internal/contextlock"
+import "github.com/relux-works/archon/internal/contextlock"
 
 // VerifySkillPin applies the existing exact-candidate signer policy to a
 // shared-closure skill. It neither enumerates tags nor upgrades a version.

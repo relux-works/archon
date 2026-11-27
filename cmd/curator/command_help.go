@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/relux-works/curator/internal/version"
+	"github.com/relux-works/archon/internal/version"
 )
 
 // commandRegistry owns the built-in command dispatch and its help topics. Child

@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/buildcache"
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/marker"
+	"github.com/relux-works/archon/internal/buildcache"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/marker"
 )
 
 type testHomeLock struct{ err error }

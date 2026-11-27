@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envregistry"
-	"github.com/relux-works/curator/internal/mcpnative"
-	"github.com/relux-works/curator/internal/privatedir"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/envregistry"
+	"github.com/relux-works/archon/internal/mcpnative"
+	"github.com/relux-works/archon/internal/privatedir"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // Production publishes private native files, ownership records, skills and

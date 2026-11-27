@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/hashing"
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/hashing"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 // verifyState reuses install's versioned content hash over protected bounded

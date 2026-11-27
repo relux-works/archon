@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/stateread"
+	"github.com/relux-works/archon/internal/stateread"
 )
 
 type report struct {

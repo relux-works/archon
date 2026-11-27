@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/envmarker"
+	"github.com/relux-works/archon/internal/envmarker"
 )
 
 // All five CLI operations carry takeover to native skills, preserve unnamed entries, and back up exact foreign link text.

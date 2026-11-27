@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/relux-works/curator/internal/godriver"
+	"github.com/relux-works/archon/internal/godriver"
 )
 
 // workerStderrLimit bounds the worker's own diagnostic stream.

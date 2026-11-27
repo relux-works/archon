@@ -17,7 +17,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/curatormutations"
+	"github.com/relux-works/archon/internal/curatormutations"
 )
 
 type inventoryReport struct {
@@ -39,7 +39,7 @@ type inventoryReport struct {
 }
 
 const curatorPackagePath = "./cmd/curator"
-const curatorPackageImportPath = "github.com/relux-works/curator/cmd/curator"
+const curatorPackageImportPath = "github.com/relux-works/archon/cmd/curator"
 const inventoryTimeout = "60m"
 const windowsInventoryTimeout = "120m"
 

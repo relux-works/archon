@@ -8,9 +8,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/relux-works/curator/internal/godriver"
-	"github.com/relux-works/curator/internal/testgitenv"
-	"github.com/relux-works/curator/internal/testtoolchain"
+	"github.com/relux-works/archon/internal/godriver"
+	"github.com/relux-works/archon/internal/testgitenv"
+	"github.com/relux-works/archon/internal/testtoolchain"
 )
 
 // TestMain gives the test binary the same fixed hidden script-worker mode

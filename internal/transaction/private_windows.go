@@ -5,7 +5,7 @@ package transaction
 import (
 	"os"
 
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 func makePublicationDirectory(path string, _ os.FileMode) error {

@@ -7,15 +7,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/audit"
-	"github.com/relux-works/curator/internal/capabilities"
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/snapshot"
-	"github.com/relux-works/curator/internal/sourcelock"
-	"github.com/relux-works/curator/internal/staging"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/audit"
+	"github.com/relux-works/archon/internal/capabilities"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/snapshot"
+	"github.com/relux-works/archon/internal/sourcelock"
+	"github.com/relux-works/archon/internal/staging"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // Capture and audit-state semantic rows (§3–§4): mutation detection,

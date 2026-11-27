@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/devsub"
-	"github.com/relux-works/curator/internal/install"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/registry"
-	"github.com/relux-works/curator/internal/testgitenv"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/devsub"
+	"github.com/relux-works/archon/internal/install"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/registry"
+	"github.com/relux-works/archon/internal/testgitenv"
 )
 
 // Currentness, substitution, and marker-plan semantic rows (§4): the

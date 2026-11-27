@@ -3,7 +3,7 @@ package closuregraph
 import (
 	"fmt"
 
-	"github.com/relux-works/curator/internal/protocoljson"
+	"github.com/relux-works/archon/internal/protocoljson"
 )
 
 // SourceClosure binds the complete pre-execution chain through C5.

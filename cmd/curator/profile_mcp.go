@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/envprofile"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/envprofile"
 )
 
 // cmdProfileMCP is deliberately separate from project install and legacy

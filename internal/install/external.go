@@ -10,14 +10,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/relux-works/curator/internal/buildmeta"
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/buildsource"
-	"github.com/relux-works/curator/internal/closure"
-	"github.com/relux-works/curator/internal/devsub"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/skillspec"
-	"github.com/relux-works/curator/internal/staging"
+	"github.com/relux-works/archon/internal/buildmeta"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/buildsource"
+	"github.com/relux-works/archon/internal/closure"
+	"github.com/relux-works/archon/internal/devsub"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/skillspec"
+	"github.com/relux-works/archon/internal/staging"
 )
 
 // ExternalDeps are operator-owned external-repository boundaries. Package

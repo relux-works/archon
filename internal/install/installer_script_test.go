@@ -19,8 +19,8 @@ import (
 const (
 	fixtureVersion      = "v1.2.3"
 	fixtureArchive      = "curator_1.2.3_darwin_amd64.tar.gz"
-	fixtureSignerPrefix = "https://github.com/relux-works/curator/.github/workflows/release.yml@refs/tags/v"
-	fixtureIdentityRE   = `^https://github.com/relux-works/curator/\.github/workflows/release\.yml@refs/tags/v`
+	fixtureSignerPrefix = "https://github.com/relux-works/archon/.github/workflows/release.yml@refs/tags/v"
+	fixtureIdentityRE   = `^https://github.com/relux-works/archon/\.github/workflows/release\.yml@refs/tags/v`
 	fixtureOIDCIssuer   = "https://token.actions.githubusercontent.com"
 	fixtureWorkflow     = "relux-works/curator/.github/workflows/release.yml"
 )

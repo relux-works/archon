@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/marker"
-	"github.com/relux-works/curator/internal/registry"
-	"github.com/relux-works/curator/internal/sourcelock"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/marker"
+	"github.com/relux-works/archon/internal/registry"
+	"github.com/relux-works/archon/internal/sourcelock"
 )
 
 // draftEvidenceStub serves one signed registry whose records echo the

@@ -3,8 +3,8 @@ package projectlease
 import (
 	"fmt"
 
-	"github.com/relux-works/curator/internal/managerlock"
-	"github.com/relux-works/curator/internal/transaction"
+	"github.com/relux-works/archon/internal/managerlock"
+	"github.com/relux-works/archon/internal/transaction"
 )
 
 // TransactionCheck supplies the project-lease policy to every manager engine

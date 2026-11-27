@@ -11,7 +11,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/relux-works/curator/internal/config"
+	"github.com/relux-works/archon/internal/config"
 )
 
 const claudeAuthConfigUsage = `Metadata-only Claude OAuth configuration:

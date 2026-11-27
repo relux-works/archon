@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/gitops"
+	"github.com/relux-works/archon/internal/gitops"
 )
 
 const (

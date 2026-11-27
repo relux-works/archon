@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/relux-works/curator/internal/buildrepo"
+	"github.com/relux-works/archon/internal/buildrepo"
 )
 
 func main() {

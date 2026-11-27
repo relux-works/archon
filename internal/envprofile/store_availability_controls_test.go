@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/pathboundary"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/pathboundary"
 )
 
 // A missing leaf is not a waiver for a missing/unsafe ancestor or a later

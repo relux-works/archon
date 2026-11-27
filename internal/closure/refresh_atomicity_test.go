@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/manifest"
-	"github.com/relux-works/curator/internal/sourcelock"
+	"github.com/relux-works/archon/internal/manifest"
+	"github.com/relux-works/archon/internal/sourcelock"
 )
 
 // advanceDraftGitTag commits one more file in repo and force-moves tag to

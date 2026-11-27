@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/buildrepo"
-	"github.com/relux-works/curator/internal/config"
-	"github.com/relux-works/curator/internal/gitcred"
-	"github.com/relux-works/curator/internal/skillspec"
+	"github.com/relux-works/archon/internal/buildrepo"
+	"github.com/relux-works/archon/internal/config"
+	"github.com/relux-works/archon/internal/gitcred"
+	"github.com/relux-works/archon/internal/skillspec"
 )
 
 func TestDraftTransportEnabled(t *testing.T) {

@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/relux-works/curator/internal/contextlock"
-	"github.com/relux-works/curator/internal/contextstore"
-	"github.com/relux-works/curator/internal/gitops"
-	"github.com/relux-works/curator/internal/privatedir"
+	"github.com/relux-works/archon/internal/contextlock"
+	"github.com/relux-works/archon/internal/contextstore"
+	"github.com/relux-works/archon/internal/gitops"
+	"github.com/relux-works/archon/internal/privatedir"
 )
 
 // Production entry point: Install -> installLocked -> contextresolve.Resolve.

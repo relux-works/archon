@@ -35,7 +35,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/relux-works/curator/internal/scriptpolicy"
+	"github.com/relux-works/archon/internal/scriptpolicy"
 )
 
 // Stable execution-boundary diagnostics of manager profile §3.1. The

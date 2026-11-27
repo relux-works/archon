@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/relux-works/curator/internal/closureexec"
+	"github.com/relux-works/archon/internal/closureexec"
 )
 
 // cachePositiveCase is one authoritative accepted cache-boundary vector.

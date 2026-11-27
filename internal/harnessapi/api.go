@@ -1,8 +1,8 @@
 // Package harnessapi delegates the versioned value-only harness contract to
-// github.com/relux-works/curator-runtimes/pkg/harnessapi.
+// github.com/relux-works/archon-pantheon/pkg/harnessapi.
 package harnessapi
 
-import upstream "github.com/relux-works/curator-runtimes/pkg/harnessapi"
+import upstream "github.com/relux-works/archon-pantheon/pkg/harnessapi"
 
 type ID = upstream.ID
 type APIVersion = upstream.APIVersion
