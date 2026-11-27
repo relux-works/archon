@@ -34,10 +34,10 @@ github.com/muesli/termenv v0.16.0 h1:S5AlUN9dENB57rsbnkPyfdGuWIlkmzJjbFf0Tf5FWUc
 github.com/muesli/termenv v0.16.0/go.mod h1:ZRfOIKPFDYQoDFF4Olj7/QJbW60Ol/kL1pU3VfY/Cnk=
 github.com/pelletier/go-toml/v2 v2.4.3 h1:GTRvJQutkOSftxIFD5xw9aepkYNuPWmVJpffdDPYVpY=
 github.com/pelletier/go-toml/v2 v2.4.3/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
+github.com/relux-works/archon-pantheon v0.7.1-0.20261127000434-422c6aa1dd27 h1:DScKR7dKxXM7pN2lNPd1NMOByCQObc8w9DYdSbAGbzY=
+github.com/relux-works/archon-pantheon v0.7.1-0.20261127000434-422c6aa1dd27/go.mod h1:qQl7VjI2WmCy/4Zl03ighi10aHdOBgX49+0ZJGs10a4=
 github.com/relux-works/curator-network-profiles v0.2.0 h1:Y9A1rn7TGClTAvdi49SrIxfqzO0p+PzUAW6UErivLcs=
 github.com/relux-works/curator-network-profiles v0.2.0/go.mod h1:KlPpVwgH45EtLFWodP1ofqWc+amLHGuftUVoZ1rsWhg=
-github.com/relux-works/curator-runtimes v0.7.1-0.20261126210852-6fa064e30fc5 h1:Nh4gRQps4F+J+lE17fOtqHQemvnDjGoH4duTDJldc3U=
-github.com/relux-works/curator-runtimes v0.7.1-0.20261126210852-6fa064e30fc5/go.mod h1:F+JtI/KXXzKtz7gCliTQdMocc9d3di49oPyxQ2OPPD0=
 github.com/relux-works/skill-go-testing-tools/tuitestkit v0.1.1 h1:T3iD+MHLRxHp9Oj2BJfuBudZFVzbVgxh8Cv1P6xUw1U=
 github.com/relux-works/skill-go-testing-tools/tuitestkit v0.1.1/go.mod h1:eskmRagIK80UL3welr4n8HITS/BAZz4lyT4LoBESN+8=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
